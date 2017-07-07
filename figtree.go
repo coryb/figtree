@@ -21,7 +21,7 @@ var log = logging.MustGetLogger("figtree")
 func LoadAllConfigs(configFile string, options interface{}) error {
 	// assert options is a pointer
 
-	paths := findParentPaths(configFile)
+	paths := FindParentPaths(configFile)
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
 	// iterate paths in reverse

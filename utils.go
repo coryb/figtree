@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func findParentPaths(fileName string) []string {
+func FindParentPaths(fileName string) []string {
 	cwd, _ := os.Getwd()
 
 	paths := make([]string, 0)
