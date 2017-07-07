@@ -2,6 +2,7 @@ package figtree
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,7 +10,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"unicode"
 
+	"github.com/fatih/camelcase"
 	"github.com/pkg/errors"
 
 	yaml "gopkg.in/coryb/yaml.v2"
@@ -18,7 +21,29 @@ import (
 
 var log = logging.MustGetLogger("figtree")
 
+type FigTree struct {
+	Defaults  interface{}
+	EnvPrefix string
+	stop      bool
+}
+
+func NewFigTree() *FigTree {
+	return &FigTree{
+		EnvPrefix: "FIGTREE",
+	}
+}
+
 func LoadAllConfigs(configFile string, options interface{}) error {
+	return NewFigTree().LoadAllConfigs(configFile, options)
+}
+
+func LoadConfig(configFile string, options interface{}) error {
+	return NewFigTree().LoadConfig(configFile, options)
+}
+
+func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
+	// reset from any previous config parsing runs
+	f.stop = false
 	// assert options is a pointer
 
 	paths := FindParentPaths(configFile)
@@ -27,21 +52,31 @@ func LoadAllConfigs(configFile string, options interface{}) error {
 	// iterate paths in reverse
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		advance, err := LoadConfig(file, options)
+		err := f.LoadConfig(file, options)
 		if err != nil {
 			return err
 		}
-		if !advance {
+		if f.stop {
 			break
 		}
+	}
+
+	// apply defaults at the end to set any undefined fields
+	if f.Defaults != nil {
+		m := &merger{sourceFile: "defaults"}
+		m.mergeStructs(
+			reflect.ValueOf(options),
+			reflect.ValueOf(f.Defaults),
+		)
 	}
 	return nil
 }
 
-func LoadConfig(file string, options interface{}) (advance bool, err error) {
+func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
+	f.populateEnv(options)
 	basePath, err := os.Getwd()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	rel, err := filepath.Rel(basePath, file)
@@ -61,12 +96,12 @@ func LoadConfig(file string, options interface{}) (advance bool, err error) {
 			if data, err := ioutil.ReadFile(file); err == nil {
 				err := yaml.Unmarshal(data, m)
 				if err != nil {
-					return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+					return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
 				}
 
 				err = yaml.Unmarshal(data, tmp)
 				if err != nil {
-					return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+					return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
 				}
 				// if reflect.ValueOf(tmp).Kind() == reflect.Map {
 				// 	tmp, _ = util.YamlFixup(tmp)
@@ -80,16 +115,16 @@ func LoadConfig(file string, options interface{}) (advance bool, err error) {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
+				return errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
 			}
 			// first parse out any config processing option
 			err := yaml.Unmarshal(stdout.Bytes(), m)
 			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+				return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
 			}
 			err = yaml.Unmarshal(stdout.Bytes(), tmp)
 			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to parse STDOUT from executable config file %s", file))
+				return errors.Wrap(err, fmt.Sprintf("Failed to parse STDOUT from executable config file %s", file))
 			}
 		}
 		m.setSource(reflect.ValueOf(tmp))
@@ -98,10 +133,12 @@ func LoadConfig(file string, options interface{}) (advance bool, err error) {
 			reflect.ValueOf(tmp),
 		)
 		if m.Config.Stop {
-			return false, nil
+			f.stop = true
+			return nil
 		}
+		f.populateEnv(options)
 	}
-	return true, nil
+	return nil
 }
 
 type ConfigOptions struct {
@@ -268,4 +305,46 @@ Outer:
 		ov = reflect.Append(ov, niv)
 	}
 	return ov
+}
+
+func (f *FigTree) populateEnv(data interface{}) {
+	options := reflect.ValueOf(data)
+	if options.Kind() == reflect.Ptr {
+		options = reflect.ValueOf(options.Elem().Interface())
+	}
+	if options.Kind() == reflect.Struct {
+		for i := 0; i < options.NumField(); i++ {
+			name := strings.Join(camelcase.Split(options.Type().Field(i).Name), "_")
+			envName := fmt.Sprintf("%s_%s", f.EnvPrefix, strings.ToUpper(name))
+
+			envName = strings.Map(func(r rune) rune {
+				if unicode.IsDigit(r) || unicode.IsLetter(r) {
+					return r
+				}
+				return '_'
+			}, envName)
+			var val string
+			switch t := options.Field(i).Interface().(type) {
+			case string:
+				val = t
+			case int, int8, int16, int32, int64:
+				val = fmt.Sprintf("%d", t)
+			case float32, float64:
+				val = fmt.Sprintf("%f", t)
+			case bool:
+				val = fmt.Sprintf("%t", t)
+			default:
+				log.Debugf("type: %T", t)
+				if b, err := json.Marshal(t); err == nil {
+					val = strings.TrimSpace(string(b))
+					if val == "null" {
+						val = ""
+					}
+				} else {
+					log.Debugf("JSON MARSHAL ERROR: %s", err)
+				}
+			}
+			os.Setenv(envName, val)
+		}
+	}
 }

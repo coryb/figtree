@@ -3,6 +3,7 @@
 package figtree
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/cheekybits/genny/generic"
@@ -68,6 +69,10 @@ func (o *RawTypeOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o RawTypeOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o RawTypeOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o RawTypeOption) String() string {

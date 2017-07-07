@@ -4,7 +4,10 @@
 
 package figtree
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type BoolOption struct {
 	Source  string
@@ -64,6 +67,10 @@ func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o BoolOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o BoolOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o BoolOption) String() string {
@@ -133,6 +140,10 @@ func (o ByteOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o ByteOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o ByteOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -198,6 +209,10 @@ func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) erro
 
 func (o Complex128Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o Complex128Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o Complex128Option) String() string {
@@ -267,6 +282,10 @@ func (o Complex64Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Complex64Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Complex64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -332,6 +351,10 @@ func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o ErrorOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o ErrorOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o ErrorOption) String() string {
@@ -401,6 +424,10 @@ func (o Float32Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Float32Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Float32Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -466,6 +493,10 @@ func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o Float64Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o Float64Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o Float64Option) String() string {
@@ -535,6 +566,10 @@ func (o IntOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o IntOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o IntOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -600,6 +635,10 @@ func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o Int16Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o Int16Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o Int16Option) String() string {
@@ -669,6 +708,10 @@ func (o Int32Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Int32Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Int32Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -734,6 +777,10 @@ func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o Int64Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o Int64Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o Int64Option) String() string {
@@ -803,6 +850,10 @@ func (o Int8Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Int8Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Int8Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -868,6 +919,10 @@ func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o RuneOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o RuneOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o RuneOption) String() string {
@@ -937,6 +992,10 @@ func (o StringOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o StringOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o StringOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -1002,6 +1061,10 @@ func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o UintOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o UintOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o UintOption) String() string {
@@ -1071,6 +1134,10 @@ func (o Uint16Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Uint16Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Uint16Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -1136,6 +1203,10 @@ func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o Uint32Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o Uint32Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o Uint32Option) String() string {
@@ -1205,6 +1276,10 @@ func (o Uint64Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Uint64Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Uint64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -1272,6 +1347,10 @@ func (o Uint8Option) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
 }
 
+func (o Uint8Option) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
+}
+
 func (o Uint8Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
@@ -1337,6 +1416,10 @@ func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (o UintptrOption) MarshalYAML() (interface{}, error) {
 	return o.Value, nil
+}
+
+func (o UintptrOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.Value)
 }
 
 func (o UintptrOption) String() string {

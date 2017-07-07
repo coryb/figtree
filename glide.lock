@@ -1,10 +1,12 @@
-hash: c10bbe847a0c1f766d6e27fc1a50ce88a1e2f59d599d201230a40cb9fdfadb90
-updated: 2017-07-06T20:17:09.187492624-07:00
+hash: 4c141f4247c76717823951388fcd50678e63195fa40b0d5bc7097d0267003052
+updated: 2017-07-06T23:09:17.970073816-07:00
 imports:
 - name: github.com/cheekybits/genny
   version: 9127e812e1e9e501ce899a18121d316ecb52e4ba
   subpackages:
   - generic
+- name: github.com/fatih/camelcase
+  version: f6a740d52f961c60348ebb109adde9f4635d7540
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: gopkg.in/coryb/yaml.v2
