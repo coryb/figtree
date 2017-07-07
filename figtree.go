@@ -18,79 +18,90 @@ import (
 
 var log = logging.MustGetLogger("figtree")
 
-func LoadConfig(configFile string, options interface{}) error {
+func LoadAllConfigs(configFile string, options interface{}) error {
 	// assert options is a pointer
 
 	paths := findParentPaths(configFile)
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
-	basePath, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
 	// iterate paths in reverse
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		rel, err := filepath.Rel(basePath, file)
+		advance, err := LoadConfig(file, options)
 		if err != nil {
-			rel = file
+			return err
 		}
-		m := &merger{sourceFile: rel}
-		type tmpOpts struct {
-			Config ConfigOptions
-		}
-
-		if stat, err := os.Stat(file); err == nil {
-			tmp := reflect.New(reflect.ValueOf(options).Elem().Type()).Interface()
-			if stat.Mode()&0111 == 0 {
-				log.Debugf("Loading config %s", file)
-				// first parse out any config processing option
-				if data, err := ioutil.ReadFile(file); err == nil {
-					err := yaml.Unmarshal(data, m)
-					if err != nil {
-						return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
-					}
-
-					err = yaml.Unmarshal(data, tmp)
-					if err != nil {
-						return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
-					}
-					// if reflect.ValueOf(tmp).Kind() == reflect.Map {
-					// 	tmp, _ = util.YamlFixup(tmp)
-					// }
-				}
-			} else {
-				log.Debugf("Found Executable Config file: %s", file)
-				// it is executable, so run it and try to parse the output
-				cmd := exec.Command(file)
-				stdout := bytes.NewBufferString("")
-				cmd.Stdout = stdout
-				cmd.Stderr = bytes.NewBufferString("")
-				if err := cmd.Run(); err != nil {
-					return errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
-				}
-				// first parse out any config processing option
-				err := yaml.Unmarshal(stdout.Bytes(), m)
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
-				}
-				err = yaml.Unmarshal(stdout.Bytes(), tmp)
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Failed to parse STDOUT from executable config file %s", file))
-				}
-			}
-			m.setSource(reflect.ValueOf(tmp))
-			m.mergeStructs(
-				reflect.ValueOf(options),
-				reflect.ValueOf(tmp),
-			)
-			if m.Config.Stop {
-				break
-			}
+		if !advance {
+			break
 		}
 	}
 	return nil
+}
+
+func LoadConfig(file string, options interface{}) (advance bool, err error) {
+	basePath, err := os.Getwd()
+	if err != nil {
+		return false, err
+	}
+
+	rel, err := filepath.Rel(basePath, file)
+	if err != nil {
+		rel = file
+	}
+	m := &merger{sourceFile: rel}
+	type tmpOpts struct {
+		Config ConfigOptions
+	}
+
+	if stat, err := os.Stat(file); err == nil {
+		tmp := reflect.New(reflect.ValueOf(options).Elem().Type()).Interface()
+		if stat.Mode()&0111 == 0 {
+			log.Debugf("Loading config %s", file)
+			// first parse out any config processing option
+			if data, err := ioutil.ReadFile(file); err == nil {
+				err := yaml.Unmarshal(data, m)
+				if err != nil {
+					return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+				}
+
+				err = yaml.Unmarshal(data, tmp)
+				if err != nil {
+					return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+				}
+				// if reflect.ValueOf(tmp).Kind() == reflect.Map {
+				// 	tmp, _ = util.YamlFixup(tmp)
+				// }
+			}
+		} else {
+			log.Debugf("Found Executable Config file: %s", file)
+			// it is executable, so run it and try to parse the output
+			cmd := exec.Command(file)
+			stdout := bytes.NewBufferString("")
+			cmd.Stdout = stdout
+			cmd.Stderr = bytes.NewBufferString("")
+			if err := cmd.Run(); err != nil {
+				return false, errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
+			}
+			// first parse out any config processing option
+			err := yaml.Unmarshal(stdout.Bytes(), m)
+			if err != nil {
+				return false, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", file))
+			}
+			err = yaml.Unmarshal(stdout.Bytes(), tmp)
+			if err != nil {
+				return false, errors.Wrap(err, fmt.Sprintf("Failed to parse STDOUT from executable config file %s", file))
+			}
+		}
+		m.setSource(reflect.ValueOf(tmp))
+		m.mergeStructs(
+			reflect.ValueOf(options),
+			reflect.ValueOf(tmp),
+		)
+		if m.Config.Stop {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 type ConfigOptions struct {

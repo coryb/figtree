@@ -59,7 +59,7 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 		Bool1:  BoolOption{"figtree.yml", true, true},
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -89,7 +89,7 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 		Bool1:  BoolOption{"figtree.yml", true, false},
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -116,7 +116,7 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 		Bool1:  BoolOption{"figtree.yml", true, true},
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -149,7 +149,7 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -181,7 +181,7 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 		Bool1: true,
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -208,7 +208,7 @@ func TestBuiltinLoadConfigD1(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }

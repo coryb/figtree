@@ -35,7 +35,7 @@ func TestOptionsExecConfigD3(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, true},
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -65,7 +65,7 @@ func TestOptionsExecConfigD2(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, false},
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -92,7 +92,7 @@ func TestOptionsExecConfigD1(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, true},
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -125,7 +125,7 @@ func TestBuiltinExecConfigD3(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -157,7 +157,7 @@ func TestBuiltinExecConfigD2(t *testing.T) {
 		Bool1: true,
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -184,7 +184,7 @@ func TestBuiltinExecConfigD1(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadConfig("exec.yml", &opts)
+	err := LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }

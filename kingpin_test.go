@@ -18,7 +18,7 @@ func TestCommandLine(t *testing.T) {
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
 
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	app := kingpin.New("test", "testing")

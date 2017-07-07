@@ -35,7 +35,7 @@ func TestOptionsOverwriteConfigD3(t *testing.T) {
 		Bool1:  BoolOption{"../overwrite.yml", true, false},
 	}
 
-	err := LoadConfig("overwrite.yml", &opts)
+	err := LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -64,7 +64,7 @@ func TestOptionsOverwriteConfigD2(t *testing.T) {
 		Bool1:  BoolOption{"overwrite.yml", true, false},
 	}
 
-	err := LoadConfig("overwrite.yml", &opts)
+	err := LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -93,7 +93,7 @@ func TestBuiltinOverwriteConfigD3(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadConfig("overwrite.yml", &opts)
+	err := LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -124,7 +124,7 @@ func TestBuiltinOverwriteConfigD2(t *testing.T) {
 		Bool1: true,
 	}
 
-	err := LoadConfig("overwrite.yml", &opts)
+	err := LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }

@@ -13,7 +13,7 @@ func TestOptionsMarshall(t *testing.T) {
 	opts := TestOptions{}
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
-	err := LoadConfig("figtree.yml", &opts)
+	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	got, err := yaml.Marshal(&opts)
