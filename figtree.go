@@ -334,14 +334,11 @@ func (f *FigTree) populateEnv(data interface{}) {
 			case bool:
 				val = fmt.Sprintf("%t", t)
 			default:
-				log.Debugf("type: %T", t)
 				if b, err := json.Marshal(t); err == nil {
 					val = strings.TrimSpace(string(b))
 					if val == "null" {
 						val = ""
 					}
-				} else {
-					log.Debugf("JSON MARSHAL ERROR: %s", err)
 				}
 			}
 			os.Setenv(envName, val)
