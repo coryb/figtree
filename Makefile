@@ -11,7 +11,8 @@ test: $(GENERATED_SRC)
 	go test
 
 gen-%.go: %.go
-	go get github.com/cheekybits/genny
+	# use github.com/cheekybits/genny after https://github.com/cheekybits/genny/pull/42 is merged
+	go get github.com/coryb/genny
 	go generate
 
 .PHONY: test

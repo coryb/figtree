@@ -75,9 +75,36 @@ func (o RawTypeOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o RawTypeOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapRawTypeOption map[string]RawTypeOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapRawTypeOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := RawTypeOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapRawTypeOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapRawTypeOption) String() string {
+	return fmt.Sprintf("%v", map[string]RawTypeOption(o))
 }

@@ -73,11 +73,38 @@ func (o BoolOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o BoolOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapBoolOption map[string]BoolOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapBoolOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := BoolOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapBoolOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapBoolOption) String() string {
+	return fmt.Sprintf("%v", map[string]BoolOption(o))
 }
 
 type ByteOption struct {
@@ -144,11 +171,38 @@ func (o ByteOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o ByteOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapByteOption map[string]ByteOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapByteOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := ByteOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapByteOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapByteOption) String() string {
+	return fmt.Sprintf("%v", map[string]ByteOption(o))
 }
 
 type Complex128Option struct {
@@ -215,11 +269,38 @@ func (o Complex128Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Complex128Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapComplex128Option map[string]Complex128Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapComplex128Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Complex128Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapComplex128Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapComplex128Option) String() string {
+	return fmt.Sprintf("%v", map[string]Complex128Option(o))
 }
 
 type Complex64Option struct {
@@ -286,11 +367,38 @@ func (o Complex64Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Complex64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapComplex64Option map[string]Complex64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapComplex64Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Complex64Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapComplex64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapComplex64Option) String() string {
+	return fmt.Sprintf("%v", map[string]Complex64Option(o))
 }
 
 type ErrorOption struct {
@@ -357,11 +465,38 @@ func (o ErrorOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o ErrorOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapErrorOption map[string]ErrorOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapErrorOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := ErrorOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapErrorOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapErrorOption) String() string {
+	return fmt.Sprintf("%v", map[string]ErrorOption(o))
 }
 
 type Float32Option struct {
@@ -428,11 +563,38 @@ func (o Float32Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Float32Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapFloat32Option map[string]Float32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapFloat32Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Float32Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapFloat32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapFloat32Option) String() string {
+	return fmt.Sprintf("%v", map[string]Float32Option(o))
 }
 
 type Float64Option struct {
@@ -499,11 +661,38 @@ func (o Float64Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Float64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapFloat64Option map[string]Float64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapFloat64Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Float64Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapFloat64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapFloat64Option) String() string {
+	return fmt.Sprintf("%v", map[string]Float64Option(o))
 }
 
 type IntOption struct {
@@ -570,11 +759,38 @@ func (o IntOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o IntOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapIntOption map[string]IntOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapIntOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := IntOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapIntOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapIntOption) String() string {
+	return fmt.Sprintf("%v", map[string]IntOption(o))
 }
 
 type Int16Option struct {
@@ -641,11 +857,38 @@ func (o Int16Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Int16Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapInt16Option map[string]Int16Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapInt16Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Int16Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapInt16Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapInt16Option) String() string {
+	return fmt.Sprintf("%v", map[string]Int16Option(o))
 }
 
 type Int32Option struct {
@@ -712,11 +955,38 @@ func (o Int32Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Int32Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapInt32Option map[string]Int32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapInt32Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Int32Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapInt32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapInt32Option) String() string {
+	return fmt.Sprintf("%v", map[string]Int32Option(o))
 }
 
 type Int64Option struct {
@@ -783,11 +1053,38 @@ func (o Int64Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Int64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapInt64Option map[string]Int64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapInt64Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Int64Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapInt64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapInt64Option) String() string {
+	return fmt.Sprintf("%v", map[string]Int64Option(o))
 }
 
 type Int8Option struct {
@@ -854,11 +1151,38 @@ func (o Int8Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Int8Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapInt8Option map[string]Int8Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapInt8Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Int8Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapInt8Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapInt8Option) String() string {
+	return fmt.Sprintf("%v", map[string]Int8Option(o))
 }
 
 type RuneOption struct {
@@ -925,11 +1249,38 @@ func (o RuneOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o RuneOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapRuneOption map[string]RuneOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapRuneOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := RuneOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapRuneOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapRuneOption) String() string {
+	return fmt.Sprintf("%v", map[string]RuneOption(o))
 }
 
 type StringOption struct {
@@ -996,11 +1347,38 @@ func (o StringOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o StringOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapStringOption map[string]StringOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapStringOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := StringOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapStringOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapStringOption) String() string {
+	return fmt.Sprintf("%v", map[string]StringOption(o))
 }
 
 type UintOption struct {
@@ -1067,11 +1445,38 @@ func (o UintOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o UintOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUintOption map[string]UintOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUintOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := UintOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUintOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUintOption) String() string {
+	return fmt.Sprintf("%v", map[string]UintOption(o))
 }
 
 type Uint16Option struct {
@@ -1138,11 +1543,38 @@ func (o Uint16Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Uint16Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUint16Option map[string]Uint16Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUint16Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Uint16Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUint16Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUint16Option) String() string {
+	return fmt.Sprintf("%v", map[string]Uint16Option(o))
 }
 
 type Uint32Option struct {
@@ -1209,11 +1641,38 @@ func (o Uint32Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Uint32Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUint32Option map[string]Uint32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUint32Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Uint32Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUint32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUint32Option) String() string {
+	return fmt.Sprintf("%v", map[string]Uint32Option(o))
 }
 
 type Uint64Option struct {
@@ -1280,11 +1739,38 @@ func (o Uint64Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Uint64Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUint64Option map[string]Uint64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUint64Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Uint64Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUint64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUint64Option) String() string {
+	return fmt.Sprintf("%v", map[string]Uint64Option(o))
 }
 
 type Uint8Option struct {
@@ -1351,11 +1837,38 @@ func (o Uint8Option) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o Uint8Option) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUint8Option map[string]Uint8Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUint8Option) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := Uint8Option{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUint8Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUint8Option) String() string {
+	return fmt.Sprintf("%v", map[string]Uint8Option(o))
 }
 
 type UintptrOption struct {
@@ -1422,9 +1935,36 @@ func (o UintptrOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Value)
 }
 
+// String is required for kingpin to generate usage with this datatype
 func (o UintptrOption) String() string {
 	if StringifyValue {
 		return fmt.Sprintf("%v", o.Value)
 	}
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
+}
+
+type MapUintptrOption map[string]UintptrOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *MapUintptrOption) Set(value string) error {
+	parts := stringMapRegex.Split(value, 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+	}
+	val := UintptrOption{}
+	val.Set(parts[1])
+	(*o)[parts[0]] = val
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *MapUintptrOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o MapUintptrOption) String() string {
+	return fmt.Sprintf("%v", map[string]UintptrOption(o))
 }
