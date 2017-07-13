@@ -108,3 +108,25 @@ func (o *MapRawTypeOption) IsCumulative() bool {
 func (o MapRawTypeOption) String() string {
 	return fmt.Sprintf("%v", map[string]RawTypeOption(o))
 }
+
+type ListRawTypeOption []RawTypeOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListRawTypeOption) Set(value string) error {
+	val := RawTypeOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListRawTypeOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListRawTypeOption) String() string {
+	return fmt.Sprintf("%v", []RawTypeOption(o))
+}

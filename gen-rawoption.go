@@ -107,6 +107,28 @@ func (o MapBoolOption) String() string {
 	return fmt.Sprintf("%v", map[string]BoolOption(o))
 }
 
+type ListBoolOption []BoolOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListBoolOption) Set(value string) error {
+	val := BoolOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListBoolOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListBoolOption) String() string {
+	return fmt.Sprintf("%v", []BoolOption(o))
+}
+
 type ByteOption struct {
 	Source  string
 	Defined bool
@@ -203,6 +225,28 @@ func (o *MapByteOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapByteOption) String() string {
 	return fmt.Sprintf("%v", map[string]ByteOption(o))
+}
+
+type ListByteOption []ByteOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListByteOption) Set(value string) error {
+	val := ByteOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListByteOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListByteOption) String() string {
+	return fmt.Sprintf("%v", []ByteOption(o))
 }
 
 type Complex128Option struct {
@@ -303,6 +347,28 @@ func (o MapComplex128Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex128Option(o))
 }
 
+type ListComplex128Option []Complex128Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListComplex128Option) Set(value string) error {
+	val := Complex128Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListComplex128Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListComplex128Option) String() string {
+	return fmt.Sprintf("%v", []Complex128Option(o))
+}
+
 type Complex64Option struct {
 	Source  string
 	Defined bool
@@ -399,6 +465,28 @@ func (o *MapComplex64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapComplex64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex64Option(o))
+}
+
+type ListComplex64Option []Complex64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListComplex64Option) Set(value string) error {
+	val := Complex64Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListComplex64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListComplex64Option) String() string {
+	return fmt.Sprintf("%v", []Complex64Option(o))
 }
 
 type ErrorOption struct {
@@ -499,6 +587,28 @@ func (o MapErrorOption) String() string {
 	return fmt.Sprintf("%v", map[string]ErrorOption(o))
 }
 
+type ListErrorOption []ErrorOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListErrorOption) Set(value string) error {
+	val := ErrorOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListErrorOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListErrorOption) String() string {
+	return fmt.Sprintf("%v", []ErrorOption(o))
+}
+
 type Float32Option struct {
 	Source  string
 	Defined bool
@@ -595,6 +705,28 @@ func (o *MapFloat32Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapFloat32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float32Option(o))
+}
+
+type ListFloat32Option []Float32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListFloat32Option) Set(value string) error {
+	val := Float32Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListFloat32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListFloat32Option) String() string {
+	return fmt.Sprintf("%v", []Float32Option(o))
 }
 
 type Float64Option struct {
@@ -695,6 +827,28 @@ func (o MapFloat64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float64Option(o))
 }
 
+type ListFloat64Option []Float64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListFloat64Option) Set(value string) error {
+	val := Float64Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListFloat64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListFloat64Option) String() string {
+	return fmt.Sprintf("%v", []Float64Option(o))
+}
+
 type IntOption struct {
 	Source  string
 	Defined bool
@@ -791,6 +945,28 @@ func (o *MapIntOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapIntOption) String() string {
 	return fmt.Sprintf("%v", map[string]IntOption(o))
+}
+
+type ListIntOption []IntOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListIntOption) Set(value string) error {
+	val := IntOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListIntOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListIntOption) String() string {
+	return fmt.Sprintf("%v", []IntOption(o))
 }
 
 type Int16Option struct {
@@ -891,6 +1067,28 @@ func (o MapInt16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int16Option(o))
 }
 
+type ListInt16Option []Int16Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListInt16Option) Set(value string) error {
+	val := Int16Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListInt16Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListInt16Option) String() string {
+	return fmt.Sprintf("%v", []Int16Option(o))
+}
+
 type Int32Option struct {
 	Source  string
 	Defined bool
@@ -987,6 +1185,28 @@ func (o *MapInt32Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapInt32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int32Option(o))
+}
+
+type ListInt32Option []Int32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListInt32Option) Set(value string) error {
+	val := Int32Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListInt32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListInt32Option) String() string {
+	return fmt.Sprintf("%v", []Int32Option(o))
 }
 
 type Int64Option struct {
@@ -1087,6 +1307,28 @@ func (o MapInt64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int64Option(o))
 }
 
+type ListInt64Option []Int64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListInt64Option) Set(value string) error {
+	val := Int64Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListInt64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListInt64Option) String() string {
+	return fmt.Sprintf("%v", []Int64Option(o))
+}
+
 type Int8Option struct {
 	Source  string
 	Defined bool
@@ -1183,6 +1425,28 @@ func (o *MapInt8Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapInt8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int8Option(o))
+}
+
+type ListInt8Option []Int8Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListInt8Option) Set(value string) error {
+	val := Int8Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListInt8Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListInt8Option) String() string {
+	return fmt.Sprintf("%v", []Int8Option(o))
 }
 
 type RuneOption struct {
@@ -1283,6 +1547,28 @@ func (o MapRuneOption) String() string {
 	return fmt.Sprintf("%v", map[string]RuneOption(o))
 }
 
+type ListRuneOption []RuneOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListRuneOption) Set(value string) error {
+	val := RuneOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListRuneOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListRuneOption) String() string {
+	return fmt.Sprintf("%v", []RuneOption(o))
+}
+
 type StringOption struct {
 	Source  string
 	Defined bool
@@ -1379,6 +1665,28 @@ func (o *MapStringOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapStringOption) String() string {
 	return fmt.Sprintf("%v", map[string]StringOption(o))
+}
+
+type ListStringOption []StringOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListStringOption) Set(value string) error {
+	val := StringOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListStringOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListStringOption) String() string {
+	return fmt.Sprintf("%v", []StringOption(o))
 }
 
 type UintOption struct {
@@ -1479,6 +1787,28 @@ func (o MapUintOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintOption(o))
 }
 
+type ListUintOption []UintOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUintOption) Set(value string) error {
+	val := UintOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUintOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUintOption) String() string {
+	return fmt.Sprintf("%v", []UintOption(o))
+}
+
 type Uint16Option struct {
 	Source  string
 	Defined bool
@@ -1575,6 +1905,28 @@ func (o *MapUint16Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapUint16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint16Option(o))
+}
+
+type ListUint16Option []Uint16Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUint16Option) Set(value string) error {
+	val := Uint16Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUint16Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUint16Option) String() string {
+	return fmt.Sprintf("%v", []Uint16Option(o))
 }
 
 type Uint32Option struct {
@@ -1675,6 +2027,28 @@ func (o MapUint32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint32Option(o))
 }
 
+type ListUint32Option []Uint32Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUint32Option) Set(value string) error {
+	val := Uint32Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUint32Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUint32Option) String() string {
+	return fmt.Sprintf("%v", []Uint32Option(o))
+}
+
 type Uint64Option struct {
 	Source  string
 	Defined bool
@@ -1771,6 +2145,28 @@ func (o *MapUint64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapUint64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint64Option(o))
+}
+
+type ListUint64Option []Uint64Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUint64Option) Set(value string) error {
+	val := Uint64Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUint64Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUint64Option) String() string {
+	return fmt.Sprintf("%v", []Uint64Option(o))
 }
 
 type Uint8Option struct {
@@ -1871,6 +2267,28 @@ func (o MapUint8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint8Option(o))
 }
 
+type ListUint8Option []Uint8Option
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUint8Option) Set(value string) error {
+	val := Uint8Option{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUint8Option) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUint8Option) String() string {
+	return fmt.Sprintf("%v", []Uint8Option(o))
+}
+
 type UintptrOption struct {
 	Source  string
 	Defined bool
@@ -1967,4 +2385,26 @@ func (o *MapUintptrOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o MapUintptrOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintptrOption(o))
+}
+
+type ListUintptrOption []UintptrOption
+
+// Set is required for kingpin interfaces to allow command line params
+// to be set to our map datatype
+func (o *ListUintptrOption) Set(value string) error {
+	val := UintptrOption{}
+	val.Set(value)
+	*o = append(*o, val)
+	return nil
+}
+
+// IsCumulative is required for kingpin interfaces to allow multiple values
+// to be set on the data structure.
+func (o *ListUintptrOption) IsCumulative() bool {
+	return true
+}
+
+// String is required for kingpin to generate usage with this datatype
+func (o ListUintptrOption) String() string {
+	return fmt.Sprintf("%v", []UintptrOption(o))
 }
