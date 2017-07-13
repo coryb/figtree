@@ -107,6 +107,14 @@ func (o MapBoolOption) String() string {
 	return fmt.Sprintf("%v", map[string]BoolOption(o))
 }
 
+func (o *MapBoolOption) Map() map[string]bool {
+	tmp := map[string]bool{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListBoolOption []BoolOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -127,6 +135,14 @@ func (o *ListBoolOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListBoolOption) String() string {
 	return fmt.Sprintf("%v", []BoolOption(o))
+}
+
+func (o *ListBoolOption) Slice() []bool {
+	tmp := []bool{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type ByteOption struct {
@@ -227,6 +243,14 @@ func (o MapByteOption) String() string {
 	return fmt.Sprintf("%v", map[string]ByteOption(o))
 }
 
+func (o *MapByteOption) Map() map[string]byte {
+	tmp := map[string]byte{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListByteOption []ByteOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -247,6 +271,14 @@ func (o *ListByteOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListByteOption) String() string {
 	return fmt.Sprintf("%v", []ByteOption(o))
+}
+
+func (o *ListByteOption) Slice() []byte {
+	tmp := []byte{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Complex128Option struct {
@@ -347,6 +379,14 @@ func (o MapComplex128Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex128Option(o))
 }
 
+func (o *MapComplex128Option) Map() map[string]complex128 {
+	tmp := map[string]complex128{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListComplex128Option []Complex128Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -367,6 +407,14 @@ func (o *ListComplex128Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListComplex128Option) String() string {
 	return fmt.Sprintf("%v", []Complex128Option(o))
+}
+
+func (o *ListComplex128Option) Slice() []complex128 {
+	tmp := []complex128{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Complex64Option struct {
@@ -467,6 +515,14 @@ func (o MapComplex64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex64Option(o))
 }
 
+func (o *MapComplex64Option) Map() map[string]complex64 {
+	tmp := map[string]complex64{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListComplex64Option []Complex64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -487,6 +543,14 @@ func (o *ListComplex64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListComplex64Option) String() string {
 	return fmt.Sprintf("%v", []Complex64Option(o))
+}
+
+func (o *ListComplex64Option) Slice() []complex64 {
+	tmp := []complex64{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type ErrorOption struct {
@@ -587,6 +651,14 @@ func (o MapErrorOption) String() string {
 	return fmt.Sprintf("%v", map[string]ErrorOption(o))
 }
 
+func (o *MapErrorOption) Map() map[string]error {
+	tmp := map[string]error{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListErrorOption []ErrorOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -607,6 +679,14 @@ func (o *ListErrorOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListErrorOption) String() string {
 	return fmt.Sprintf("%v", []ErrorOption(o))
+}
+
+func (o *ListErrorOption) Slice() []error {
+	tmp := []error{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Float32Option struct {
@@ -707,6 +787,14 @@ func (o MapFloat32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float32Option(o))
 }
 
+func (o *MapFloat32Option) Map() map[string]float32 {
+	tmp := map[string]float32{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListFloat32Option []Float32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -727,6 +815,14 @@ func (o *ListFloat32Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListFloat32Option) String() string {
 	return fmt.Sprintf("%v", []Float32Option(o))
+}
+
+func (o *ListFloat32Option) Slice() []float32 {
+	tmp := []float32{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Float64Option struct {
@@ -827,6 +923,14 @@ func (o MapFloat64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float64Option(o))
 }
 
+func (o *MapFloat64Option) Map() map[string]float64 {
+	tmp := map[string]float64{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListFloat64Option []Float64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -847,6 +951,14 @@ func (o *ListFloat64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListFloat64Option) String() string {
 	return fmt.Sprintf("%v", []Float64Option(o))
+}
+
+func (o *ListFloat64Option) Slice() []float64 {
+	tmp := []float64{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type IntOption struct {
@@ -947,6 +1059,14 @@ func (o MapIntOption) String() string {
 	return fmt.Sprintf("%v", map[string]IntOption(o))
 }
 
+func (o *MapIntOption) Map() map[string]int {
+	tmp := map[string]int{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListIntOption []IntOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -967,6 +1087,14 @@ func (o *ListIntOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListIntOption) String() string {
 	return fmt.Sprintf("%v", []IntOption(o))
+}
+
+func (o *ListIntOption) Slice() []int {
+	tmp := []int{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Int16Option struct {
@@ -1067,6 +1195,14 @@ func (o MapInt16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int16Option(o))
 }
 
+func (o *MapInt16Option) Map() map[string]int16 {
+	tmp := map[string]int16{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListInt16Option []Int16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1087,6 +1223,14 @@ func (o *ListInt16Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListInt16Option) String() string {
 	return fmt.Sprintf("%v", []Int16Option(o))
+}
+
+func (o *ListInt16Option) Slice() []int16 {
+	tmp := []int16{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Int32Option struct {
@@ -1187,6 +1331,14 @@ func (o MapInt32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int32Option(o))
 }
 
+func (o *MapInt32Option) Map() map[string]int32 {
+	tmp := map[string]int32{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListInt32Option []Int32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1207,6 +1359,14 @@ func (o *ListInt32Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListInt32Option) String() string {
 	return fmt.Sprintf("%v", []Int32Option(o))
+}
+
+func (o *ListInt32Option) Slice() []int32 {
+	tmp := []int32{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Int64Option struct {
@@ -1307,6 +1467,14 @@ func (o MapInt64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int64Option(o))
 }
 
+func (o *MapInt64Option) Map() map[string]int64 {
+	tmp := map[string]int64{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListInt64Option []Int64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1327,6 +1495,14 @@ func (o *ListInt64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListInt64Option) String() string {
 	return fmt.Sprintf("%v", []Int64Option(o))
+}
+
+func (o *ListInt64Option) Slice() []int64 {
+	tmp := []int64{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Int8Option struct {
@@ -1427,6 +1603,14 @@ func (o MapInt8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int8Option(o))
 }
 
+func (o *MapInt8Option) Map() map[string]int8 {
+	tmp := map[string]int8{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListInt8Option []Int8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1447,6 +1631,14 @@ func (o *ListInt8Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListInt8Option) String() string {
 	return fmt.Sprintf("%v", []Int8Option(o))
+}
+
+func (o *ListInt8Option) Slice() []int8 {
+	tmp := []int8{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type RuneOption struct {
@@ -1547,6 +1739,14 @@ func (o MapRuneOption) String() string {
 	return fmt.Sprintf("%v", map[string]RuneOption(o))
 }
 
+func (o *MapRuneOption) Map() map[string]rune {
+	tmp := map[string]rune{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListRuneOption []RuneOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1567,6 +1767,14 @@ func (o *ListRuneOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListRuneOption) String() string {
 	return fmt.Sprintf("%v", []RuneOption(o))
+}
+
+func (o *ListRuneOption) Slice() []rune {
+	tmp := []rune{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type StringOption struct {
@@ -1667,6 +1875,14 @@ func (o MapStringOption) String() string {
 	return fmt.Sprintf("%v", map[string]StringOption(o))
 }
 
+func (o *MapStringOption) Map() map[string]string {
+	tmp := map[string]string{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListStringOption []StringOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1687,6 +1903,14 @@ func (o *ListStringOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListStringOption) String() string {
 	return fmt.Sprintf("%v", []StringOption(o))
+}
+
+func (o *ListStringOption) Slice() []string {
+	tmp := []string{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type UintOption struct {
@@ -1787,6 +2011,14 @@ func (o MapUintOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintOption(o))
 }
 
+func (o *MapUintOption) Map() map[string]uint {
+	tmp := map[string]uint{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUintOption []UintOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1807,6 +2039,14 @@ func (o *ListUintOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUintOption) String() string {
 	return fmt.Sprintf("%v", []UintOption(o))
+}
+
+func (o *ListUintOption) Slice() []uint {
+	tmp := []uint{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Uint16Option struct {
@@ -1907,6 +2147,14 @@ func (o MapUint16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint16Option(o))
 }
 
+func (o *MapUint16Option) Map() map[string]uint16 {
+	tmp := map[string]uint16{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUint16Option []Uint16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1927,6 +2175,14 @@ func (o *ListUint16Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUint16Option) String() string {
 	return fmt.Sprintf("%v", []Uint16Option(o))
+}
+
+func (o *ListUint16Option) Slice() []uint16 {
+	tmp := []uint16{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Uint32Option struct {
@@ -2027,6 +2283,14 @@ func (o MapUint32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint32Option(o))
 }
 
+func (o *MapUint32Option) Map() map[string]uint32 {
+	tmp := map[string]uint32{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUint32Option []Uint32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2047,6 +2311,14 @@ func (o *ListUint32Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUint32Option) String() string {
 	return fmt.Sprintf("%v", []Uint32Option(o))
+}
+
+func (o *ListUint32Option) Slice() []uint32 {
+	tmp := []uint32{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Uint64Option struct {
@@ -2147,6 +2419,14 @@ func (o MapUint64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint64Option(o))
 }
 
+func (o *MapUint64Option) Map() map[string]uint64 {
+	tmp := map[string]uint64{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUint64Option []Uint64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2167,6 +2447,14 @@ func (o *ListUint64Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUint64Option) String() string {
 	return fmt.Sprintf("%v", []Uint64Option(o))
+}
+
+func (o *ListUint64Option) Slice() []uint64 {
+	tmp := []uint64{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type Uint8Option struct {
@@ -2267,6 +2555,14 @@ func (o MapUint8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint8Option(o))
 }
 
+func (o *MapUint8Option) Map() map[string]uint8 {
+	tmp := map[string]uint8{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUint8Option []Uint8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2287,6 +2583,14 @@ func (o *ListUint8Option) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUint8Option) String() string {
 	return fmt.Sprintf("%v", []Uint8Option(o))
+}
+
+func (o *ListUint8Option) Slice() []uint8 {
+	tmp := []uint8{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
 
 type UintptrOption struct {
@@ -2387,6 +2691,14 @@ func (o MapUintptrOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintptrOption(o))
 }
 
+func (o *MapUintptrOption) Map() map[string]uintptr {
+	tmp := map[string]uintptr{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListUintptrOption []UintptrOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2407,4 +2719,12 @@ func (o *ListUintptrOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListUintptrOption) String() string {
 	return fmt.Sprintf("%v", []UintptrOption(o))
+}
+
+func (o *ListUintptrOption) Slice() []uintptr {
+	tmp := []uintptr{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }

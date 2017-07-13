@@ -109,6 +109,14 @@ func (o MapRawTypeOption) String() string {
 	return fmt.Sprintf("%v", map[string]RawTypeOption(o))
 }
 
+func (o *MapRawTypeOption) Map() map[string]RawType {
+	tmp := map[string]RawType{}
+	for k, v := range *o {
+		tmp[k] = v.Value
+	}
+	return tmp
+}
+
 type ListRawTypeOption []RawTypeOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -129,4 +137,12 @@ func (o *ListRawTypeOption) IsCumulative() bool {
 // String is required for kingpin to generate usage with this datatype
 func (o ListRawTypeOption) String() string {
 	return fmt.Sprintf("%v", []RawTypeOption(o))
+}
+
+func (o *ListRawTypeOption) Slice() []RawType {
+	tmp := []RawType{}
+	for _, elem := range *o {
+		tmp = append(tmp, elem.Value)
+	}
+	return tmp
 }
