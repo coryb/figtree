@@ -79,7 +79,19 @@ func (o *RawTypeOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o RawTypeOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   RawType
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o RawTypeOption) MarshalJSON() ([]byte, error) {

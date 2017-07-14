@@ -77,7 +77,19 @@ func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o BoolOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   bool
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o BoolOption) MarshalJSON() ([]byte, error) {
@@ -250,7 +262,19 @@ func (o *ByteOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o ByteOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   byte
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o ByteOption) MarshalJSON() ([]byte, error) {
@@ -423,7 +447,19 @@ func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) erro
 }
 
 func (o Complex128Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   complex128
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Complex128Option) MarshalJSON() ([]byte, error) {
@@ -596,7 +632,19 @@ func (o *Complex64Option) UnmarshalYAML(unmarshal func(interface{}) error) error
 }
 
 func (o Complex64Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   complex64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Complex64Option) MarshalJSON() ([]byte, error) {
@@ -769,7 +817,19 @@ func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o ErrorOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   error
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o ErrorOption) MarshalJSON() ([]byte, error) {
@@ -942,7 +1002,19 @@ func (o *Float32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Float32Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   float32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Float32Option) MarshalJSON() ([]byte, error) {
@@ -1115,7 +1187,19 @@ func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Float64Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   float64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Float64Option) MarshalJSON() ([]byte, error) {
@@ -1288,7 +1372,19 @@ func (o *IntOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o IntOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   int
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o IntOption) MarshalJSON() ([]byte, error) {
@@ -1461,7 +1557,19 @@ func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Int16Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   int16
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Int16Option) MarshalJSON() ([]byte, error) {
@@ -1634,7 +1742,19 @@ func (o *Int32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Int32Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   int32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Int32Option) MarshalJSON() ([]byte, error) {
@@ -1807,7 +1927,19 @@ func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Int64Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   int64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Int64Option) MarshalJSON() ([]byte, error) {
@@ -1980,7 +2112,19 @@ func (o *Int8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Int8Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   int8
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Int8Option) MarshalJSON() ([]byte, error) {
@@ -2153,7 +2297,19 @@ func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o RuneOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   rune
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o RuneOption) MarshalJSON() ([]byte, error) {
@@ -2326,7 +2482,19 @@ func (o *StringOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o StringOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   string
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o StringOption) MarshalJSON() ([]byte, error) {
@@ -2499,7 +2667,19 @@ func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o UintOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uint
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o UintOption) MarshalJSON() ([]byte, error) {
@@ -2672,7 +2852,19 @@ func (o *Uint16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Uint16Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uint16
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Uint16Option) MarshalJSON() ([]byte, error) {
@@ -2845,7 +3037,19 @@ func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Uint32Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uint32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Uint32Option) MarshalJSON() ([]byte, error) {
@@ -3018,7 +3222,19 @@ func (o *Uint64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Uint64Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uint64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Uint64Option) MarshalJSON() ([]byte, error) {
@@ -3191,7 +3407,19 @@ func (o *Uint8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o Uint8Option) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uint8
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o Uint8Option) MarshalJSON() ([]byte, error) {
@@ -3364,7 +3592,19 @@ func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o UintptrOption) MarshalYAML() (interface{}, error) {
-	return o.Value, nil
+	if StringifyValue {
+		return o.Value, nil
+	}
+	// need a copy of this sturct without the MarshalYAML interface attached
+	return struct {
+		Value   uintptr
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	}, nil
 }
 
 func (o UintptrOption) MarshalJSON() ([]byte, error) {

@@ -16,6 +16,10 @@ func TestOptionsMarshall(t *testing.T) {
 	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
+	StringifyValue = true
+	defer func() {
+		StringifyValue = false
+	}()
 	got, err := yaml.Marshal(&opts)
 	assert.Nil(t, err)
 
