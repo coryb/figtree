@@ -46,6 +46,17 @@ func (o *BoolOption) Set(s string) error {
 	return nil
 }
 
+// This is useful with survey prompting library
+func (o *BoolOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(bool); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
+}
+
 func (o *BoolOption) SetValue(v interface{}) error {
 	if val, ok := v.(bool); ok {
 		o.Value = val
@@ -115,6 +126,19 @@ func (o *MapBoolOption) Map() map[string]bool {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapBoolOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := BoolOption{}
+	if v, ok := value.(bool); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListBoolOption []BoolOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -124,6 +148,19 @@ func (o *ListBoolOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListBoolOption) WriteAnswer(value interface{}) error {
+	tmp := BoolOption{}
+	if v, ok := value.(bool); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -180,6 +217,17 @@ func (o *ByteOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ByteOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(byte); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *ByteOption) SetValue(v interface{}) error {
@@ -251,6 +299,19 @@ func (o *MapByteOption) Map() map[string]byte {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapByteOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := ByteOption{}
+	if v, ok := value.(byte); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListByteOption []ByteOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -260,6 +321,19 @@ func (o *ListByteOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListByteOption) WriteAnswer(value interface{}) error {
+	tmp := ByteOption{}
+	if v, ok := value.(byte); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -316,6 +390,17 @@ func (o *Complex128Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Complex128Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(complex128); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Complex128Option) SetValue(v interface{}) error {
@@ -387,6 +472,19 @@ func (o *MapComplex128Option) Map() map[string]complex128 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapComplex128Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Complex128Option{}
+	if v, ok := value.(complex128); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListComplex128Option []Complex128Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -396,6 +494,19 @@ func (o *ListComplex128Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListComplex128Option) WriteAnswer(value interface{}) error {
+	tmp := Complex128Option{}
+	if v, ok := value.(complex128); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -452,6 +563,17 @@ func (o *Complex64Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Complex64Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(complex64); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Complex64Option) SetValue(v interface{}) error {
@@ -523,6 +645,19 @@ func (o *MapComplex64Option) Map() map[string]complex64 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapComplex64Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Complex64Option{}
+	if v, ok := value.(complex64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListComplex64Option []Complex64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -532,6 +667,19 @@ func (o *ListComplex64Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListComplex64Option) WriteAnswer(value interface{}) error {
+	tmp := Complex64Option{}
+	if v, ok := value.(complex64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -588,6 +736,17 @@ func (o *ErrorOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ErrorOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(error); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *ErrorOption) SetValue(v interface{}) error {
@@ -659,6 +818,19 @@ func (o *MapErrorOption) Map() map[string]error {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapErrorOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := ErrorOption{}
+	if v, ok := value.(error); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListErrorOption []ErrorOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -668,6 +840,19 @@ func (o *ListErrorOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListErrorOption) WriteAnswer(value interface{}) error {
+	tmp := ErrorOption{}
+	if v, ok := value.(error); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -724,6 +909,17 @@ func (o *Float32Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Float32Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(float32); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Float32Option) SetValue(v interface{}) error {
@@ -795,6 +991,19 @@ func (o *MapFloat32Option) Map() map[string]float32 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapFloat32Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Float32Option{}
+	if v, ok := value.(float32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListFloat32Option []Float32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -804,6 +1013,19 @@ func (o *ListFloat32Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListFloat32Option) WriteAnswer(value interface{}) error {
+	tmp := Float32Option{}
+	if v, ok := value.(float32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -860,6 +1082,17 @@ func (o *Float64Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Float64Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(float64); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Float64Option) SetValue(v interface{}) error {
@@ -931,6 +1164,19 @@ func (o *MapFloat64Option) Map() map[string]float64 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapFloat64Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Float64Option{}
+	if v, ok := value.(float64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListFloat64Option []Float64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -940,6 +1186,19 @@ func (o *ListFloat64Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListFloat64Option) WriteAnswer(value interface{}) error {
+	tmp := Float64Option{}
+	if v, ok := value.(float64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -996,6 +1255,17 @@ func (o *IntOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *IntOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(int); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *IntOption) SetValue(v interface{}) error {
@@ -1067,6 +1337,19 @@ func (o *MapIntOption) Map() map[string]int {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapIntOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := IntOption{}
+	if v, ok := value.(int); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListIntOption []IntOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1076,6 +1359,19 @@ func (o *ListIntOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListIntOption) WriteAnswer(value interface{}) error {
+	tmp := IntOption{}
+	if v, ok := value.(int); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1132,6 +1428,17 @@ func (o *Int16Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Int16Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(int16); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Int16Option) SetValue(v interface{}) error {
@@ -1203,6 +1510,19 @@ func (o *MapInt16Option) Map() map[string]int16 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapInt16Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Int16Option{}
+	if v, ok := value.(int16); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListInt16Option []Int16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1212,6 +1532,19 @@ func (o *ListInt16Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListInt16Option) WriteAnswer(value interface{}) error {
+	tmp := Int16Option{}
+	if v, ok := value.(int16); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1268,6 +1601,17 @@ func (o *Int32Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Int32Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(int32); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Int32Option) SetValue(v interface{}) error {
@@ -1339,6 +1683,19 @@ func (o *MapInt32Option) Map() map[string]int32 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapInt32Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Int32Option{}
+	if v, ok := value.(int32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListInt32Option []Int32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1348,6 +1705,19 @@ func (o *ListInt32Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListInt32Option) WriteAnswer(value interface{}) error {
+	tmp := Int32Option{}
+	if v, ok := value.(int32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1404,6 +1774,17 @@ func (o *Int64Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Int64Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(int64); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Int64Option) SetValue(v interface{}) error {
@@ -1475,6 +1856,19 @@ func (o *MapInt64Option) Map() map[string]int64 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapInt64Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Int64Option{}
+	if v, ok := value.(int64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListInt64Option []Int64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1484,6 +1878,19 @@ func (o *ListInt64Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListInt64Option) WriteAnswer(value interface{}) error {
+	tmp := Int64Option{}
+	if v, ok := value.(int64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1540,6 +1947,17 @@ func (o *Int8Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Int8Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(int8); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Int8Option) SetValue(v interface{}) error {
@@ -1611,6 +2029,19 @@ func (o *MapInt8Option) Map() map[string]int8 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapInt8Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Int8Option{}
+	if v, ok := value.(int8); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListInt8Option []Int8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1620,6 +2051,19 @@ func (o *ListInt8Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListInt8Option) WriteAnswer(value interface{}) error {
+	tmp := Int8Option{}
+	if v, ok := value.(int8); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1676,6 +2120,17 @@ func (o *RuneOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *RuneOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(rune); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *RuneOption) SetValue(v interface{}) error {
@@ -1747,6 +2202,19 @@ func (o *MapRuneOption) Map() map[string]rune {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapRuneOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := RuneOption{}
+	if v, ok := value.(rune); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListRuneOption []RuneOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1756,6 +2224,19 @@ func (o *ListRuneOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListRuneOption) WriteAnswer(value interface{}) error {
+	tmp := RuneOption{}
+	if v, ok := value.(rune); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1812,6 +2293,17 @@ func (o *StringOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *StringOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(string); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *StringOption) SetValue(v interface{}) error {
@@ -1883,6 +2375,19 @@ func (o *MapStringOption) Map() map[string]string {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapStringOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := StringOption{}
+	if v, ok := value.(string); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListStringOption []StringOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1892,6 +2397,19 @@ func (o *ListStringOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListStringOption) WriteAnswer(value interface{}) error {
+	tmp := StringOption{}
+	if v, ok := value.(string); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -1948,6 +2466,17 @@ func (o *UintOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *UintOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uint); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *UintOption) SetValue(v interface{}) error {
@@ -2019,6 +2548,19 @@ func (o *MapUintOption) Map() map[string]uint {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUintOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := UintOption{}
+	if v, ok := value.(uint); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUintOption []UintOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2028,6 +2570,19 @@ func (o *ListUintOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUintOption) WriteAnswer(value interface{}) error {
+	tmp := UintOption{}
+	if v, ok := value.(uint); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -2084,6 +2639,17 @@ func (o *Uint16Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Uint16Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uint16); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Uint16Option) SetValue(v interface{}) error {
@@ -2155,6 +2721,19 @@ func (o *MapUint16Option) Map() map[string]uint16 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUint16Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Uint16Option{}
+	if v, ok := value.(uint16); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUint16Option []Uint16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2164,6 +2743,19 @@ func (o *ListUint16Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUint16Option) WriteAnswer(value interface{}) error {
+	tmp := Uint16Option{}
+	if v, ok := value.(uint16); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -2220,6 +2812,17 @@ func (o *Uint32Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Uint32Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uint32); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Uint32Option) SetValue(v interface{}) error {
@@ -2291,6 +2894,19 @@ func (o *MapUint32Option) Map() map[string]uint32 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUint32Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Uint32Option{}
+	if v, ok := value.(uint32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUint32Option []Uint32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2300,6 +2916,19 @@ func (o *ListUint32Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUint32Option) WriteAnswer(value interface{}) error {
+	tmp := Uint32Option{}
+	if v, ok := value.(uint32); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -2356,6 +2985,17 @@ func (o *Uint64Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Uint64Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uint64); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Uint64Option) SetValue(v interface{}) error {
@@ -2427,6 +3067,19 @@ func (o *MapUint64Option) Map() map[string]uint64 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUint64Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Uint64Option{}
+	if v, ok := value.(uint64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUint64Option []Uint64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2436,6 +3089,19 @@ func (o *ListUint64Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUint64Option) WriteAnswer(value interface{}) error {
+	tmp := Uint64Option{}
+	if v, ok := value.(uint64); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -2492,6 +3158,17 @@ func (o *Uint8Option) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *Uint8Option) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uint8); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *Uint8Option) SetValue(v interface{}) error {
@@ -2563,6 +3240,19 @@ func (o *MapUint8Option) Map() map[string]uint8 {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUint8Option) WriteAnswerField(name string, value interface{}) error {
+	tmp := Uint8Option{}
+	if v, ok := value.(uint8); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUint8Option []Uint8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2572,6 +3262,19 @@ func (o *ListUint8Option) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUint8Option) WriteAnswer(value interface{}) error {
+	tmp := Uint8Option{}
+	if v, ok := value.(uint8); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
@@ -2628,6 +3331,17 @@ func (o *UintptrOption) Set(s string) error {
 	o.Source = "override"
 	o.Defined = true
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *UintptrOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(uintptr); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 func (o *UintptrOption) SetValue(v interface{}) error {
@@ -2699,6 +3413,19 @@ func (o *MapUintptrOption) Map() map[string]uintptr {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapUintptrOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := UintptrOption{}
+	if v, ok := value.(uintptr); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListUintptrOption []UintptrOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2708,6 +3435,19 @@ func (o *ListUintptrOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListUintptrOption) WriteAnswer(value interface{}) error {
+	tmp := UintptrOption{}
+	if v, ok := value.(uintptr); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values

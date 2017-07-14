@@ -48,6 +48,17 @@ func (o *RawTypeOption) Set(s string) error {
 	return nil
 }
 
+// This is useful with survey prompting library
+func (o *RawTypeOption) WriteAnswer(value interface{}) error {
+	if v, ok := value.(RawType); ok {
+		o.Value = v
+		o.Defined = true
+		o.Source = "prompt"
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
+}
+
 func (o *RawTypeOption) SetValue(v interface{}) error {
 	if val, ok := v.(RawType); ok {
 		o.Value = val
@@ -117,6 +128,19 @@ func (o *MapRawTypeOption) Map() map[string]RawType {
 	return tmp
 }
 
+// This is useful with survey prompting library
+func (o *MapRawTypeOption) WriteAnswerField(name string, value interface{}) error {
+	tmp := RawTypeOption{}
+	if v, ok := value.(RawType); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		(*o)[name] = tmp
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
 type ListRawTypeOption []RawTypeOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -126,6 +150,19 @@ func (o *ListRawTypeOption) Set(value string) error {
 	val.Set(value)
 	*o = append(*o, val)
 	return nil
+}
+
+// This is useful with survey prompting library
+func (o *ListRawTypeOption) WriteAnswer(value interface{}) error {
+	tmp := RawTypeOption{}
+	if v, ok := value.(RawType); ok {
+		tmp.Value = v
+		tmp.Defined = true
+		tmp.Source = "prompt"
+		*o = append(*o, tmp)
+		return nil
+	}
+	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
