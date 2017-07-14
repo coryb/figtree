@@ -25,7 +25,7 @@ func NewRawTypeOption(dflt RawType) RawTypeOption {
 	}
 }
 
-func (o *RawTypeOption) IsDefined() bool {
+func (o RawTypeOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -33,7 +33,7 @@ func (o *RawTypeOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *RawTypeOption) GetValue() interface{} {
+func (o RawTypeOption) GetValue() interface{} {
 	return o.Value
 }
 

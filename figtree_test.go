@@ -12,13 +12,13 @@ func init() {
 }
 
 type TestOptions struct {
-	String1    StringOption            `yaml:"str1,omitempty"`
-	LeaveEmpty StringOption            `yaml:"leave-empty,omitempty"`
-	Array1     []StringOption          `yaml:"arr1,omitempty"`
-	Map1       map[string]StringOption `yaml:"map1,omitempty"`
-	Int1       IntOption               `yaml:"int1,omitempty"`
-	Float1     Float32Option           `yaml:"float1,omitempty"`
-	Bool1      BoolOption              `yaml:"bool1,omitempty"`
+	String1    StringOption     `yaml:"str1,omitempty"`
+	LeaveEmpty StringOption     `yaml:"leave-empty,omitempty"`
+	Array1     ListStringOption `yaml:"arr1,omitempty"`
+	Map1       MapStringOption  `yaml:"map1,omitempty"`
+	Int1       IntOption        `yaml:"int1,omitempty"`
+	Float1     Float32Option    `yaml:"float1,omitempty"`
+	Bool1      BoolOption       `yaml:"bool1,omitempty"`
 }
 
 type TestBuiltin struct {

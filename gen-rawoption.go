@@ -23,7 +23,7 @@ func NewBoolOption(dflt bool) BoolOption {
 	}
 }
 
-func (o *BoolOption) IsDefined() bool {
+func (o BoolOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -31,7 +31,7 @@ func (o *BoolOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *BoolOption) GetValue() interface{} {
+func (o BoolOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -208,7 +208,7 @@ func NewByteOption(dflt byte) ByteOption {
 	}
 }
 
-func (o *ByteOption) IsDefined() bool {
+func (o ByteOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -216,7 +216,7 @@ func (o *ByteOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *ByteOption) GetValue() interface{} {
+func (o ByteOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -393,7 +393,7 @@ func NewComplex128Option(dflt complex128) Complex128Option {
 	}
 }
 
-func (o *Complex128Option) IsDefined() bool {
+func (o Complex128Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -401,7 +401,7 @@ func (o *Complex128Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Complex128Option) GetValue() interface{} {
+func (o Complex128Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -578,7 +578,7 @@ func NewComplex64Option(dflt complex64) Complex64Option {
 	}
 }
 
-func (o *Complex64Option) IsDefined() bool {
+func (o Complex64Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -586,7 +586,7 @@ func (o *Complex64Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Complex64Option) GetValue() interface{} {
+func (o Complex64Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -763,7 +763,7 @@ func NewErrorOption(dflt error) ErrorOption {
 	}
 }
 
-func (o *ErrorOption) IsDefined() bool {
+func (o ErrorOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -771,7 +771,7 @@ func (o *ErrorOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *ErrorOption) GetValue() interface{} {
+func (o ErrorOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -948,7 +948,7 @@ func NewFloat32Option(dflt float32) Float32Option {
 	}
 }
 
-func (o *Float32Option) IsDefined() bool {
+func (o Float32Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -956,7 +956,7 @@ func (o *Float32Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Float32Option) GetValue() interface{} {
+func (o Float32Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -1133,7 +1133,7 @@ func NewFloat64Option(dflt float64) Float64Option {
 	}
 }
 
-func (o *Float64Option) IsDefined() bool {
+func (o Float64Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -1141,7 +1141,7 @@ func (o *Float64Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Float64Option) GetValue() interface{} {
+func (o Float64Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -1318,7 +1318,7 @@ func NewIntOption(dflt int) IntOption {
 	}
 }
 
-func (o *IntOption) IsDefined() bool {
+func (o IntOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -1326,7 +1326,7 @@ func (o *IntOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *IntOption) GetValue() interface{} {
+func (o IntOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -1503,7 +1503,7 @@ func NewInt16Option(dflt int16) Int16Option {
 	}
 }
 
-func (o *Int16Option) IsDefined() bool {
+func (o Int16Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -1511,7 +1511,7 @@ func (o *Int16Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Int16Option) GetValue() interface{} {
+func (o Int16Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -1688,7 +1688,7 @@ func NewInt32Option(dflt int32) Int32Option {
 	}
 }
 
-func (o *Int32Option) IsDefined() bool {
+func (o Int32Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -1696,7 +1696,7 @@ func (o *Int32Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Int32Option) GetValue() interface{} {
+func (o Int32Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -1873,7 +1873,7 @@ func NewInt64Option(dflt int64) Int64Option {
 	}
 }
 
-func (o *Int64Option) IsDefined() bool {
+func (o Int64Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -1881,7 +1881,7 @@ func (o *Int64Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Int64Option) GetValue() interface{} {
+func (o Int64Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2058,7 +2058,7 @@ func NewInt8Option(dflt int8) Int8Option {
 	}
 }
 
-func (o *Int8Option) IsDefined() bool {
+func (o Int8Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2066,7 +2066,7 @@ func (o *Int8Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Int8Option) GetValue() interface{} {
+func (o Int8Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2243,7 +2243,7 @@ func NewRuneOption(dflt rune) RuneOption {
 	}
 }
 
-func (o *RuneOption) IsDefined() bool {
+func (o RuneOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2251,7 +2251,7 @@ func (o *RuneOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *RuneOption) GetValue() interface{} {
+func (o RuneOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2428,7 +2428,7 @@ func NewStringOption(dflt string) StringOption {
 	}
 }
 
-func (o *StringOption) IsDefined() bool {
+func (o StringOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2436,7 +2436,7 @@ func (o *StringOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *StringOption) GetValue() interface{} {
+func (o StringOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2613,7 +2613,7 @@ func NewUintOption(dflt uint) UintOption {
 	}
 }
 
-func (o *UintOption) IsDefined() bool {
+func (o UintOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2621,7 +2621,7 @@ func (o *UintOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *UintOption) GetValue() interface{} {
+func (o UintOption) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2798,7 +2798,7 @@ func NewUint16Option(dflt uint16) Uint16Option {
 	}
 }
 
-func (o *Uint16Option) IsDefined() bool {
+func (o Uint16Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2806,7 +2806,7 @@ func (o *Uint16Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Uint16Option) GetValue() interface{} {
+func (o Uint16Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -2983,7 +2983,7 @@ func NewUint32Option(dflt uint32) Uint32Option {
 	}
 }
 
-func (o *Uint32Option) IsDefined() bool {
+func (o Uint32Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -2991,7 +2991,7 @@ func (o *Uint32Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Uint32Option) GetValue() interface{} {
+func (o Uint32Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -3168,7 +3168,7 @@ func NewUint64Option(dflt uint64) Uint64Option {
 	}
 }
 
-func (o *Uint64Option) IsDefined() bool {
+func (o Uint64Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -3176,7 +3176,7 @@ func (o *Uint64Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Uint64Option) GetValue() interface{} {
+func (o Uint64Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -3353,7 +3353,7 @@ func NewUint8Option(dflt uint8) Uint8Option {
 	}
 }
 
-func (o *Uint8Option) IsDefined() bool {
+func (o Uint8Option) IsDefined() bool {
 	return o.Defined
 }
 
@@ -3361,7 +3361,7 @@ func (o *Uint8Option) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *Uint8Option) GetValue() interface{} {
+func (o Uint8Option) GetValue() interface{} {
 	return o.Value
 }
 
@@ -3538,7 +3538,7 @@ func NewUintptrOption(dflt uintptr) UintptrOption {
 	}
 }
 
-func (o *UintptrOption) IsDefined() bool {
+func (o UintptrOption) IsDefined() bool {
 	return o.Defined
 }
 
@@ -3546,7 +3546,7 @@ func (o *UintptrOption) SetSource(source string) {
 	o.Source = source
 }
 
-func (o *UintptrOption) GetValue() interface{} {
+func (o UintptrOption) GetValue() interface{} {
 	return o.Value
 }
 

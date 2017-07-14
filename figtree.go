@@ -333,17 +333,20 @@ func (f *FigTree) populateEnv(data interface{}) {
 			switch t := options.Field(i).Interface().(type) {
 			case string:
 				val = t
-			case int, int8, int16, int32, int64:
-				val = fmt.Sprintf("%d", t)
-			case float32, float64:
-				val = fmt.Sprintf("%f", t)
-			case bool:
-				val = fmt.Sprintf("%t", t)
+			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
+				val = fmt.Sprintf("%v", t)
 			default:
-				if b, err := json.Marshal(t); err == nil {
-					val = strings.TrimSpace(string(b))
-					if val == "null" {
-						val = ""
+				type gettable interface {
+					GetValue() interface{}
+				}
+				if get, ok := t.(gettable); ok {
+					val = fmt.Sprintf("%v", get.GetValue())
+				} else {
+					if b, err := json.Marshal(t); err == nil {
+						val = strings.TrimSpace(string(b))
+						if val == "null" {
+							val = ""
+						}
 					}
 				}
 			}
