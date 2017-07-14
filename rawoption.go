@@ -78,6 +78,15 @@ func (o *RawTypeOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+func (o *RawTypeOption) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &o.Value); err == nil {
+		o.Defined = true
+	} else {
+		return err
+	}
+	return nil
+}
+
 func (o RawTypeOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
