@@ -263,6 +263,12 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
 					ov.Field(i).Set(m.mergeArrays(ov.Field(i), nv.Field(i)))
 				}
+			case reflect.Struct:
+				// only merge structs if they are not an Option type:
+				if _, ok := ov.Field(i).Addr().Interface().(Option); !ok {
+					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
+					m.mergeStructs(ov.Field(i), nv.Field(i))
+				}
 			}
 		}
 	}
