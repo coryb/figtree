@@ -149,7 +149,7 @@ func (o *MapRawTypeOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapRawTypeOption) IsCumulative() bool {
+func (o MapRawTypeOption) IsCumulative() bool {
 	return true
 }
 
@@ -158,9 +158,9 @@ func (o MapRawTypeOption) String() string {
 	return fmt.Sprintf("%v", map[string]RawTypeOption(o))
 }
 
-func (o *MapRawTypeOption) Map() map[string]RawType {
+func (o MapRawTypeOption) Map() map[string]RawType {
 	tmp := map[string]RawType{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -177,6 +177,17 @@ func (o *MapRawTypeOption) WriteAnswerField(name string, value interface{}) erro
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapRawTypeOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListRawTypeOption []RawTypeOption
@@ -205,7 +216,7 @@ func (o *ListRawTypeOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListRawTypeOption) IsCumulative() bool {
+func (o ListRawTypeOption) IsCumulative() bool {
 	return true
 }
 
@@ -214,10 +225,21 @@ func (o ListRawTypeOption) String() string {
 	return fmt.Sprintf("%v", []RawTypeOption(o))
 }
 
-func (o *ListRawTypeOption) Slice() []RawType {
+func (o ListRawTypeOption) Slice() []RawType {
 	tmp := []RawType{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListRawTypeOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }

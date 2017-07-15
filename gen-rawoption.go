@@ -147,7 +147,7 @@ func (o *MapBoolOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapBoolOption) IsCumulative() bool {
+func (o MapBoolOption) IsCumulative() bool {
 	return true
 }
 
@@ -156,9 +156,9 @@ func (o MapBoolOption) String() string {
 	return fmt.Sprintf("%v", map[string]BoolOption(o))
 }
 
-func (o *MapBoolOption) Map() map[string]bool {
+func (o MapBoolOption) Map() map[string]bool {
 	tmp := map[string]bool{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -175,6 +175,17 @@ func (o *MapBoolOption) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapBoolOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListBoolOption []BoolOption
@@ -203,7 +214,7 @@ func (o *ListBoolOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListBoolOption) IsCumulative() bool {
+func (o ListBoolOption) IsCumulative() bool {
 	return true
 }
 
@@ -212,12 +223,23 @@ func (o ListBoolOption) String() string {
 	return fmt.Sprintf("%v", []BoolOption(o))
 }
 
-func (o *ListBoolOption) Slice() []bool {
+func (o ListBoolOption) Slice() []bool {
 	tmp := []bool{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListBoolOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ByteOption struct {
@@ -357,7 +379,7 @@ func (o *MapByteOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapByteOption) IsCumulative() bool {
+func (o MapByteOption) IsCumulative() bool {
 	return true
 }
 
@@ -366,9 +388,9 @@ func (o MapByteOption) String() string {
 	return fmt.Sprintf("%v", map[string]ByteOption(o))
 }
 
-func (o *MapByteOption) Map() map[string]byte {
+func (o MapByteOption) Map() map[string]byte {
 	tmp := map[string]byte{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -385,6 +407,17 @@ func (o *MapByteOption) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapByteOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListByteOption []ByteOption
@@ -413,7 +446,7 @@ func (o *ListByteOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListByteOption) IsCumulative() bool {
+func (o ListByteOption) IsCumulative() bool {
 	return true
 }
 
@@ -422,12 +455,23 @@ func (o ListByteOption) String() string {
 	return fmt.Sprintf("%v", []ByteOption(o))
 }
 
-func (o *ListByteOption) Slice() []byte {
+func (o ListByteOption) Slice() []byte {
 	tmp := []byte{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListByteOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Complex128Option struct {
@@ -567,7 +611,7 @@ func (o *MapComplex128Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapComplex128Option) IsCumulative() bool {
+func (o MapComplex128Option) IsCumulative() bool {
 	return true
 }
 
@@ -576,9 +620,9 @@ func (o MapComplex128Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex128Option(o))
 }
 
-func (o *MapComplex128Option) Map() map[string]complex128 {
+func (o MapComplex128Option) Map() map[string]complex128 {
 	tmp := map[string]complex128{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -595,6 +639,17 @@ func (o *MapComplex128Option) WriteAnswerField(name string, value interface{}) e
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapComplex128Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListComplex128Option []Complex128Option
@@ -623,7 +678,7 @@ func (o *ListComplex128Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListComplex128Option) IsCumulative() bool {
+func (o ListComplex128Option) IsCumulative() bool {
 	return true
 }
 
@@ -632,12 +687,23 @@ func (o ListComplex128Option) String() string {
 	return fmt.Sprintf("%v", []Complex128Option(o))
 }
 
-func (o *ListComplex128Option) Slice() []complex128 {
+func (o ListComplex128Option) Slice() []complex128 {
 	tmp := []complex128{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListComplex128Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Complex64Option struct {
@@ -777,7 +843,7 @@ func (o *MapComplex64Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapComplex64Option) IsCumulative() bool {
+func (o MapComplex64Option) IsCumulative() bool {
 	return true
 }
 
@@ -786,9 +852,9 @@ func (o MapComplex64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex64Option(o))
 }
 
-func (o *MapComplex64Option) Map() map[string]complex64 {
+func (o MapComplex64Option) Map() map[string]complex64 {
 	tmp := map[string]complex64{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -805,6 +871,17 @@ func (o *MapComplex64Option) WriteAnswerField(name string, value interface{}) er
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapComplex64Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListComplex64Option []Complex64Option
@@ -833,7 +910,7 @@ func (o *ListComplex64Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListComplex64Option) IsCumulative() bool {
+func (o ListComplex64Option) IsCumulative() bool {
 	return true
 }
 
@@ -842,12 +919,23 @@ func (o ListComplex64Option) String() string {
 	return fmt.Sprintf("%v", []Complex64Option(o))
 }
 
-func (o *ListComplex64Option) Slice() []complex64 {
+func (o ListComplex64Option) Slice() []complex64 {
 	tmp := []complex64{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListComplex64Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ErrorOption struct {
@@ -987,7 +1075,7 @@ func (o *MapErrorOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapErrorOption) IsCumulative() bool {
+func (o MapErrorOption) IsCumulative() bool {
 	return true
 }
 
@@ -996,9 +1084,9 @@ func (o MapErrorOption) String() string {
 	return fmt.Sprintf("%v", map[string]ErrorOption(o))
 }
 
-func (o *MapErrorOption) Map() map[string]error {
+func (o MapErrorOption) Map() map[string]error {
 	tmp := map[string]error{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -1015,6 +1103,17 @@ func (o *MapErrorOption) WriteAnswerField(name string, value interface{}) error 
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapErrorOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListErrorOption []ErrorOption
@@ -1043,7 +1142,7 @@ func (o *ListErrorOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListErrorOption) IsCumulative() bool {
+func (o ListErrorOption) IsCumulative() bool {
 	return true
 }
 
@@ -1052,12 +1151,23 @@ func (o ListErrorOption) String() string {
 	return fmt.Sprintf("%v", []ErrorOption(o))
 }
 
-func (o *ListErrorOption) Slice() []error {
+func (o ListErrorOption) Slice() []error {
 	tmp := []error{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListErrorOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Float32Option struct {
@@ -1197,7 +1307,7 @@ func (o *MapFloat32Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapFloat32Option) IsCumulative() bool {
+func (o MapFloat32Option) IsCumulative() bool {
 	return true
 }
 
@@ -1206,9 +1316,9 @@ func (o MapFloat32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float32Option(o))
 }
 
-func (o *MapFloat32Option) Map() map[string]float32 {
+func (o MapFloat32Option) Map() map[string]float32 {
 	tmp := map[string]float32{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -1225,6 +1335,17 @@ func (o *MapFloat32Option) WriteAnswerField(name string, value interface{}) erro
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapFloat32Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListFloat32Option []Float32Option
@@ -1253,7 +1374,7 @@ func (o *ListFloat32Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListFloat32Option) IsCumulative() bool {
+func (o ListFloat32Option) IsCumulative() bool {
 	return true
 }
 
@@ -1262,12 +1383,23 @@ func (o ListFloat32Option) String() string {
 	return fmt.Sprintf("%v", []Float32Option(o))
 }
 
-func (o *ListFloat32Option) Slice() []float32 {
+func (o ListFloat32Option) Slice() []float32 {
 	tmp := []float32{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListFloat32Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Float64Option struct {
@@ -1407,7 +1539,7 @@ func (o *MapFloat64Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapFloat64Option) IsCumulative() bool {
+func (o MapFloat64Option) IsCumulative() bool {
 	return true
 }
 
@@ -1416,9 +1548,9 @@ func (o MapFloat64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float64Option(o))
 }
 
-func (o *MapFloat64Option) Map() map[string]float64 {
+func (o MapFloat64Option) Map() map[string]float64 {
 	tmp := map[string]float64{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -1435,6 +1567,17 @@ func (o *MapFloat64Option) WriteAnswerField(name string, value interface{}) erro
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapFloat64Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListFloat64Option []Float64Option
@@ -1463,7 +1606,7 @@ func (o *ListFloat64Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListFloat64Option) IsCumulative() bool {
+func (o ListFloat64Option) IsCumulative() bool {
 	return true
 }
 
@@ -1472,12 +1615,23 @@ func (o ListFloat64Option) String() string {
 	return fmt.Sprintf("%v", []Float64Option(o))
 }
 
-func (o *ListFloat64Option) Slice() []float64 {
+func (o ListFloat64Option) Slice() []float64 {
 	tmp := []float64{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListFloat64Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type IntOption struct {
@@ -1617,7 +1771,7 @@ func (o *MapIntOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapIntOption) IsCumulative() bool {
+func (o MapIntOption) IsCumulative() bool {
 	return true
 }
 
@@ -1626,9 +1780,9 @@ func (o MapIntOption) String() string {
 	return fmt.Sprintf("%v", map[string]IntOption(o))
 }
 
-func (o *MapIntOption) Map() map[string]int {
+func (o MapIntOption) Map() map[string]int {
 	tmp := map[string]int{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -1645,6 +1799,17 @@ func (o *MapIntOption) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapIntOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListIntOption []IntOption
@@ -1673,7 +1838,7 @@ func (o *ListIntOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListIntOption) IsCumulative() bool {
+func (o ListIntOption) IsCumulative() bool {
 	return true
 }
 
@@ -1682,12 +1847,23 @@ func (o ListIntOption) String() string {
 	return fmt.Sprintf("%v", []IntOption(o))
 }
 
-func (o *ListIntOption) Slice() []int {
+func (o ListIntOption) Slice() []int {
 	tmp := []int{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListIntOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Int16Option struct {
@@ -1827,7 +2003,7 @@ func (o *MapInt16Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapInt16Option) IsCumulative() bool {
+func (o MapInt16Option) IsCumulative() bool {
 	return true
 }
 
@@ -1836,9 +2012,9 @@ func (o MapInt16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int16Option(o))
 }
 
-func (o *MapInt16Option) Map() map[string]int16 {
+func (o MapInt16Option) Map() map[string]int16 {
 	tmp := map[string]int16{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -1855,6 +2031,17 @@ func (o *MapInt16Option) WriteAnswerField(name string, value interface{}) error 
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapInt16Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListInt16Option []Int16Option
@@ -1883,7 +2070,7 @@ func (o *ListInt16Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListInt16Option) IsCumulative() bool {
+func (o ListInt16Option) IsCumulative() bool {
 	return true
 }
 
@@ -1892,12 +2079,23 @@ func (o ListInt16Option) String() string {
 	return fmt.Sprintf("%v", []Int16Option(o))
 }
 
-func (o *ListInt16Option) Slice() []int16 {
+func (o ListInt16Option) Slice() []int16 {
 	tmp := []int16{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListInt16Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Int32Option struct {
@@ -2037,7 +2235,7 @@ func (o *MapInt32Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapInt32Option) IsCumulative() bool {
+func (o MapInt32Option) IsCumulative() bool {
 	return true
 }
 
@@ -2046,9 +2244,9 @@ func (o MapInt32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int32Option(o))
 }
 
-func (o *MapInt32Option) Map() map[string]int32 {
+func (o MapInt32Option) Map() map[string]int32 {
 	tmp := map[string]int32{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -2065,6 +2263,17 @@ func (o *MapInt32Option) WriteAnswerField(name string, value interface{}) error 
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapInt32Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListInt32Option []Int32Option
@@ -2093,7 +2302,7 @@ func (o *ListInt32Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListInt32Option) IsCumulative() bool {
+func (o ListInt32Option) IsCumulative() bool {
 	return true
 }
 
@@ -2102,12 +2311,23 @@ func (o ListInt32Option) String() string {
 	return fmt.Sprintf("%v", []Int32Option(o))
 }
 
-func (o *ListInt32Option) Slice() []int32 {
+func (o ListInt32Option) Slice() []int32 {
 	tmp := []int32{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListInt32Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Int64Option struct {
@@ -2247,7 +2467,7 @@ func (o *MapInt64Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapInt64Option) IsCumulative() bool {
+func (o MapInt64Option) IsCumulative() bool {
 	return true
 }
 
@@ -2256,9 +2476,9 @@ func (o MapInt64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int64Option(o))
 }
 
-func (o *MapInt64Option) Map() map[string]int64 {
+func (o MapInt64Option) Map() map[string]int64 {
 	tmp := map[string]int64{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -2275,6 +2495,17 @@ func (o *MapInt64Option) WriteAnswerField(name string, value interface{}) error 
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapInt64Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListInt64Option []Int64Option
@@ -2303,7 +2534,7 @@ func (o *ListInt64Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListInt64Option) IsCumulative() bool {
+func (o ListInt64Option) IsCumulative() bool {
 	return true
 }
 
@@ -2312,12 +2543,23 @@ func (o ListInt64Option) String() string {
 	return fmt.Sprintf("%v", []Int64Option(o))
 }
 
-func (o *ListInt64Option) Slice() []int64 {
+func (o ListInt64Option) Slice() []int64 {
 	tmp := []int64{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListInt64Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Int8Option struct {
@@ -2457,7 +2699,7 @@ func (o *MapInt8Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapInt8Option) IsCumulative() bool {
+func (o MapInt8Option) IsCumulative() bool {
 	return true
 }
 
@@ -2466,9 +2708,9 @@ func (o MapInt8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int8Option(o))
 }
 
-func (o *MapInt8Option) Map() map[string]int8 {
+func (o MapInt8Option) Map() map[string]int8 {
 	tmp := map[string]int8{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -2485,6 +2727,17 @@ func (o *MapInt8Option) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapInt8Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListInt8Option []Int8Option
@@ -2513,7 +2766,7 @@ func (o *ListInt8Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListInt8Option) IsCumulative() bool {
+func (o ListInt8Option) IsCumulative() bool {
 	return true
 }
 
@@ -2522,12 +2775,23 @@ func (o ListInt8Option) String() string {
 	return fmt.Sprintf("%v", []Int8Option(o))
 }
 
-func (o *ListInt8Option) Slice() []int8 {
+func (o ListInt8Option) Slice() []int8 {
 	tmp := []int8{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListInt8Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type RuneOption struct {
@@ -2667,7 +2931,7 @@ func (o *MapRuneOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapRuneOption) IsCumulative() bool {
+func (o MapRuneOption) IsCumulative() bool {
 	return true
 }
 
@@ -2676,9 +2940,9 @@ func (o MapRuneOption) String() string {
 	return fmt.Sprintf("%v", map[string]RuneOption(o))
 }
 
-func (o *MapRuneOption) Map() map[string]rune {
+func (o MapRuneOption) Map() map[string]rune {
 	tmp := map[string]rune{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -2695,6 +2959,17 @@ func (o *MapRuneOption) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapRuneOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListRuneOption []RuneOption
@@ -2723,7 +2998,7 @@ func (o *ListRuneOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListRuneOption) IsCumulative() bool {
+func (o ListRuneOption) IsCumulative() bool {
 	return true
 }
 
@@ -2732,12 +3007,23 @@ func (o ListRuneOption) String() string {
 	return fmt.Sprintf("%v", []RuneOption(o))
 }
 
-func (o *ListRuneOption) Slice() []rune {
+func (o ListRuneOption) Slice() []rune {
 	tmp := []rune{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListRuneOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type StringOption struct {
@@ -2877,7 +3163,7 @@ func (o *MapStringOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapStringOption) IsCumulative() bool {
+func (o MapStringOption) IsCumulative() bool {
 	return true
 }
 
@@ -2886,9 +3172,9 @@ func (o MapStringOption) String() string {
 	return fmt.Sprintf("%v", map[string]StringOption(o))
 }
 
-func (o *MapStringOption) Map() map[string]string {
+func (o MapStringOption) Map() map[string]string {
 	tmp := map[string]string{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -2905,6 +3191,17 @@ func (o *MapStringOption) WriteAnswerField(name string, value interface{}) error
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapStringOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListStringOption []StringOption
@@ -2933,7 +3230,7 @@ func (o *ListStringOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListStringOption) IsCumulative() bool {
+func (o ListStringOption) IsCumulative() bool {
 	return true
 }
 
@@ -2942,12 +3239,23 @@ func (o ListStringOption) String() string {
 	return fmt.Sprintf("%v", []StringOption(o))
 }
 
-func (o *ListStringOption) Slice() []string {
+func (o ListStringOption) Slice() []string {
 	tmp := []string{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListStringOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type UintOption struct {
@@ -3087,7 +3395,7 @@ func (o *MapUintOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUintOption) IsCumulative() bool {
+func (o MapUintOption) IsCumulative() bool {
 	return true
 }
 
@@ -3096,9 +3404,9 @@ func (o MapUintOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintOption(o))
 }
 
-func (o *MapUintOption) Map() map[string]uint {
+func (o MapUintOption) Map() map[string]uint {
 	tmp := map[string]uint{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -3115,6 +3423,17 @@ func (o *MapUintOption) WriteAnswerField(name string, value interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUintOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUintOption []UintOption
@@ -3143,7 +3462,7 @@ func (o *ListUintOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUintOption) IsCumulative() bool {
+func (o ListUintOption) IsCumulative() bool {
 	return true
 }
 
@@ -3152,12 +3471,23 @@ func (o ListUintOption) String() string {
 	return fmt.Sprintf("%v", []UintOption(o))
 }
 
-func (o *ListUintOption) Slice() []uint {
+func (o ListUintOption) Slice() []uint {
 	tmp := []uint{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUintOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Uint16Option struct {
@@ -3297,7 +3627,7 @@ func (o *MapUint16Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUint16Option) IsCumulative() bool {
+func (o MapUint16Option) IsCumulative() bool {
 	return true
 }
 
@@ -3306,9 +3636,9 @@ func (o MapUint16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint16Option(o))
 }
 
-func (o *MapUint16Option) Map() map[string]uint16 {
+func (o MapUint16Option) Map() map[string]uint16 {
 	tmp := map[string]uint16{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -3325,6 +3655,17 @@ func (o *MapUint16Option) WriteAnswerField(name string, value interface{}) error
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUint16Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUint16Option []Uint16Option
@@ -3353,7 +3694,7 @@ func (o *ListUint16Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUint16Option) IsCumulative() bool {
+func (o ListUint16Option) IsCumulative() bool {
 	return true
 }
 
@@ -3362,12 +3703,23 @@ func (o ListUint16Option) String() string {
 	return fmt.Sprintf("%v", []Uint16Option(o))
 }
 
-func (o *ListUint16Option) Slice() []uint16 {
+func (o ListUint16Option) Slice() []uint16 {
 	tmp := []uint16{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUint16Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Uint32Option struct {
@@ -3507,7 +3859,7 @@ func (o *MapUint32Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUint32Option) IsCumulative() bool {
+func (o MapUint32Option) IsCumulative() bool {
 	return true
 }
 
@@ -3516,9 +3868,9 @@ func (o MapUint32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint32Option(o))
 }
 
-func (o *MapUint32Option) Map() map[string]uint32 {
+func (o MapUint32Option) Map() map[string]uint32 {
 	tmp := map[string]uint32{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -3535,6 +3887,17 @@ func (o *MapUint32Option) WriteAnswerField(name string, value interface{}) error
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUint32Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUint32Option []Uint32Option
@@ -3563,7 +3926,7 @@ func (o *ListUint32Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUint32Option) IsCumulative() bool {
+func (o ListUint32Option) IsCumulative() bool {
 	return true
 }
 
@@ -3572,12 +3935,23 @@ func (o ListUint32Option) String() string {
 	return fmt.Sprintf("%v", []Uint32Option(o))
 }
 
-func (o *ListUint32Option) Slice() []uint32 {
+func (o ListUint32Option) Slice() []uint32 {
 	tmp := []uint32{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUint32Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Uint64Option struct {
@@ -3717,7 +4091,7 @@ func (o *MapUint64Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUint64Option) IsCumulative() bool {
+func (o MapUint64Option) IsCumulative() bool {
 	return true
 }
 
@@ -3726,9 +4100,9 @@ func (o MapUint64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint64Option(o))
 }
 
-func (o *MapUint64Option) Map() map[string]uint64 {
+func (o MapUint64Option) Map() map[string]uint64 {
 	tmp := map[string]uint64{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -3745,6 +4119,17 @@ func (o *MapUint64Option) WriteAnswerField(name string, value interface{}) error
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUint64Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUint64Option []Uint64Option
@@ -3773,7 +4158,7 @@ func (o *ListUint64Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUint64Option) IsCumulative() bool {
+func (o ListUint64Option) IsCumulative() bool {
 	return true
 }
 
@@ -3782,12 +4167,23 @@ func (o ListUint64Option) String() string {
 	return fmt.Sprintf("%v", []Uint64Option(o))
 }
 
-func (o *ListUint64Option) Slice() []uint64 {
+func (o ListUint64Option) Slice() []uint64 {
 	tmp := []uint64{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUint64Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type Uint8Option struct {
@@ -3927,7 +4323,7 @@ func (o *MapUint8Option) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUint8Option) IsCumulative() bool {
+func (o MapUint8Option) IsCumulative() bool {
 	return true
 }
 
@@ -3936,9 +4332,9 @@ func (o MapUint8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint8Option(o))
 }
 
-func (o *MapUint8Option) Map() map[string]uint8 {
+func (o MapUint8Option) Map() map[string]uint8 {
 	tmp := map[string]uint8{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -3955,6 +4351,17 @@ func (o *MapUint8Option) WriteAnswerField(name string, value interface{}) error 
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUint8Option) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUint8Option []Uint8Option
@@ -3983,7 +4390,7 @@ func (o *ListUint8Option) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUint8Option) IsCumulative() bool {
+func (o ListUint8Option) IsCumulative() bool {
 	return true
 }
 
@@ -3992,12 +4399,23 @@ func (o ListUint8Option) String() string {
 	return fmt.Sprintf("%v", []Uint8Option(o))
 }
 
-func (o *ListUint8Option) Slice() []uint8 {
+func (o ListUint8Option) Slice() []uint8 {
 	tmp := []uint8{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUint8Option) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type UintptrOption struct {
@@ -4137,7 +4555,7 @@ func (o *MapUintptrOption) Set(value string) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *MapUintptrOption) IsCumulative() bool {
+func (o MapUintptrOption) IsCumulative() bool {
 	return true
 }
 
@@ -4146,9 +4564,9 @@ func (o MapUintptrOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintptrOption(o))
 }
 
-func (o *MapUintptrOption) Map() map[string]uintptr {
+func (o MapUintptrOption) Map() map[string]uintptr {
 	tmp := map[string]uintptr{}
-	for k, v := range *o {
+	for k, v := range o {
 		tmp[k] = v.Value
 	}
 	return tmp
@@ -4165,6 +4583,17 @@ func (o *MapUintptrOption) WriteAnswerField(name string, value interface{}) erro
 		return nil
 	}
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+}
+
+func (o MapUintptrOption) IsDefined() bool {
+	// the map is "defined" if any one of the values
+	// in the map is defined
+	for _, val := range o {
+		if val.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
 
 type ListUintptrOption []UintptrOption
@@ -4193,7 +4622,7 @@ func (o *ListUintptrOption) WriteAnswer(value interface{}) error {
 
 // IsCumulative is required for kingpin interfaces to allow multiple values
 // to be set on the data structure.
-func (o *ListUintptrOption) IsCumulative() bool {
+func (o ListUintptrOption) IsCumulative() bool {
 	return true
 }
 
@@ -4202,10 +4631,21 @@ func (o ListUintptrOption) String() string {
 	return fmt.Sprintf("%v", []UintptrOption(o))
 }
 
-func (o *ListUintptrOption) Slice() []uintptr {
+func (o ListUintptrOption) Slice() []uintptr {
 	tmp := []uintptr{}
-	for _, elem := range *o {
+	for _, elem := range o {
 		tmp = append(tmp, elem.Value)
 	}
 	return tmp
+}
+
+func (o ListUintptrOption) IsDefined() bool {
+	// The list is "defined" if any one of the elements
+	// are defined
+	for _, elem := range o {
+		if elem.IsDefined() {
+			return true
+		}
+	}
+	return false
 }
