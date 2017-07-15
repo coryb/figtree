@@ -7,6 +7,7 @@ package figtree
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 )
 
 type BoolOption struct {
@@ -77,8 +78,12 @@ func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *BoolOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp bool
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -89,7 +94,7 @@ func (o BoolOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   bool
 		Source  string
@@ -102,7 +107,19 @@ func (o BoolOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o BoolOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   bool
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -271,8 +288,12 @@ func (o *ByteOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *ByteOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp byte
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -283,7 +304,7 @@ func (o ByteOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   byte
 		Source  string
@@ -296,7 +317,19 @@ func (o ByteOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o ByteOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   byte
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -465,8 +498,12 @@ func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) erro
 }
 
 func (o *Complex128Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp complex128
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -477,7 +514,7 @@ func (o Complex128Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   complex128
 		Source  string
@@ -490,7 +527,19 @@ func (o Complex128Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Complex128Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   complex128
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -659,8 +708,12 @@ func (o *Complex64Option) UnmarshalYAML(unmarshal func(interface{}) error) error
 }
 
 func (o *Complex64Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp complex64
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -671,7 +724,7 @@ func (o Complex64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   complex64
 		Source  string
@@ -684,7 +737,19 @@ func (o Complex64Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Complex64Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   complex64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -853,8 +918,12 @@ func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *ErrorOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp error
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -865,7 +934,7 @@ func (o ErrorOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   error
 		Source  string
@@ -878,7 +947,19 @@ func (o ErrorOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o ErrorOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   error
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -1047,8 +1128,12 @@ func (o *Float32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Float32Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp float32
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -1059,7 +1144,7 @@ func (o Float32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   float32
 		Source  string
@@ -1072,7 +1157,19 @@ func (o Float32Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Float32Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   float32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -1241,8 +1338,12 @@ func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Float64Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp float64
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -1253,7 +1354,7 @@ func (o Float64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   float64
 		Source  string
@@ -1266,7 +1367,19 @@ func (o Float64Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Float64Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   float64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -1435,8 +1548,12 @@ func (o *IntOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *IntOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp int
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -1447,7 +1564,7 @@ func (o IntOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   int
 		Source  string
@@ -1460,7 +1577,19 @@ func (o IntOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o IntOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   int
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -1629,8 +1758,12 @@ func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Int16Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp int16
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -1641,7 +1774,7 @@ func (o Int16Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   int16
 		Source  string
@@ -1654,7 +1787,19 @@ func (o Int16Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Int16Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   int16
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -1823,8 +1968,12 @@ func (o *Int32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Int32Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp int32
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -1835,7 +1984,7 @@ func (o Int32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   int32
 		Source  string
@@ -1848,7 +1997,19 @@ func (o Int32Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Int32Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   int32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2017,8 +2178,12 @@ func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Int64Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp int64
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2029,7 +2194,7 @@ func (o Int64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   int64
 		Source  string
@@ -2042,7 +2207,19 @@ func (o Int64Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Int64Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   int64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2211,8 +2388,12 @@ func (o *Int8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Int8Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp int8
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2223,7 +2404,7 @@ func (o Int8Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   int8
 		Source  string
@@ -2236,7 +2417,19 @@ func (o Int8Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Int8Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   int8
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2405,8 +2598,12 @@ func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *RuneOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp rune
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2417,7 +2614,7 @@ func (o RuneOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   rune
 		Source  string
@@ -2430,7 +2627,19 @@ func (o RuneOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o RuneOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   rune
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2599,8 +2808,12 @@ func (o *StringOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *StringOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp string
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2611,7 +2824,7 @@ func (o StringOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   string
 		Source  string
@@ -2624,7 +2837,19 @@ func (o StringOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o StringOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   string
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2793,8 +3018,12 @@ func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *UintOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uint
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2805,7 +3034,7 @@ func (o UintOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uint
 		Source  string
@@ -2818,7 +3047,19 @@ func (o UintOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o UintOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uint
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -2987,8 +3228,12 @@ func (o *Uint16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Uint16Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uint16
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -2999,7 +3244,7 @@ func (o Uint16Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uint16
 		Source  string
@@ -3012,7 +3257,19 @@ func (o Uint16Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Uint16Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uint16
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -3181,8 +3438,12 @@ func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Uint32Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uint32
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -3193,7 +3454,7 @@ func (o Uint32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uint32
 		Source  string
@@ -3206,7 +3467,19 @@ func (o Uint32Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Uint32Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uint32
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -3375,8 +3648,12 @@ func (o *Uint64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Uint64Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uint64
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -3387,7 +3664,7 @@ func (o Uint64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uint64
 		Source  string
@@ -3400,7 +3677,19 @@ func (o Uint64Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Uint64Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uint64
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -3569,8 +3858,12 @@ func (o *Uint8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *Uint8Option) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uint8
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -3581,7 +3874,7 @@ func (o Uint8Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uint8
 		Source  string
@@ -3594,7 +3887,19 @@ func (o Uint8Option) MarshalYAML() (interface{}, error) {
 }
 
 func (o Uint8Option) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uint8
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
@@ -3763,8 +4068,12 @@ func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *UintptrOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp uintptr
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -3775,7 +4084,7 @@ func (o UintptrOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   uintptr
 		Source  string
@@ -3788,7 +4097,19 @@ func (o UintptrOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o UintptrOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   uintptr
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype

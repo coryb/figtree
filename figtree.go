@@ -171,11 +171,11 @@ func (m *merger) mustOverwrite(name string) bool {
 	return false
 }
 
-func (m *merger) isEmpty(v reflect.Value) bool {
+func isEmpty(v reflect.Value) bool {
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
-func (m *merger) isSame(v1, v2 reflect.Value) bool {
+func isSame(v1, v2 reflect.Value) bool {
 	return reflect.DeepEqual(v1.Interface(), v2.Interface())
 }
 
@@ -235,7 +235,7 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	for i := 0; i < nv.NumField(); i++ {
 		fieldName := yamlFieldName(ov.Type().Field(i))
 
-		if (m.isEmpty(ov.Field(i)) || m.mustOverwrite(fieldName)) && !m.isSame(ov.Field(i), nv.Field(i)) {
+		if (isEmpty(ov.Field(i)) || m.mustOverwrite(fieldName)) && !isSame(ov.Field(i), nv.Field(i)) {
 			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nv.Field(i).Interface())
 			ov.Field(i).Set(nv.Field(i))
 		} else {

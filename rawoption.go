@@ -5,6 +5,7 @@ package figtree
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/cheekybits/genny/generic"
 )
@@ -79,8 +80,12 @@ func (o *RawTypeOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (o *RawTypeOption) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &o.Value); err == nil {
-		o.Defined = true
+	var tmp RawType
+	if err := json.Unmarshal(b, &tmp); err == nil {
+		if !isEmpty(reflect.ValueOf(tmp)) {
+			o.Value = tmp
+			o.Defined = true
+		}
 	} else {
 		return err
 	}
@@ -91,7 +96,7 @@ func (o RawTypeOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
 	}
-	// need a copy of this sturct without the MarshalYAML interface attached
+	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   RawType
 		Source  string
@@ -104,7 +109,19 @@ func (o RawTypeOption) MarshalYAML() (interface{}, error) {
 }
 
 func (o RawTypeOption) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Value)
+	if StringifyValue {
+		return json.Marshal(o.Value)
+	}
+	// need a copy of this struct without the MarshalJSON interface attached
+	return json.Marshal(struct {
+		Value   RawType
+		Source  string
+		Defined bool
+	}{
+		Value:   o.Value,
+		Source:  o.Source,
+		Defined: o.Defined,
+	})
 }
 
 // String is required for kingpin to generate usage with this datatype
