@@ -13,3 +13,9 @@ var StringifyValue = true
 
 // used in option parsing for map types Set routines
 var stringMapRegex = regexp.MustCompile("[:=]")
+
+// IsBoolFlag is required by kingpin interface to determine if
+// this variable requires a value
+func (b BoolOption) IsBoolFlag() bool {
+	return true
+}
