@@ -21,7 +21,7 @@ type RawTypeOption struct {
 func NewRawTypeOption(dflt RawType) RawTypeOption {
 	return RawTypeOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }

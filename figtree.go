@@ -63,11 +63,12 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 
 	// apply defaults at the end to set any undefined fields
 	if f.Defaults != nil {
-		m := &merger{sourceFile: "defaults"}
+		m := &merger{sourceFile: "default"}
 		m.mergeStructs(
 			reflect.ValueOf(options),
 			reflect.ValueOf(f.Defaults),
 		)
+		f.populateEnv(options)
 	}
 	return nil
 }

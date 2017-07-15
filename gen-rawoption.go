@@ -19,7 +19,7 @@ type BoolOption struct {
 func NewBoolOption(dflt bool) BoolOption {
 	return BoolOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -251,7 +251,7 @@ type ByteOption struct {
 func NewByteOption(dflt byte) ByteOption {
 	return ByteOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -483,7 +483,7 @@ type Complex128Option struct {
 func NewComplex128Option(dflt complex128) Complex128Option {
 	return Complex128Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -715,7 +715,7 @@ type Complex64Option struct {
 func NewComplex64Option(dflt complex64) Complex64Option {
 	return Complex64Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -947,7 +947,7 @@ type ErrorOption struct {
 func NewErrorOption(dflt error) ErrorOption {
 	return ErrorOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -1179,7 +1179,7 @@ type Float32Option struct {
 func NewFloat32Option(dflt float32) Float32Option {
 	return Float32Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -1411,7 +1411,7 @@ type Float64Option struct {
 func NewFloat64Option(dflt float64) Float64Option {
 	return Float64Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -1643,7 +1643,7 @@ type IntOption struct {
 func NewIntOption(dflt int) IntOption {
 	return IntOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -1875,7 +1875,7 @@ type Int16Option struct {
 func NewInt16Option(dflt int16) Int16Option {
 	return Int16Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -2107,7 +2107,7 @@ type Int32Option struct {
 func NewInt32Option(dflt int32) Int32Option {
 	return Int32Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -2339,7 +2339,7 @@ type Int64Option struct {
 func NewInt64Option(dflt int64) Int64Option {
 	return Int64Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -2571,7 +2571,7 @@ type Int8Option struct {
 func NewInt8Option(dflt int8) Int8Option {
 	return Int8Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -2803,7 +2803,7 @@ type RuneOption struct {
 func NewRuneOption(dflt rune) RuneOption {
 	return RuneOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -3035,7 +3035,7 @@ type StringOption struct {
 func NewStringOption(dflt string) StringOption {
 	return StringOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -3267,7 +3267,7 @@ type UintOption struct {
 func NewUintOption(dflt uint) UintOption {
 	return UintOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -3499,7 +3499,7 @@ type Uint16Option struct {
 func NewUint16Option(dflt uint16) Uint16Option {
 	return Uint16Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -3731,7 +3731,7 @@ type Uint32Option struct {
 func NewUint32Option(dflt uint32) Uint32Option {
 	return Uint32Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -3963,7 +3963,7 @@ type Uint64Option struct {
 func NewUint64Option(dflt uint64) Uint64Option {
 	return Uint64Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -4195,7 +4195,7 @@ type Uint8Option struct {
 func NewUint8Option(dflt uint8) Uint8Option {
 	return Uint8Option{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
@@ -4427,7 +4427,7 @@ type UintptrOption struct {
 func NewUintptrOption(dflt uintptr) UintptrOption {
 	return UintptrOption{
 		Source:  "default",
-		Defined: false,
+		Defined: true,
 		Value:   dflt,
 	}
 }
