@@ -336,6 +336,15 @@ func (f *FigTree) populateEnv(data interface{}) {
 			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool:
 				val = fmt.Sprintf("%v", t)
 			default:
+				switch options.Field(i).Kind() {
+				case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+					if options.Field(i).IsNil() {
+						continue
+					}
+				}
+				if t == nil {
+					continue
+				}
 				type definable interface {
 					IsDefined() bool
 				}
