@@ -178,12 +178,9 @@ func (o *MapBoolOption) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapBoolOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -232,12 +229,9 @@ func (o ListBoolOption) Slice() []bool {
 }
 
 func (o ListBoolOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -410,12 +404,9 @@ func (o *MapByteOption) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapByteOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -464,12 +455,9 @@ func (o ListByteOption) Slice() []byte {
 }
 
 func (o ListByteOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -642,12 +630,9 @@ func (o *MapComplex128Option) WriteAnswerField(name string, value interface{}) e
 }
 
 func (o MapComplex128Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -696,12 +681,9 @@ func (o ListComplex128Option) Slice() []complex128 {
 }
 
 func (o ListComplex128Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -874,12 +856,9 @@ func (o *MapComplex64Option) WriteAnswerField(name string, value interface{}) er
 }
 
 func (o MapComplex64Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -928,12 +907,9 @@ func (o ListComplex64Option) Slice() []complex64 {
 }
 
 func (o ListComplex64Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1106,12 +1082,9 @@ func (o *MapErrorOption) WriteAnswerField(name string, value interface{}) error 
 }
 
 func (o MapErrorOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1160,12 +1133,9 @@ func (o ListErrorOption) Slice() []error {
 }
 
 func (o ListErrorOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1338,12 +1308,9 @@ func (o *MapFloat32Option) WriteAnswerField(name string, value interface{}) erro
 }
 
 func (o MapFloat32Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1392,12 +1359,9 @@ func (o ListFloat32Option) Slice() []float32 {
 }
 
 func (o ListFloat32Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1570,12 +1534,9 @@ func (o *MapFloat64Option) WriteAnswerField(name string, value interface{}) erro
 }
 
 func (o MapFloat64Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1624,12 +1585,9 @@ func (o ListFloat64Option) Slice() []float64 {
 }
 
 func (o ListFloat64Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1802,12 +1760,9 @@ func (o *MapIntOption) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapIntOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -1856,12 +1811,9 @@ func (o ListIntOption) Slice() []int {
 }
 
 func (o ListIntOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2034,12 +1986,9 @@ func (o *MapInt16Option) WriteAnswerField(name string, value interface{}) error 
 }
 
 func (o MapInt16Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2088,12 +2037,9 @@ func (o ListInt16Option) Slice() []int16 {
 }
 
 func (o ListInt16Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2266,12 +2212,9 @@ func (o *MapInt32Option) WriteAnswerField(name string, value interface{}) error 
 }
 
 func (o MapInt32Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2320,12 +2263,9 @@ func (o ListInt32Option) Slice() []int32 {
 }
 
 func (o ListInt32Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2498,12 +2438,9 @@ func (o *MapInt64Option) WriteAnswerField(name string, value interface{}) error 
 }
 
 func (o MapInt64Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2552,12 +2489,9 @@ func (o ListInt64Option) Slice() []int64 {
 }
 
 func (o ListInt64Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2730,12 +2664,9 @@ func (o *MapInt8Option) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapInt8Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2784,12 +2715,9 @@ func (o ListInt8Option) Slice() []int8 {
 }
 
 func (o ListInt8Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -2962,12 +2890,9 @@ func (o *MapRuneOption) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapRuneOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3016,12 +2941,9 @@ func (o ListRuneOption) Slice() []rune {
 }
 
 func (o ListRuneOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3194,12 +3116,9 @@ func (o *MapStringOption) WriteAnswerField(name string, value interface{}) error
 }
 
 func (o MapStringOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3248,12 +3167,9 @@ func (o ListStringOption) Slice() []string {
 }
 
 func (o ListStringOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3426,12 +3342,9 @@ func (o *MapUintOption) WriteAnswerField(name string, value interface{}) error {
 }
 
 func (o MapUintOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3480,12 +3393,9 @@ func (o ListUintOption) Slice() []uint {
 }
 
 func (o ListUintOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3658,12 +3568,9 @@ func (o *MapUint16Option) WriteAnswerField(name string, value interface{}) error
 }
 
 func (o MapUint16Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3712,12 +3619,9 @@ func (o ListUint16Option) Slice() []uint16 {
 }
 
 func (o ListUint16Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3890,12 +3794,9 @@ func (o *MapUint32Option) WriteAnswerField(name string, value interface{}) error
 }
 
 func (o MapUint32Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -3944,12 +3845,9 @@ func (o ListUint32Option) Slice() []uint32 {
 }
 
 func (o ListUint32Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4122,12 +4020,9 @@ func (o *MapUint64Option) WriteAnswerField(name string, value interface{}) error
 }
 
 func (o MapUint64Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4176,12 +4071,9 @@ func (o ListUint64Option) Slice() []uint64 {
 }
 
 func (o ListUint64Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4354,12 +4246,9 @@ func (o *MapUint8Option) WriteAnswerField(name string, value interface{}) error 
 }
 
 func (o MapUint8Option) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4408,12 +4297,9 @@ func (o ListUint8Option) Slice() []uint8 {
 }
 
 func (o ListUint8Option) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4586,12 +4472,9 @@ func (o *MapUintptrOption) WriteAnswerField(name string, value interface{}) erro
 }
 
 func (o MapUintptrOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -4640,12 +4523,9 @@ func (o ListUintptrOption) Slice() []uintptr {
 }
 
 func (o ListUintptrOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }

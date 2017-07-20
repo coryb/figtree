@@ -180,12 +180,9 @@ func (o *MapRawTypeOption) WriteAnswerField(name string, value interface{}) erro
 }
 
 func (o MapRawTypeOption) IsDefined() bool {
-	// the map is "defined" if any one of the values
-	// in the map is defined
-	for _, val := range o {
-		if val.IsDefined() {
-			return true
-		}
+	// true if the map has any keys
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
@@ -234,12 +231,9 @@ func (o ListRawTypeOption) Slice() []RawType {
 }
 
 func (o ListRawTypeOption) IsDefined() bool {
-	// The list is "defined" if any one of the elements
-	// are defined
-	for _, elem := range o {
-		if elem.IsDefined() {
-			return true
-		}
+	// true if the list is not empty
+	if len(o) > 0 {
+		return true
 	}
 	return false
 }
