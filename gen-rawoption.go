@@ -7,7 +7,6 @@ package figtree
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 )
 
 type BoolOption struct {
@@ -68,25 +67,18 @@ func (o *BoolOption) SetValue(v interface{}) error {
 }
 
 func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *BoolOption) UnmarshalJSON(b []byte) error {
-	var tmp bool
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -294,25 +286,18 @@ func (o *ByteOption) SetValue(v interface{}) error {
 }
 
 func (o *ByteOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *ByteOption) UnmarshalJSON(b []byte) error {
-	var tmp byte
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -520,25 +505,18 @@ func (o *Complex128Option) SetValue(v interface{}) error {
 }
 
 func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Complex128Option) UnmarshalJSON(b []byte) error {
-	var tmp complex128
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -746,25 +724,18 @@ func (o *Complex64Option) SetValue(v interface{}) error {
 }
 
 func (o *Complex64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Complex64Option) UnmarshalJSON(b []byte) error {
-	var tmp complex64
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -972,25 +943,18 @@ func (o *ErrorOption) SetValue(v interface{}) error {
 }
 
 func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *ErrorOption) UnmarshalJSON(b []byte) error {
-	var tmp error
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -1198,25 +1162,18 @@ func (o *Float32Option) SetValue(v interface{}) error {
 }
 
 func (o *Float32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Float32Option) UnmarshalJSON(b []byte) error {
-	var tmp float32
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -1424,25 +1381,18 @@ func (o *Float64Option) SetValue(v interface{}) error {
 }
 
 func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Float64Option) UnmarshalJSON(b []byte) error {
-	var tmp float64
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -1650,25 +1600,18 @@ func (o *IntOption) SetValue(v interface{}) error {
 }
 
 func (o *IntOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *IntOption) UnmarshalJSON(b []byte) error {
-	var tmp int
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -1876,25 +1819,18 @@ func (o *Int16Option) SetValue(v interface{}) error {
 }
 
 func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Int16Option) UnmarshalJSON(b []byte) error {
-	var tmp int16
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -2102,25 +2038,18 @@ func (o *Int32Option) SetValue(v interface{}) error {
 }
 
 func (o *Int32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Int32Option) UnmarshalJSON(b []byte) error {
-	var tmp int32
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -2328,25 +2257,18 @@ func (o *Int64Option) SetValue(v interface{}) error {
 }
 
 func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Int64Option) UnmarshalJSON(b []byte) error {
-	var tmp int64
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -2554,25 +2476,18 @@ func (o *Int8Option) SetValue(v interface{}) error {
 }
 
 func (o *Int8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Int8Option) UnmarshalJSON(b []byte) error {
-	var tmp int8
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -2780,25 +2695,18 @@ func (o *RuneOption) SetValue(v interface{}) error {
 }
 
 func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *RuneOption) UnmarshalJSON(b []byte) error {
-	var tmp rune
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -3006,25 +2914,18 @@ func (o *StringOption) SetValue(v interface{}) error {
 }
 
 func (o *StringOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *StringOption) UnmarshalJSON(b []byte) error {
-	var tmp string
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -3232,25 +3133,18 @@ func (o *UintOption) SetValue(v interface{}) error {
 }
 
 func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *UintOption) UnmarshalJSON(b []byte) error {
-	var tmp uint
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -3458,25 +3352,18 @@ func (o *Uint16Option) SetValue(v interface{}) error {
 }
 
 func (o *Uint16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Uint16Option) UnmarshalJSON(b []byte) error {
-	var tmp uint16
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -3684,25 +3571,18 @@ func (o *Uint32Option) SetValue(v interface{}) error {
 }
 
 func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Uint32Option) UnmarshalJSON(b []byte) error {
-	var tmp uint32
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -3910,25 +3790,18 @@ func (o *Uint64Option) SetValue(v interface{}) error {
 }
 
 func (o *Uint64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Uint64Option) UnmarshalJSON(b []byte) error {
-	var tmp uint64
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -4136,25 +4009,18 @@ func (o *Uint8Option) SetValue(v interface{}) error {
 }
 
 func (o *Uint8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *Uint8Option) UnmarshalJSON(b []byte) error {
-	var tmp uint8
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 
@@ -4362,25 +4228,18 @@ func (o *UintptrOption) SetValue(v interface{}) error {
 }
 
 func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *UintptrOption) UnmarshalJSON(b []byte) error {
-	var tmp uintptr
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 

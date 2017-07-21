@@ -5,7 +5,6 @@ package figtree
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/cheekybits/genny/generic"
 )
@@ -70,25 +69,18 @@ func (o *RawTypeOption) SetValue(v interface{}) error {
 }
 
 func (o *RawTypeOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	if err := unmarshal(&o.Value); err == nil {
-		o.Defined = true
-	} else {
+	if err := unmarshal(&o.Value); err != nil {
 		return err
 	}
-
+	o.Defined = true
 	return nil
 }
 
 func (o *RawTypeOption) UnmarshalJSON(b []byte) error {
-	var tmp RawType
-	if err := json.Unmarshal(b, &tmp); err == nil {
-		if !isEmpty(reflect.ValueOf(tmp)) {
-			o.Value = tmp
-			o.Defined = true
-		}
-	} else {
+	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
+	o.Defined = true
 	return nil
 }
 

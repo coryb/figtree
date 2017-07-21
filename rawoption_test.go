@@ -1,7 +1,10 @@
 package figtree
 
 import (
+	"encoding/json"
 	"testing"
+
+	yaml "gopkg.in/coryb/yaml.v2"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -31,5 +34,41 @@ func TestOptionInterface(t *testing.T) {
 	assert.True(t, f(&Uint64Option{}))
 	assert.True(t, f(&Uint8Option{}))
 	assert.True(t, f(&UintptrOption{}))
+}
 
+func TestStringOptionYAML(t *testing.T) {
+	s := ""
+	err := yaml.Unmarshal([]byte(`""`), &s)
+	assert.Nil(t, err)
+	assert.Equal(t, s, "")
+
+	type testType struct {
+		String StringOption `yaml:"string,omitempty"`
+	}
+	tt := testType{}
+
+	err = yaml.Unmarshal([]byte(`string: ""`), &tt)
+	assert.Nil(t, err)
+	assert.Equal(t, tt.String, StringOption{Value: "", Defined: true})
+
+	tt = testType{}
+	err = yaml.Unmarshal([]byte(`string: "value"`), &tt)
+	assert.Nil(t, err)
+	assert.Equal(t, tt.String, StringOption{Value: "value", Defined: true})
+}
+
+func TestStringOptionJSON(t *testing.T) {
+	type testType struct {
+		String StringOption `json:"string,omitempty"`
+	}
+	tt := testType{}
+
+	err := json.Unmarshal([]byte(`{"string": ""}`), &tt)
+	assert.Nil(t, err)
+	assert.Equal(t, tt.String, StringOption{Value: "", Defined: true})
+
+	tt = testType{}
+	err = json.Unmarshal([]byte(`{"string": "value"}`), &tt)
+	assert.Nil(t, err)
+	assert.Equal(t, tt.String, StringOption{Value: "value", Defined: true})
 }
