@@ -49,7 +49,7 @@ func (o *RawTypeOption) Set(s string) error {
 }
 
 // This is useful with survey prompting library
-func (o *RawTypeOption) WriteAnswer(value interface{}) error {
+func (o *RawTypeOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(RawType); ok {
 		o.Value = v
 		o.Defined = true
@@ -159,7 +159,7 @@ func (o MapRawTypeOption) Map() map[string]RawType {
 }
 
 // This is useful with survey prompting library
-func (o *MapRawTypeOption) WriteAnswerField(name string, value interface{}) error {
+func (o *MapRawTypeOption) WriteAnswer(name string, value interface{}) error {
 	tmp := RawTypeOption{}
 	if v, ok := value.(RawType); ok {
 		tmp.Value = v
@@ -191,7 +191,7 @@ func (o *ListRawTypeOption) Set(value string) error {
 }
 
 // This is useful with survey prompting library
-func (o *ListRawTypeOption) WriteAnswer(value interface{}) error {
+func (o *ListRawTypeOption) WriteAnswer(name string, value interface{}) error {
 	tmp := RawTypeOption{}
 	if v, ok := value.(RawType); ok {
 		tmp.Value = v
