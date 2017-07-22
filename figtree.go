@@ -331,6 +331,12 @@ func (f *FigTree) populateEnv(data interface{}) {
 				return '_'
 			}, envName)
 			var val string
+			structField := options.Type().Field(i)
+			// PkgPath is empty for upper case (exported) field names.
+			if structField.PkgPath != "" {
+				// unexported field, skipping
+				continue
+			}
 			switch t := options.Field(i).Interface().(type) {
 			case string:
 				val = t
