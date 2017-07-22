@@ -208,6 +208,12 @@ func (m *merger) setSource(v reflect.Value) {
 			}
 		}
 		for i := 0; i < v.NumField(); i++ {
+			structField := v.Type().Field(i)
+			// PkgPath is empty for upper case (exported) field names.
+			if structField.PkgPath != "" {
+				// unexported field, skipping
+				continue
+			}
 			m.setSource(v.Field(i))
 		}
 	case reflect.Array:
@@ -234,7 +240,14 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		return
 	}
 	for i := 0; i < nv.NumField(); i++ {
-		fieldName := yamlFieldName(ov.Type().Field(i))
+		ovStructField := ov.Type().Field(i)
+		nvStructField := nv.Type().Field(i)
+		// PkgPath is empty for upper case (exported) field names.
+		if ovStructField.PkgPath != "" || nvStructField.PkgPath != "" {
+			// unexported field, skipping
+			continue
+		}
+		fieldName := yamlFieldName(ovStructField)
 
 		if (isEmpty(ov.Field(i)) || m.mustOverwrite(fieldName)) && !isSame(ov.Field(i), nv.Field(i)) {
 			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nv.Field(i).Interface())
@@ -321,7 +334,13 @@ func (f *FigTree) populateEnv(data interface{}) {
 	}
 	if options.Kind() == reflect.Struct {
 		for i := 0; i < options.NumField(); i++ {
-			name := strings.Join(camelcase.Split(options.Type().Field(i).Name), "_")
+			structField := options.Type().Field(i)
+			// PkgPath is empty for upper case (exported) field names.
+			if structField.PkgPath != "" {
+				// unexported field, skipping
+				continue
+			}
+			name := strings.Join(camelcase.Split(structField.Name), "_")
 			envName := fmt.Sprintf("%s_%s", f.EnvPrefix, strings.ToUpper(name))
 
 			envName = strings.Map(func(r rune) rune {
@@ -331,12 +350,6 @@ func (f *FigTree) populateEnv(data interface{}) {
 				return '_'
 			}, envName)
 			var val string
-			structField := options.Type().Field(i)
-			// PkgPath is empty for upper case (exported) field names.
-			if structField.PkgPath != "" {
-				// unexported field, skipping
-				continue
-			}
 			switch t := options.Field(i).Interface().(type) {
 			case string:
 				val = t
