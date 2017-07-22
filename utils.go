@@ -1,10 +1,19 @@
 package figtree
 
 import (
-	"fmt"
 	"os"
+	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
+
+func homedir() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("USERPROFILE")
+	}
+	return os.Getenv("HOME")
+}
 
 func FindParentPaths(fileName string) []string {
 	cwd, _ := os.Getwd()
@@ -12,24 +21,24 @@ func FindParentPaths(fileName string) []string {
 	paths := make([]string, 0)
 
 	// special case if homedir is not in current path then check there anyway
-	homedir := os.Getenv("HOME")
+	homedir := homedir()
 	if !strings.HasPrefix(cwd, homedir) {
-		file := fmt.Sprintf("%s/%s", homedir, fileName)
+		file := path.Join(homedir, fileName)
 		if _, err := os.Stat(file); err == nil {
-			paths = append(paths, file)
+			paths = append(paths, filepath.FromSlash(file))
 		}
 	}
 
 	var dir string
 	for _, part := range strings.Split(cwd, string(os.PathSeparator)) {
-		if dir == "/" {
-			dir = fmt.Sprintf("/%s", part)
+		if part == "" && dir == "" {
+			dir = "/"
 		} else {
-			dir = fmt.Sprintf("%s/%s", dir, part)
+			dir = path.Join(dir, part)
 		}
-		file := fmt.Sprintf("%s/%s", dir, fileName)
+		file := path.Join(dir, fileName)
 		if _, err := os.Stat(file); err == nil {
-			paths = append(paths, file)
+			paths = append(paths, filepath.FromSlash(file))
 		}
 	}
 	return paths
