@@ -340,7 +340,24 @@ func (f *FigTree) populateEnv(data interface{}) {
 				// unexported field, skipping
 				continue
 			}
+
 			name := strings.Join(camelcase.Split(structField.Name), "_")
+
+			if tag := structField.Tag.Get("figtree"); tag != "" {
+				if strings.HasSuffix(tag, ",inline") {
+					// if we have a tag like: `figtree:",inline"` then we
+					// want to the field as a top level member and not serialize
+					// the raw struct to json, so just recurse here
+					f.populateEnv(options.Field(i).Interface())
+					continue
+				}
+				// next look for `figtree:"env,..."` to set the env name to that
+				parts := strings.Split(tag, ",")
+				if len(parts) > 0 {
+					name = parts[0]
+				}
+			}
+
 			envName := fmt.Sprintf("%s_%s", f.EnvPrefix, strings.ToUpper(name))
 
 			envName = strings.Map(func(r rune) rune {

@@ -121,6 +121,15 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 	assert.Exactly(t, expected, opts)
 }
 
+func TestOptionsCorrupt(t *testing.T) {
+	opts := TestOptions{}
+	os.Chdir("d1")
+	defer os.Chdir("..")
+
+	err := LoadAllConfigs("corrupt.yml", &opts)
+	assert.NotNil(t, err)
+}
+
 func TestBuiltinLoadConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
 	os.Chdir("d1/d2/d3")
@@ -211,4 +220,13 @@ func TestBuiltinLoadConfigD1(t *testing.T) {
 	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
+}
+
+func TestBuiltinCorrupt(t *testing.T) {
+	opts := TestBuiltin{}
+	os.Chdir("d1")
+	defer os.Chdir("..")
+
+	err := LoadAllConfigs("corrupt.yml", &opts)
+	assert.NotNil(t, err)
 }
