@@ -317,6 +317,15 @@ Outer:
 		niv := nv.Index(ni)
 		for oi := 0; oi < ov.Len(); oi++ {
 			oiv := ov.Index(oi)
+			if oiv.CanAddr() && niv.CanAddr() {
+				if oOption, ok := oiv.Addr().Interface().(Option); ok {
+					if nOption, ok := niv.Addr().Interface().(Option); ok {
+						if reflect.DeepEqual(oOption.GetValue(), nOption.GetValue()) {
+							continue Outer
+						}
+					}
+				}
+			}
 			if reflect.DeepEqual(niv.Interface(), oiv.Interface()) {
 				continue Outer
 			}
