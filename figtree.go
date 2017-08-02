@@ -173,6 +173,13 @@ func (m *merger) mustOverwrite(name string) bool {
 }
 
 func isEmpty(v reflect.Value) bool {
+	if v.CanAddr() {
+		if option, ok := v.Addr().Interface().(Option); ok {
+			if option.GetSource() == "default" {
+				return true
+			}
+		}
+	}
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 

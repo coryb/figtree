@@ -245,3 +245,37 @@ func TestBuiltinCorrupt(t *testing.T) {
 	err := LoadAllConfigs("corrupt.yml", &opts)
 	assert.NotNil(t, err)
 }
+
+func TestOptionsLoadConfigDefaults(t *testing.T) {
+	opts := TestOptions{
+		String1: NewStringOption("defaultVal1"),
+		Int1:    NewIntOption(999),
+		Float1:  NewFloat32Option(9.99),
+		Bool1:   NewBoolOption(false),
+	}
+	os.Chdir("d1")
+	defer os.Chdir("..")
+
+	arr1 := []StringOption{}
+	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
+
+	expected := TestOptions{
+		String1:    StringOption{"figtree.yml", true, "d1str1val1"},
+		LeaveEmpty: StringOption{},
+		Array1:     arr1,
+		Map1: map[string]StringOption{
+			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
+			"key1": StringOption{"figtree.yml", true, "d1map1val1"},
+			"dup":  StringOption{"figtree.yml", true, "d1dupval"},
+		},
+		Int1:   IntOption{"figtree.yml", true, 111},
+		Float1: Float32Option{"figtree.yml", true, 1.11},
+		Bool1:  BoolOption{"figtree.yml", true, true},
+	}
+
+	err := LoadAllConfigs("figtree.yml", &opts)
+	assert.Nil(t, err)
+	assert.Exactly(t, expected, opts)
+}
