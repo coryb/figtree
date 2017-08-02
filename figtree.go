@@ -256,7 +256,7 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		}
 		fieldName := yamlFieldName(ovStructField)
 
-		if (isEmpty(ov.Field(i)) || m.mustOverwrite(fieldName)) && !isSame(ov.Field(i), nv.Field(i)) {
+		if (isEmpty(ov.Field(i)) && !isEmpty(nv.Field(i)) || m.mustOverwrite(fieldName)) && !isSame(ov.Field(i), nv.Field(i)) {
 			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nv.Field(i).Interface())
 			ov.Field(i).Set(nv.Field(i))
 		} else {

@@ -248,10 +248,11 @@ func TestBuiltinCorrupt(t *testing.T) {
 
 func TestOptionsLoadConfigDefaults(t *testing.T) {
 	opts := TestOptions{
-		String1: NewStringOption("defaultVal1"),
-		Int1:    NewIntOption(999),
-		Float1:  NewFloat32Option(9.99),
-		Bool1:   NewBoolOption(false),
+		String1:    NewStringOption("defaultVal1"),
+		LeaveEmpty: NewStringOption("emptyVal1"),
+		Int1:       NewIntOption(999),
+		Float1:     NewFloat32Option(9.99),
+		Bool1:      NewBoolOption(false),
 	}
 	os.Chdir("d1")
 	defer os.Chdir("..")
@@ -263,7 +264,7 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 
 	expected := TestOptions{
 		String1:    StringOption{"figtree.yml", true, "d1str1val1"},
-		LeaveEmpty: StringOption{},
+		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
 			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
