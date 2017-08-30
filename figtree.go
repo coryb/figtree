@@ -360,7 +360,18 @@ func (f *FigTree) populateEnv(data interface{}) {
 	if options.Kind() == reflect.Map {
 		for _, key := range options.MapKeys() {
 			if strKey, ok := key.Interface().(string); ok {
-				name := strings.Join(camelcase.Split(strKey), "_")
+				// first chunk up string so that `foo-bar` becomes ["foo", "bar"]
+				parts := strings.FieldsFunc(strKey, func(r rune) bool {
+					return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+				})
+				// now for each chunk split again on camelcase so ["fooBar", "baz"]
+				// becomes ["foo", "Bar", "baz"]
+				allParts := []string{}
+				for _, part := range parts {
+					allParts = append(allParts, camelcase.Split(part)...)
+				}
+
+				name := strings.Join(allParts, "_")
 				envName := fmt.Sprintf("%s_%s", f.EnvPrefix, strings.ToUpper(name))
 				os.Setenv(envName, fmt.Sprintf("%v", options.MapIndex(key).Interface()))
 			}
