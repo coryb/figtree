@@ -104,11 +104,11 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		reflect.ValueOf(options),
 		reflect.ValueOf(tmp),
 	)
+	f.populateEnv(options)
 	if m.Config.Stop {
 		f.stop = true
 		return nil
 	}
-	f.populateEnv(options)
 	return nil
 }
 
