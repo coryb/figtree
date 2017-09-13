@@ -196,12 +196,12 @@ type decoder struct {
 var (
 	mapItemType    = reflect.TypeOf(MapItem{})
 	durationType   = reflect.TypeOf(time.Duration(0))
-	defaultMapType = reflect.TypeOf(map[interface{}]interface{}{})
-	ifaceType      = defaultMapType.Elem()
+	DefaultMapType = reflect.TypeOf(map[interface{}]interface{}{})
+	IfaceType      = DefaultMapType.Elem()
 )
 
 func newDecoder(strict bool) *decoder {
-	d := &decoder{mapType: defaultMapType, strict: strict}
+	d := &decoder{mapType: DefaultMapType, strict: strict}
 	d.aliases = make(map[string]bool)
 	return d
 }
@@ -537,7 +537,7 @@ func (d *decoder) mapping(n *node, out reflect.Value) (good bool) {
 	et := outt.Elem()
 
 	mapType := d.mapType
-	if outt.Key() == ifaceType && outt.Elem() == ifaceType {
+	if outt.Key() == IfaceType && outt.Elem() == IfaceType {
 		d.mapType = outt
 	}
 
