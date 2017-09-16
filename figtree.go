@@ -73,13 +73,13 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 			reflect.ValueOf(options),
 			reflect.ValueOf(f.Defaults),
 		)
-		f.populateEnv(options)
+		f.PopulateEnv(options)
 	}
 	return nil
 }
 
 func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) (err error) {
-	f.populateEnv(options)
+	f.PopulateEnv(options)
 
 	defer func(mapType, iface reflect.Type) {
 		yaml.DefaultMapType = mapType
@@ -112,7 +112,7 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		reflect.ValueOf(options),
 		reflect.ValueOf(tmp),
 	)
-	f.populateEnv(options)
+	f.PopulateEnv(options)
 	if m.Config.Stop {
 		f.stop = true
 		return nil
@@ -412,7 +412,7 @@ func (f *FigTree) formatEnvValue(value reflect.Value) (string, bool) {
 	return "", false
 }
 
-func (f *FigTree) populateEnv(data interface{}) {
+func (f *FigTree) PopulateEnv(data interface{}) {
 	options := reflect.ValueOf(data)
 	if options.Kind() == reflect.Ptr {
 		options = reflect.ValueOf(options.Elem().Interface())
@@ -455,7 +455,7 @@ func (f *FigTree) populateEnv(data interface{}) {
 					// if we have a tag like: `figtree:",inline"` then we
 					// want to the field as a top level member and not serialize
 					// the raw struct to json, so just recurse here
-					f.populateEnv(options.Field(i).Interface())
+					f.PopulateEnv(options.Field(i).Interface())
 					continue
 				}
 				// next look for `figtree:"env,..."` to set the env name to that
