@@ -461,6 +461,10 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 				// next look for `figtree:"env,..."` to set the env name to that
 				parts := strings.Split(tag, ",")
 				if len(parts) > 0 {
+					// if the env name is "-" then we should not populate this data into the env
+					if parts[0] == "-" {
+						continue
+					}
 					name = parts[0]
 				}
 			}
