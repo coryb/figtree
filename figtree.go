@@ -477,6 +477,7 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 				os.Setenv(envName, val)
 			} else {
 				os.Unsetenv(envName)
+			}
 		}
 	}
 }
