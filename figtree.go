@@ -436,6 +436,8 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 				val, ok := f.formatEnvValue(options.MapIndex(key))
 				if ok {
 					os.Setenv(envName, val)
+				} else {
+					os.Unsetenv(envName)
 				}
 			}
 		}
@@ -473,7 +475,8 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 			val, ok := f.formatEnvValue(options.Field(i))
 			if ok {
 				os.Setenv(envName, val)
-			}
+			} else {
+				os.Unsetenv(envName)
 		}
 	}
 }
