@@ -153,6 +153,17 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
 	return nil
 }
 
+// Merge will attempt to merge the data from src into dst.  They shoud be either both maps or both structs.
+// The structs do not need to have the same structure, but any field name that exists in both
+// structs will must be the same type.
+func Merge(dst, src interface{}) {
+	m := &merger{sourceFile: "merge"}
+	m.mergeStructs(
+		reflect.ValueOf(dst),
+		reflect.ValueOf(src),
+	)
+}
+
 type ConfigOptions struct {
 	Overwrite []string `json:"overwrite,omitempty" yaml:"overwrite,omitempty"`
 	Stop      bool     `json:"stop,omitempty" yaml:"stop,omitempty"`
@@ -262,8 +273,14 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		return
 	}
 	for i := 0; i < nv.NumField(); i++ {
-		ovStructField := ov.Type().Field(i)
 		nvStructField := nv.Type().Field(i)
+		ovStructField, ok := ov.Type().FieldByName(nvStructField.Name)
+		if !ok {
+			// if original value does not have the same struct field
+			// then just skip this field.
+			continue
+		}
+
 		// PkgPath is empty for upper case (exported) field names.
 		if ovStructField.PkgPath != "" || nvStructField.PkgPath != "" {
 			// unexported field, skipping
@@ -271,39 +288,42 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		}
 		fieldName := yamlFieldName(ovStructField)
 
-		if (isEmpty(ov.Field(i)) || isDefault(ov.Field(i)) || m.mustOverwrite(fieldName)) && !isEmpty(nv.Field(i)) && !isSame(ov.Field(i), nv.Field(i)) {
-			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nv.Field(i).Interface())
-			ov.Field(i).Set(nv.Field(i))
+		ovField := ov.FieldByName(nvStructField.Name)
+		nvField := nv.Field(i)
+
+		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) {
+			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
+			ovField.Set(nvField)
 		} else {
-			switch ov.Field(i).Kind() {
+			switch ovField.Kind() {
 			case reflect.Map:
-				if nv.Field(i).Len() > 0 {
-					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
-					m.mergeMaps(ov.Field(i), nv.Field(i))
+				if nvField.Len() > 0 {
+					log.Debugf("Merging: %v with %v", ovField, nvField)
+					m.mergeMaps(ovField, nvField)
 				}
 			case reflect.Slice:
-				if nv.Field(i).Len() > 0 {
-					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
-					if ov.Field(i).CanSet() {
-						if ov.Field(i).Len() == 0 {
-							ov.Field(i).Set(nv.Field(i))
+				if nvField.Len() > 0 {
+					log.Debugf("Merging: %v with %v", ovField, nvField)
+					if ovField.CanSet() {
+						if ovField.Len() == 0 {
+							ovField.Set(nvField)
 						} else {
-							log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
-							ov.Field(i).Set(m.mergeArrays(ov.Field(i), nv.Field(i)))
+							log.Debugf("Merging: %v with %v", ovField, nvField)
+							ovField.Set(m.mergeArrays(ovField, nvField))
 						}
 					}
 
 				}
 			case reflect.Array:
-				if nv.Field(i).Len() > 0 {
-					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
-					ov.Field(i).Set(m.mergeArrays(ov.Field(i), nv.Field(i)))
+				if nvField.Len() > 0 {
+					log.Debugf("Merging: %v with %v", ovField, nvField)
+					ovField.Set(m.mergeArrays(ovField, nvField))
 				}
 			case reflect.Struct:
 				// only merge structs if they are not an Option type:
-				if _, ok := ov.Field(i).Addr().Interface().(Option); !ok {
-					log.Debugf("Merging: %v with %v", ov.Field(i), nv.Field(i))
-					m.mergeStructs(ov.Field(i), nv.Field(i))
+				if _, ok := ovField.Addr().Interface().(Option); !ok {
+					log.Debugf("Merging: %v with %v", ovField, nvField)
+					m.mergeStructs(ovField, nvField)
 				}
 			}
 		}
