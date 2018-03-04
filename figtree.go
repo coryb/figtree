@@ -164,6 +164,38 @@ func Merge(dst, src interface{}) {
 	)
 }
 
+// MakeMergeStruct will take multiple structs and return a pointer to a zero value for the
+// anonymous struct that has all the public fields from all the structs merged into one struct.
+// If there are multiple structs with the same field names, the first appearance of that name
+// will be used.
+func MakeMergeStruct(structs ...interface{}) interface{} {
+	fields := []reflect.StructField{}
+	foundFields := map[string]struct{}{}
+	for _, data := range structs {
+		v := reflect.ValueOf(data)
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+		typ := v.Type()
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			if field.PkgPath != "" {
+				// unexported field, skip
+				continue
+			}
+			if _, ok := foundFields[field.Name]; ok {
+				// field already found, skip
+				continue
+			}
+			foundFields[field.Name] = struct{}{}
+			fields = append(fields, field)
+		}
+	}
+
+	newType := reflect.StructOf(fields)
+	return reflect.New(newType).Interface()
+}
+
 type ConfigOptions struct {
 	Overwrite []string `json:"overwrite,omitempty" yaml:"overwrite,omitempty"`
 	Stop      bool     `json:"stop,omitempty" yaml:"stop,omitempty"`
