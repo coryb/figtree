@@ -420,7 +420,7 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		ovField := ov.FieldByName(nvStructField.Name)
 		nvField := nv.Field(i)
 
-		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) {
+		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) && nvField.Type().AssignableTo(ovField.Type()) {
 			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
 			ovField.Set(nvField)
 		} else {
