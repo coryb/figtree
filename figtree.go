@@ -240,15 +240,19 @@ func mapToStruct(src reflect.Value) reflect.Value {
 		dest = dest.Elem()
 	}
 
+	m := merger{}
 	for _, key := range src.MapKeys() {
+		structFieldName := camelCase(key.String())
 		keyval := reflect.ValueOf(src.MapIndex(key).Interface())
 		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
 			keyval = mapToStruct(keyval.Elem()).Addr()
+			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
 		} else if keyval.Kind() == reflect.Map {
 			keyval = mapToStruct(keyval)
+			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
+		} else {
+			dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
 		}
-		structFieldName := camelCase(key.String())
-		dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
 	}
 	return dest
 }
