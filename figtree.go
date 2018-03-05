@@ -212,7 +212,12 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 			}
 		} else if typ.Kind() == reflect.Map {
 			for _, key := range v.MapKeys() {
-				keyval := v.MapIndex(key)
+				keyval := reflect.ValueOf(v.MapIndex(key).Interface())
+				if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
+					keyval = makeMergeStruct(keyval.Elem())
+				} else if keyval.Kind() == reflect.Map {
+					keyval = makeMergeStruct(keyval).Elem()
+				}
 				fields = append(fields, reflect.StructField{
 					Name: camelCase(key.String()),
 					Type: reflect.ValueOf(keyval.Interface()).Type(),
@@ -236,7 +241,12 @@ func mapToStruct(src reflect.Value) reflect.Value {
 	}
 
 	for _, key := range src.MapKeys() {
-		keyval := src.MapIndex(key)
+		keyval := reflect.ValueOf(src.MapIndex(key).Interface())
+		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
+			keyval = mapToStruct(keyval.Elem()).Addr()
+		} else if keyval.Kind() == reflect.Map {
+			keyval = mapToStruct(keyval)
+		}
 		structFieldName := camelCase(key.String())
 		dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
 	}
