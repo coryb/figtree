@@ -2,6 +2,7 @@ package figtree
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	logging "gopkg.in/op/go-logging.v1"
@@ -279,4 +280,106 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
+}
+
+func TestMergeMapWithStruct(t *testing.T) {
+	dest := map[string]interface{}{
+		"mapkey": "mapval1",
+		"map": map[string]interface{}{
+			"mapkey": "mapval2",
+		},
+	}
+
+	src := struct {
+		StructField string
+		Map         struct {
+			StructField string
+		}
+	}{
+		StructField: "field1",
+		Map: struct {
+			StructField string
+		}{
+			StructField: "field2",
+		},
+	}
+
+	m := &merger{}
+	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+
+	expected := map[string]interface{}{
+		"mapkey":       "mapval1",
+		"struct-field": "field1",
+		"map": map[string]interface{}{
+			"mapkey":       "mapval2",
+			"struct-field": "field2",
+		},
+	}
+	assert.Equal(t, expected, dest)
+
+}
+
+func TestMergeStructWithMap(t *testing.T) {
+	dest := struct {
+		StructField string
+		Mapkey      string
+		Map         struct {
+			StructField string
+			Mapkey      string
+		}
+	}{
+		StructField: "field1",
+		Map: struct {
+			StructField string
+			Mapkey      string
+		}{
+			StructField: "field2",
+		},
+	}
+
+	src := map[string]interface{}{
+		"mapkey": "mapval1",
+		"map": map[string]interface{}{
+			"mapkey": "mapval2",
+		},
+	}
+
+	m := &merger{}
+	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+
+	expected := struct {
+		StructField string
+		Mapkey      string
+		Map         struct {
+			StructField string
+			Mapkey      string
+		}
+	}{
+		StructField: "field1",
+		Mapkey:      "mapval1",
+		Map: struct {
+			StructField string
+			Mapkey      string
+		}{
+			StructField: "field2",
+			Mapkey:      "mapval2",
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMakeMergeStruct(t *testing.T) {
+	input := map[string]interface{}{
+		"mapkey": "mapval1",
+		"map": map[string]interface{}{
+			"mapkey": "mapval2",
+		},
+	}
+
+	got := MakeMergeStruct(input)
+
+	Merge(got, &input)
+
+	assert.Equal(t, input["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Mapkey").Interface())
+	assert.Equal(t, input["map"], reflect.ValueOf(got).Elem().FieldByName("Map").Interface())
 }

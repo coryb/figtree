@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -153,6 +154,17 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
 	return nil
 }
 
+var camelCaseWords = regexp.MustCompile("[0-9A-Za-z]+")
+
+func camelCase(name string) string {
+	words := camelCaseWords.FindAllString(name, -1)
+	for i, word := range words {
+		words[i] = strings.Title(word)
+	}
+	return strings.Join(words, "")
+
+}
+
 // Merge will attempt to merge the data from src into dst.  They shoud be either both maps or both structs.
 // The structs do not need to have the same structure, but any field name that exists in both
 // structs will must be the same type.
@@ -169,31 +181,88 @@ func Merge(dst, src interface{}) {
 // If there are multiple structs with the same field names, the first appearance of that name
 // will be used.
 func MakeMergeStruct(structs ...interface{}) interface{} {
+	values := []reflect.Value{}
+	for _, data := range structs {
+		values = append(values, reflect.ValueOf(data))
+	}
+	return makeMergeStruct(values...).Interface()
+}
+
+func makeMergeStruct(values ...reflect.Value) reflect.Value {
 	fields := []reflect.StructField{}
 	foundFields := map[string]struct{}{}
-	for _, data := range structs {
-		v := reflect.ValueOf(data)
+	for _, v := range values {
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
 		typ := v.Type()
-		for i := 0; i < typ.NumField(); i++ {
-			field := typ.Field(i)
-			if field.PkgPath != "" {
-				// unexported field, skip
-				continue
+		if typ.Kind() == reflect.Struct {
+			for i := 0; i < typ.NumField(); i++ {
+				field := typ.Field(i)
+				if field.PkgPath != "" {
+					// unexported field, skip
+					continue
+				}
+				if _, ok := foundFields[field.Name]; ok {
+					// field already found, skip
+					continue
+				}
+				foundFields[field.Name] = struct{}{}
+				fields = append(fields, field)
 			}
-			if _, ok := foundFields[field.Name]; ok {
-				// field already found, skip
-				continue
+		} else if typ.Kind() == reflect.Map {
+			for _, key := range v.MapKeys() {
+				keyval := v.MapIndex(key)
+				fields = append(fields, reflect.StructField{
+					Name: camelCase(key.String()),
+					Type: reflect.ValueOf(keyval.Interface()).Type(),
+				})
 			}
-			foundFields[field.Name] = struct{}{}
-			fields = append(fields, field)
 		}
 	}
 
 	newType := reflect.StructOf(fields)
-	return reflect.New(newType).Interface()
+	return reflect.New(newType)
+}
+
+func mapToStruct(src reflect.Value) reflect.Value {
+	if src.Kind() != reflect.Map {
+		return reflect.Value{}
+	}
+
+	dest := makeMergeStruct(src)
+	if dest.Kind() == reflect.Ptr {
+		dest = dest.Elem()
+	}
+
+	for _, key := range src.MapKeys() {
+		keyval := src.MapIndex(key)
+		structFieldName := camelCase(key.String())
+		dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
+	}
+	return dest
+}
+
+func structToMap(src reflect.Value) reflect.Value {
+	if src.Kind() != reflect.Struct {
+		return reflect.Value{}
+	}
+
+	dest := reflect.ValueOf(map[string]interface{}{})
+
+	typ := src.Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		structField := typ.Field(i)
+		if structField.PkgPath != "" {
+			// skip private fields
+			continue
+		}
+		name := yamlFieldName(structField)
+		dest.SetMapIndex(reflect.ValueOf(name), src.Field(i))
+	}
+
+	return dest
 }
 
 type ConfigOptions struct {
@@ -214,7 +283,13 @@ func yamlFieldName(sf reflect.StructField) string {
 		parts := strings.Split(tag, ",")
 		return parts[0]
 	}
-	return sf.Name
+	// guess the field name from reversing camel case
+	// so "FooBar" becomes "foo-bar"
+	parts := camelcase.Split(sf.Name)
+	for i := range parts {
+		parts[i] = strings.ToLower(parts[i])
+	}
+	return strings.Join(parts, "-")
 }
 
 func (m *merger) mustOverwrite(name string) bool {
@@ -297,10 +372,18 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	if nv.Kind() == reflect.Ptr {
 		nv = nv.Elem()
 	}
+	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Struct {
+		nv = structToMap(nv)
+	}
 	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Map {
 		m.mergeMaps(ov, nv)
 		return
 	}
+
+	if ov.Kind() == reflect.Struct && nv.Kind() == reflect.Map {
+		nv = mapToStruct(nv)
+	}
+
 	if !ov.IsValid() || !nv.IsValid() {
 		return
 	}
@@ -373,7 +456,7 @@ func (m *merger) mergeMaps(ov, nv reflect.Value) {
 			switch ovi.Kind() {
 			case reflect.Map:
 				log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
-				m.mergeMaps(ovi, nvi)
+				m.mergeStructs(ovi, nvi)
 			case reflect.Slice:
 				log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
 				ov.SetMapIndex(key, m.mergeArrays(ovi, nvi))
