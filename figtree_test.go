@@ -253,28 +253,31 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 		LeaveEmpty: NewStringOption("emptyVal1"),
 		Int1:       NewIntOption(999),
 		Float1:     NewFloat32Option(9.99),
-		Bool1:      NewBoolOption(false),
+		Bool1:      NewBoolOption(true),
 	}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	os.Chdir("d1/d2")
+	defer os.Chdir("../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val2"})
 	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
+	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d1str1val1"},
+		String1:    StringOption{"figtree.yml", true, "d2str1val1"},
 		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d1map1val1"},
-			"dup":  StringOption{"figtree.yml", true, "d1dupval"},
+			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
+			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
+			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
+			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 111},
-		Float1: Float32Option{"figtree.yml", true, 1.11},
-		Bool1:  BoolOption{"figtree.yml", true, true},
+		Int1:   IntOption{"figtree.yml", true, 222},
+		Float1: Float32Option{"figtree.yml", true, 2.22},
+		Bool1:  BoolOption{"figtree.yml", true, false},
 	}
 
 	err := LoadAllConfigs("figtree.yml", &opts)

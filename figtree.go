@@ -21,7 +21,11 @@ import (
 	logging "gopkg.in/op/go-logging.v1"
 )
 
-var log = logging.MustGetLogger("figtree")
+type Logger interface {
+	Debugf(format string, args ...interface{})
+}
+
+var Log Logger = logging.MustGetLogger("figtree")
 
 type FigTree struct {
 	ConfigDir string
@@ -134,12 +138,12 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
 
 	if stat, err := os.Stat(file); err == nil {
 		if stat.Mode()&0111 == 0 {
-			log.Debugf("Loading config %s", file)
+			Log.Debugf("Loading config %s", file)
 			if data, err := ioutil.ReadFile(file); err == nil {
 				return f.LoadConfigBytes(data, rel, options)
 			}
 		} else {
-			log.Debugf("Found Executable Config file: %s", file)
+			Log.Debugf("Found Executable Config file: %s", file)
 			// it is executable, so run it and try to parse the output
 			cmd := exec.Command(file)
 			stdout := bytes.NewBufferString("")
@@ -421,23 +425,23 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		nvField := nv.Field(i)
 
 		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) && nvField.Type().AssignableTo(ovField.Type()) {
-			log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
+			Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
 			ovField.Set(nvField)
 		} else {
 			switch ovField.Kind() {
 			case reflect.Map:
 				if nvField.Len() > 0 {
-					log.Debugf("Merging: %v with %v", ovField, nvField)
+					Log.Debugf("Merging: %v with %v", ovField, nvField)
 					m.mergeMaps(ovField, nvField)
 				}
 			case reflect.Slice:
 				if nvField.Len() > 0 {
-					log.Debugf("Merging: %v with %v", ovField, nvField)
+					Log.Debugf("Merging: %v with %v", ovField, nvField)
 					if ovField.CanSet() {
 						if ovField.Len() == 0 {
 							ovField.Set(nvField)
 						} else {
-							log.Debugf("Merging: %v with %v", ovField, nvField)
+							Log.Debugf("Merging: %v with %v", ovField, nvField)
 							ovField.Set(m.mergeArrays(ovField, nvField))
 						}
 					}
@@ -445,13 +449,13 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 				}
 			case reflect.Array:
 				if nvField.Len() > 0 {
-					log.Debugf("Merging: %v with %v", ovField, nvField)
+					Log.Debugf("Merging: %v with %v", ovField, nvField)
 					ovField.Set(m.mergeArrays(ovField, nvField))
 				}
 			case reflect.Struct:
 				// only merge structs if they are not an Option type:
 				if _, ok := ovField.Addr().Interface().(Option); !ok {
-					log.Debugf("Merging: %v with %v", ovField, nvField)
+					Log.Debugf("Merging: %v with %v", ovField, nvField)
 					m.mergeStructs(ovField, nvField)
 				}
 			}
@@ -462,20 +466,20 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 func (m *merger) mergeMaps(ov, nv reflect.Value) {
 	for _, key := range nv.MapKeys() {
 		if !ov.MapIndex(key).IsValid() {
-			log.Debugf("Setting %v to %#v", key.Interface(), nv.MapIndex(key).Interface())
+			Log.Debugf("Setting %v to %#v", key.Interface(), nv.MapIndex(key).Interface())
 			ov.SetMapIndex(key, nv.MapIndex(key))
 		} else {
 			ovi := reflect.ValueOf(ov.MapIndex(key).Interface())
 			nvi := reflect.ValueOf(nv.MapIndex(key).Interface())
 			switch ovi.Kind() {
 			case reflect.Map:
-				log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
+				Log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
 				m.mergeStructs(ovi, nvi)
 			case reflect.Slice:
-				log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
+				Log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
 				ov.SetMapIndex(key, m.mergeArrays(ovi, nvi))
 			case reflect.Array:
-				log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
+				Log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
 				ov.SetMapIndex(key, m.mergeArrays(ovi, nvi))
 			}
 		}
@@ -501,7 +505,7 @@ Outer:
 				continue Outer
 			}
 		}
-		log.Debugf("Appending %v to %v", niv.Interface(), ov)
+		Log.Debugf("Appending %v to %v", niv.Interface(), ov)
 		ov = reflect.Append(ov, niv)
 	}
 	return ov
