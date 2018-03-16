@@ -387,3 +387,23 @@ func TestMakeMergeStruct(t *testing.T) {
 	assert.Equal(t, struct{ Mapkey string }{"mapval2"}, reflect.ValueOf(got).Elem().FieldByName("Map").Interface())
 	assert.Equal(t, input["map"].(map[string]interface{})["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Map").FieldByName("Mapkey").Interface())
 }
+
+func TestMakeMergeStructWithDups(t *testing.T) {
+	input := map[string]interface{}{
+		"mapkey": "mapval1",
+	}
+
+	s := struct {
+		Mapkey string
+	}{
+		Mapkey: "mapval2",
+	}
+
+	got := MakeMergeStruct(input, s)
+	Merge(got, &input)
+	assert.Equal(t, &struct{ Mapkey string }{"mapval1"}, got)
+
+	got = MakeMergeStruct(s, input)
+	Merge(got, &s)
+	assert.Equal(t, &struct{ Mapkey string }{"mapval2"}, got)
+}

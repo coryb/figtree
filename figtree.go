@@ -200,9 +200,10 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 			v = v.Elem()
 		}
 		typ := v.Type()
+		var field reflect.StructField
 		if typ.Kind() == reflect.Struct {
 			for i := 0; i < typ.NumField(); i++ {
-				field := typ.Field(i)
+				field = typ.Field(i)
 				if field.PkgPath != "" {
 					// unexported field, skip
 					continue
@@ -222,10 +223,16 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 				} else if keyval.Kind() == reflect.Map {
 					keyval = makeMergeStruct(keyval).Elem()
 				}
-				fields = append(fields, reflect.StructField{
+				field = reflect.StructField{
 					Name: camelCase(key.String()),
 					Type: reflect.ValueOf(keyval.Interface()).Type(),
-				})
+				}
+				if _, ok := foundFields[field.Name]; ok {
+					// field already found, skip
+					continue
+				}
+				foundFields[field.Name] = struct{}{}
+				fields = append(fields, field)
 			}
 		}
 	}
