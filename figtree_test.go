@@ -407,3 +407,25 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 	Merge(got, &s)
 	assert.Equal(t, &struct{ Mapkey string }{"mapval2"}, got)
 }
+
+func TestMakeMergeStructWithInline(t *testing.T) {
+	type Inner struct {
+		InnerString string
+	}
+
+	outer := struct {
+		Inner       `figtree:",inline"`
+		OuterString string
+	}{}
+
+	other := struct {
+		OtherString string
+	}{}
+
+	got := MakeMergeStruct(outer, other)
+	assert.IsType(t, (*struct {
+		InnerString string
+		OtherString string
+		OuterString string
+	})(nil), got)
+}

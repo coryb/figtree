@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -192,10 +193,21 @@ func MakeMergeStruct(structs ...interface{}) interface{} {
 	return makeMergeStruct(values...).Interface()
 }
 
+func inlineField(field reflect.StructField) bool {
+	if tag := field.Tag.Get("figtree"); tag != "" {
+		return strings.HasSuffix(tag, ",inline")
+	}
+	if tag := field.Tag.Get("yaml"); tag != "" {
+		return strings.HasSuffix(tag, ",inline")
+	}
+	return false
+}
+
 func makeMergeStruct(values ...reflect.Value) reflect.Value {
 	fields := []reflect.StructField{}
 	foundFields := map[string]struct{}{}
-	for _, v := range values {
+	for i := 0; i < len(values); i++ {
+		v := values[i]
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
@@ -210,6 +222,10 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 				}
 				if _, ok := foundFields[field.Name]; ok {
 					// field already found, skip
+					continue
+				}
+				if inlineField(field) {
+					values = append(values, v.Field(i))
 					continue
 				}
 				foundFields[field.Name] = struct{}{}
@@ -237,6 +253,9 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 		}
 	}
 
+	sort.Slice(fields, func(i, j int) bool {
+		return fields[i].Name < fields[j].Name
+	})
 	newType := reflect.StructOf(fields)
 	return reflect.New(newType)
 }
