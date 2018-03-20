@@ -438,9 +438,17 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		return
 	}
 	for i := 0; i < nv.NumField(); i++ {
+		nvField := nv.Field(i)
 		nvStructField := nv.Type().Field(i)
 		ovStructField, ok := ov.Type().FieldByName(nvStructField.Name)
 		if !ok {
+			if nvStructField.Anonymous {
+				// this is an embedded struct, and the destination does not contain
+				// the same embeded struct, so try to merge the embedded struct
+				// directly with the destination
+				m.mergeStructs(ov, nvField)
+				continue
+			}
 			// if original value does not have the same struct field
 			// then just skip this field.
 			continue
@@ -454,7 +462,6 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		fieldName := yamlFieldName(ovStructField)
 
 		ovField := ov.FieldByName(nvStructField.Name)
-		nvField := nv.Field(i)
 
 		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) {
 			if nvField.Type().AssignableTo(ovField.Type()) {

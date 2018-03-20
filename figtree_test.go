@@ -528,6 +528,62 @@ func TestMergeMapWithStructUsingOptions(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeStructsWithSrcEmbedded(t *testing.T) {
+	dest := struct {
+		FieldName string
+	}{}
+
+	type embedded struct {
+		FieldName string
+	}
+
+	src := struct {
+		embedded
+	}{
+		embedded: embedded{
+			FieldName: "field1",
+		},
+	}
+
+	m := &merger{}
+	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+
+	expected := struct {
+		FieldName string
+	}{
+		FieldName: "field1",
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeStructsWithDestEmbedded(t *testing.T) {
+	type embedded struct {
+		FieldName string
+	}
+
+	dest := struct {
+		embedded
+	}{}
+
+	src := struct {
+		FieldName string
+	}{
+		FieldName: "field1",
+	}
+
+	m := &merger{}
+	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+
+	expected := struct {
+		embedded
+	}{
+		embedded: embedded{
+			FieldName: "field1",
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMakeMergeStruct(t *testing.T) {
 	input := map[string]interface{}{
 		"mapkey": "mapval1",
