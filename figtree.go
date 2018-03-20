@@ -242,6 +242,7 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 				field = reflect.StructField{
 					Name: camelCase(key.String()),
 					Type: reflect.ValueOf(keyval.Interface()).Type(),
+					Tag:  reflect.StructTag(fmt.Sprintf(`json:"%s" yaml:"%s"`, key.String(), key.String())),
 				}
 				if _, ok := foundFields[field.Name]; ok {
 					// field already found, skip

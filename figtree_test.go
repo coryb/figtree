@@ -1,10 +1,12 @@
 package figtree
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"testing"
 
+	yaml "gopkg.in/coryb/yaml.v2"
 	logging "gopkg.in/op/go-logging.v1"
 
 	"github.com/stretchr/testify/assert"
@@ -597,7 +599,9 @@ func TestMakeMergeStruct(t *testing.T) {
 	Merge(got, &input)
 
 	assert.Equal(t, input["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Mapkey").Interface())
-	assert.Equal(t, struct{ Mapkey string }{"mapval2"}, reflect.ValueOf(got).Elem().FieldByName("Map").Interface())
+	assert.Equal(t, struct {
+		Mapkey string `json:"mapkey" yaml:"mapkey"`
+	}{"mapval2"}, reflect.ValueOf(got).Elem().FieldByName("Map").Interface())
 	assert.Equal(t, input["map"].(map[string]interface{})["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Map").FieldByName("Mapkey").Interface())
 }
 
@@ -614,7 +618,9 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 
 	got := MakeMergeStruct(input, s)
 	Merge(got, &input)
-	assert.Equal(t, &struct{ Mapkey string }{"mapval1"}, got)
+	assert.Equal(t, &struct {
+		Mapkey string `json:"mapkey" yaml:"mapkey"`
+	}{"mapval1"}, got)
 
 	got = MakeMergeStruct(s, input)
 	Merge(got, &s)
@@ -650,8 +656,56 @@ func TestMakeMergeStructWithInline(t *testing.T) {
 
 	got = MakeMergeStruct(outer, otherMap)
 	assert.IsType(t, (*struct {
-		InnerString string
-		OtherString string
+		InnerString string `json:"inner-string" yaml:"inner-string"`
+		OtherString string `json:"other-string" yaml:"other-string"`
 		OuterString string
 	})(nil), got)
+}
+
+func TestMakeMergeStructWithYaml(t *testing.T) {
+	input := "foo-bar: foo-val\n"
+	data := map[string]interface{}{}
+	err := yaml.Unmarshal([]byte(input), &data)
+	assert.NoError(t, err)
+
+	// turn map data into a struct
+	got := MakeMergeStruct(data)
+	// then assign the data back into that struct
+	Merge(got, data)
+
+	expected := &struct {
+		FooBar string `json:"foo-bar" yaml:"foo-bar"`
+	}{
+		"foo-val",
+	}
+	assert.Equal(t, expected, got)
+
+	// make sure the new structure serializes back to the original document
+	output, err := yaml.Marshal(expected)
+	assert.NoError(t, err)
+	assert.Equal(t, input, string(output))
+}
+
+func TestMakeMergeStructWithJson(t *testing.T) {
+	input := `{"foo-bar":"foo-val"}`
+	data := map[string]interface{}{}
+	err := json.Unmarshal([]byte(input), &data)
+	assert.NoError(t, err)
+
+	// turn map data into a struct
+	got := MakeMergeStruct(data)
+	// then assign the data back into that struct
+	Merge(got, data)
+
+	expected := &struct {
+		FooBar string `json:"foo-bar" yaml:"foo-bar"`
+	}{
+		"foo-val",
+	}
+	assert.Equal(t, expected, got)
+
+	// make sure the new structure serializes back to the original document
+	output, err := json.Marshal(expected)
+	assert.NoError(t, err)
+	assert.Equal(t, input, string(output))
 }
