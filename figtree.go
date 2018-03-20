@@ -428,6 +428,12 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		nv = mapToStruct(nv)
 	}
 
+	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Struct {
+		nv = structToMap(nv)
+		m.mergeMaps(ov, nv)
+		return
+	}
+
 	if !ov.IsValid() || !nv.IsValid() {
 		return
 	}
@@ -450,9 +456,26 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		ovField := ov.FieldByName(nvStructField.Name)
 		nvField := nv.Field(i)
 
-		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) && nvField.Type().AssignableTo(ovField.Type()) {
-			Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
-			ovField.Set(nvField)
+		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) {
+			if nvField.Type().AssignableTo(ovField.Type()) {
+				Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
+				ovField.Set(nvField)
+				continue
+			}
+			if ovField.CanAddr() {
+				if option, ok := ovField.Addr().Interface().(Option); ok {
+					ovOptionValue := reflect.ValueOf(option.GetValue())
+					if nvField.Type().AssignableTo(ovOptionValue.Type()) {
+						Log.Debugf("Setting %s value to %#v", nv.Type().Field(i).Name, nvField.Interface())
+						option.SetValue(nvField.Interface())
+						option.SetSource(m.sourceFile)
+						continue
+					} else {
+						panic(fmt.Errorf("%s is not assinable to %s", nvField.Type(), ovOptionValue.Type()))
+					}
+				}
+			}
+			panic(fmt.Errorf("unable to merge %T with %T", ovField.Interface(), nvField.Interface()))
 		} else {
 			switch ovField.Kind() {
 			case reflect.Map:
@@ -507,6 +530,24 @@ func (m *merger) mergeMaps(ov, nv reflect.Value) {
 			case reflect.Array:
 				Log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
 				ov.SetMapIndex(key, m.mergeArrays(ovi, nvi))
+			default:
+				if isEmpty(ovi) {
+					if nvi.Type().AssignableTo(ovi.Type()) {
+						ov.SetMapIndex(key, nvi)
+					} else {
+						// to check for the Option interface we need the Addr of the value, but
+						// we cannot take the Addr of a map value, so we have to first copy
+						// it, meh not optimal
+						newVal := reflect.New(nvi.Type())
+						newVal.Elem().Set(nvi)
+						if nOption, ok := newVal.Interface().(Option); ok {
+							ov.SetMapIndex(key, reflect.ValueOf(nOption.GetValue()))
+							continue
+						}
+						panic(fmt.Errorf("map value %T is not assignable to %T", nvi.Interface(), ovi.Interface()))
+					}
+
+				}
 			}
 		}
 	}

@@ -371,6 +371,163 @@ func TestMergeStructWithMap(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeStructUsingOptionsWithMap(t *testing.T) {
+	dest := struct {
+		Bool    BoolOption
+		Byte    ByteOption
+		Float32 Float32Option
+		Float64 Float64Option
+		Int16   Int16Option
+		Int32   Int32Option
+		Int64   Int64Option
+		Int8    Int8Option
+		Int     IntOption
+		Rune    RuneOption
+		String  StringOption
+		Uint16  Uint16Option
+		Uint32  Uint32Option
+		Uint64  Uint64Option
+		Uint8   Uint8Option
+		Uint    UintOption
+	}{}
+
+	src := map[string]interface{}{
+		"bool":    true,
+		"byte":    byte(10),
+		"float32": float32(1.23),
+		"float64": float64(2.34),
+		"int16":   int16(123),
+		"int32":   int32(234),
+		"int64":   int64(345),
+		"int8":    int8(127),
+		"int":     int(456),
+		"rune":    rune('a'),
+		"string":  "stringval",
+		"uint16":  uint16(123),
+		"uint32":  uint32(234),
+		"uint64":  uint64(345),
+		"uint8":   uint8(255),
+		"uint":    uint(456),
+	}
+
+	Merge(&dest, &src)
+
+	expected := struct {
+		Bool    BoolOption
+		Byte    ByteOption
+		Float32 Float32Option
+		Float64 Float64Option
+		Int16   Int16Option
+		Int32   Int32Option
+		Int64   Int64Option
+		Int8    Int8Option
+		Int     IntOption
+		Rune    RuneOption
+		String  StringOption
+		Uint16  Uint16Option
+		Uint32  Uint32Option
+		Uint64  Uint64Option
+		Uint8   Uint8Option
+		Uint    UintOption
+	}{
+		Bool:    BoolOption{"merge", true, true},
+		Byte:    ByteOption{"merge", true, byte(10)},
+		Float32: Float32Option{"merge", true, float32(1.23)},
+		Float64: Float64Option{"merge", true, float64(2.34)},
+		Int16:   Int16Option{"merge", true, int16(123)},
+		Int32:   Int32Option{"merge", true, int32(234)},
+		Int64:   Int64Option{"merge", true, int64(345)},
+		Int8:    Int8Option{"merge", true, int8(127)},
+		Int:     IntOption{"merge", true, int(456)},
+		Rune:    RuneOption{"merge", true, rune('a')},
+		String:  StringOption{"merge", true, "stringval"},
+		Uint16:  Uint16Option{"merge", true, uint16(123)},
+		Uint32:  Uint32Option{"merge", true, uint32(234)},
+		Uint64:  Uint64Option{"merge", true, uint64(345)},
+		Uint8:   Uint8Option{"merge", true, uint8(255)},
+		Uint:    UintOption{"merge", true, uint(456)},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeMapWithStructUsingOptions(t *testing.T) {
+	dest := map[string]interface{}{
+		"bool":    false,
+		"byte":    byte(0),
+		"float32": float32(0),
+		"float64": float64(0),
+		"int16":   int16(0),
+		"int32":   int32(0),
+		"int64":   int64(0),
+		"int8":    int8(0),
+		"int":     int(0),
+		"rune":    rune(0),
+		"string":  "",
+		"uint16":  uint16(0),
+		"uint32":  uint32(0),
+		"uint64":  uint64(0),
+		"uint8":   uint8(0),
+		"uint":    uint(0),
+	}
+
+	src := struct {
+		Bool    BoolOption
+		Byte    ByteOption
+		Float32 Float32Option `yaml:"float32"`
+		Float64 Float64Option `yaml:"float64"`
+		Int16   Int16Option   `yaml:"int16"`
+		Int32   Int32Option   `yaml:"int32"`
+		Int64   Int64Option   `yaml:"int64"`
+		Int8    Int8Option    `yaml:"int8"`
+		Int     IntOption
+		Rune    RuneOption
+		String  StringOption
+		Uint16  Uint16Option `yaml:"uint16"`
+		Uint32  Uint32Option `yaml:"uint32"`
+		Uint64  Uint64Option `yaml:"uint64"`
+		Uint8   Uint8Option  `yaml:"uint8"`
+		Uint    UintOption
+	}{
+		Bool:    NewBoolOption(true),
+		Byte:    NewByteOption(10),
+		Float32: NewFloat32Option(1.23),
+		Float64: NewFloat64Option(2.34),
+		Int16:   NewInt16Option(123),
+		Int32:   NewInt32Option(234),
+		Int64:   NewInt64Option(345),
+		Int8:    NewInt8Option(127),
+		Int:     NewIntOption(456),
+		Rune:    NewRuneOption('a'),
+		String:  NewStringOption("stringval"),
+		Uint16:  NewUint16Option(123),
+		Uint32:  NewUint32Option(234),
+		Uint64:  NewUint64Option(345),
+		Uint8:   NewUint8Option(255),
+		Uint:    NewUintOption(456),
+	}
+
+	Merge(&dest, &src)
+	expected := map[string]interface{}{
+		"bool":    true,
+		"byte":    byte(10),
+		"float32": float32(1.23),
+		"float64": float64(2.34),
+		"int16":   int16(123),
+		"int32":   int32(234),
+		"int64":   int64(345),
+		"int8":    int8(127),
+		"int":     int(456),
+		"rune":    rune('a'),
+		"string":  "stringval",
+		"uint16":  uint16(123),
+		"uint32":  uint32(234),
+		"uint64":  uint64(345),
+		"uint8":   uint8(255),
+		"uint":    uint(456),
+	}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMakeMergeStruct(t *testing.T) {
 	input := map[string]interface{}{
 		"mapkey": "mapval1",
@@ -419,10 +576,23 @@ func TestMakeMergeStructWithInline(t *testing.T) {
 	}{}
 
 	other := struct {
+		InnerString string
 		OtherString string
 	}{}
 
 	got := MakeMergeStruct(outer, other)
+	assert.IsType(t, (*struct {
+		InnerString string
+		OtherString string
+		OuterString string
+	})(nil), got)
+
+	otherMap := map[string]interface{}{
+		"inner-string": "inner",
+		"other-string": "other",
+	}
+
+	got = MakeMergeStruct(outer, otherMap)
 	assert.IsType(t, (*struct {
 		InnerString string
 		OtherString string
