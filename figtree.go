@@ -584,25 +584,27 @@ func (m *merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
 Outer:
 	for ni := 0; ni < nv.Len(); ni++ {
 		niv := nv.Index(ni)
+
+		nvElem := reflect.New(ov.Type().Elem()).Elem()
+		m.assignValue(nvElem, niv)
+
 		for oi := 0; oi < ov.Len(); oi++ {
 			oiv := ov.Index(oi)
-			if oiv.CanAddr() && niv.CanAddr() {
+			if oiv.CanAddr() && nvElem.CanAddr() {
 				if oOption, ok := oiv.Addr().Interface().(Option); ok {
-					if nOption, ok := niv.Addr().Interface().(Option); ok {
+					if nOption, ok := nvElem.Addr().Interface().(Option); ok {
 						if reflect.DeepEqual(oOption.GetValue(), nOption.GetValue()) {
 							continue Outer
 						}
 					}
 				}
 			}
-			if reflect.DeepEqual(niv.Interface(), oiv.Interface()) {
+			if reflect.DeepEqual(nvElem.Interface(), oiv.Interface()) {
 				continue Outer
 			}
 		}
-		Log.Debugf("Appending %v to %v", niv.Interface(), ov)
-		ovElem := reflect.New(ov.Type().Elem())
-		m.assignValue(ovElem.Elem(), niv)
-		ov = reflect.Append(ov, ovElem.Elem())
+		Log.Debugf("Appending %v to %v", nvElem.Interface(), ov)
+		ov = reflect.Append(ov, nvElem)
 	}
 	return ov
 }

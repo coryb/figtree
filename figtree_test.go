@@ -533,7 +533,11 @@ func TestMergeMapWithStructUsingOptions(t *testing.T) {
 func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 	dest := struct {
 		Strings ListStringOption
-	}{}
+	}{
+		Strings: ListStringOption{
+			NewStringOption("abc"),
+		},
+	}
 
 	src := map[string]interface{}{
 		"strings": []string{
@@ -548,7 +552,7 @@ func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 		Strings ListStringOption
 	}{
 		ListStringOption{
-			StringOption{"merge", true, "abc"},
+			StringOption{"default", true, "abc"},
 			StringOption{"merge", true, "def"},
 		},
 	}
@@ -557,7 +561,7 @@ func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 
 func TestMergeMapWithStructUsingListOptions(t *testing.T) {
 	dest := map[string]interface{}{
-		"strings": []string{},
+		"strings": []string{"abc"},
 	}
 
 	src := struct {
