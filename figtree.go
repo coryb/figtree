@@ -451,12 +451,10 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	if nv.Kind() == reflect.Ptr {
 		nv = nv.Elem()
 	}
-	Log.Debugf("Merging %s with %s", ov.Kind(), nv.Kind())
 	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Struct {
 		nv = structToMap(nv)
 	}
 	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Map {
-		Log.Debugf("mergeMaps")
 		m.mergeMaps(ov, nv)
 		return
 	}
@@ -539,13 +537,12 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 func (m *merger) mergeMaps(ov, nv reflect.Value) {
 	for _, key := range nv.MapKeys() {
 		if !ov.MapIndex(key).IsValid() {
-			Log.Debugf("B Setting %v to %#v", key.Interface(), nv.MapIndex(key).Interface())
 			ovElem := reflect.New(ov.Type().Elem()).Elem()
 			m.assignValue(ovElem, nv.MapIndex(key))
 			if ov.IsNil() {
 				ov.Set(reflect.MakeMap(ov.Type()))
 			}
-			Log.Debugf("C Setting %v to %#v", key.Interface(), ovElem.Interface())
+			Log.Debugf("Setting %v to %#v", key.Interface(), ovElem.Interface())
 			ov.SetMapIndex(key, ovElem)
 		} else {
 			ovi := reflect.ValueOf(ov.MapIndex(key).Interface())
