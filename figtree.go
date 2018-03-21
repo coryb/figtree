@@ -410,6 +410,40 @@ func (m *merger) setSource(v reflect.Value) {
 	}
 }
 
+func (m *merger) assignValue(dest, src reflect.Value) {
+	if src.Type().AssignableTo(dest.Type()) {
+		dest.Set(src)
+		return
+	}
+	if dest.CanAddr() {
+		if option, ok := dest.Addr().Interface().(Option); ok {
+			destOptionValue := reflect.ValueOf(option.GetValue())
+			// map interface type to real-ish type:
+			src = reflect.ValueOf(src.Interface())
+			if src.Type().AssignableTo(destOptionValue.Type()) {
+				option.SetValue(src.Interface())
+				option.SetSource(m.sourceFile)
+				return
+			} else {
+				panic(fmt.Errorf("%s is not assinable to %s", src.Type(), destOptionValue.Type()))
+			}
+		}
+	}
+	// make copy so we can reliably Addr it to see if it fits the
+	// Option interface.
+	srcCopy := reflect.New(src.Type()).Elem()
+	srcCopy.Set(src)
+	if option, ok := srcCopy.Addr().Interface().(Option); ok {
+		srcOptionValue := reflect.ValueOf(option.GetValue())
+		if srcOptionValue.Type().AssignableTo(dest.Type()) {
+			m.assignValue(dest, srcOptionValue)
+			return
+		} else {
+			panic(fmt.Errorf("%s is not assinable to %s", srcOptionValue.Type(), dest.Type()))
+		}
+	}
+}
+
 func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	if ov.Kind() == reflect.Ptr {
 		ov = ov.Elem()
@@ -417,10 +451,12 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	if nv.Kind() == reflect.Ptr {
 		nv = nv.Elem()
 	}
+	Log.Debugf("Merging %s with %s", ov.Kind(), nv.Kind())
 	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Struct {
 		nv = structToMap(nv)
 	}
 	if ov.Kind() == reflect.Map && nv.Kind() == reflect.Map {
+		Log.Debugf("mergeMaps")
 		m.mergeMaps(ov, nv)
 		return
 	}
@@ -465,56 +501,36 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 		ovField := ov.FieldByName(nvStructField.Name)
 
 		if (isEmpty(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isEmpty(nvField) && !isSame(ovField, nvField) {
-			if nvField.Type().AssignableTo(ovField.Type()) {
-				Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
-				ovField.Set(nvField)
-				continue
-			}
-			if ovField.CanAddr() {
-				if option, ok := ovField.Addr().Interface().(Option); ok {
-					ovOptionValue := reflect.ValueOf(option.GetValue())
-					if nvField.Type().AssignableTo(ovOptionValue.Type()) {
-						Log.Debugf("Setting %s value to %#v", nv.Type().Field(i).Name, nvField.Interface())
-						option.SetValue(nvField.Interface())
-						option.SetSource(m.sourceFile)
-						continue
-					} else {
-						panic(fmt.Errorf("%s is not assinable to %s", nvField.Type(), ovOptionValue.Type()))
-					}
-				}
-			}
-			panic(fmt.Errorf("unable to merge %T with %T", ovField.Interface(), nvField.Interface()))
-		} else {
-			switch ovField.Kind() {
-			case reflect.Map:
-				if nvField.Len() > 0 {
-					Log.Debugf("Merging: %v with %v", ovField, nvField)
-					m.mergeMaps(ovField, nvField)
-				}
-			case reflect.Slice:
-				if nvField.Len() > 0 {
-					Log.Debugf("Merging: %v with %v", ovField, nvField)
-					if ovField.CanSet() {
-						if ovField.Len() == 0 {
-							ovField.Set(nvField)
-						} else {
-							Log.Debugf("Merging: %v with %v", ovField, nvField)
-							ovField.Set(m.mergeArrays(ovField, nvField))
-						}
-					}
-
-				}
-			case reflect.Array:
-				if nvField.Len() > 0 {
+			Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, ovField.Interface())
+			m.assignValue(ovField, nvField)
+		}
+		switch ovField.Kind() {
+		case reflect.Map:
+			Log.Debugf("Merging: %v with %v", ovField, nvField)
+			m.mergeStructs(ovField, nvField)
+		case reflect.Slice:
+			if nvField.Len() > 0 {
+				Log.Debugf("Merging: %v with %v", ovField, nvField)
+				if ovField.CanSet() {
+					// if ovField.Len() == 0 {
+					// 	ovField.Set(nvField)
+					// } else {
 					Log.Debugf("Merging: %v with %v", ovField, nvField)
 					ovField.Set(m.mergeArrays(ovField, nvField))
+					// }
 				}
-			case reflect.Struct:
-				// only merge structs if they are not an Option type:
-				if _, ok := ovField.Addr().Interface().(Option); !ok {
-					Log.Debugf("Merging: %v with %v", ovField, nvField)
-					m.mergeStructs(ovField, nvField)
-				}
+
+			}
+		case reflect.Array:
+			if nvField.Len() > 0 {
+				Log.Debugf("Merging: %v with %v", ovField, nvField)
+				ovField.Set(m.mergeArrays(ovField, nvField))
+			}
+		case reflect.Struct:
+			// only merge structs if they are not an Option type:
+			if _, ok := ovField.Addr().Interface().(Option); !ok {
+				Log.Debugf("Merging: %v with %v", ovField, nvField)
+				m.mergeStructs(ovField, nvField)
 			}
 		}
 	}
@@ -523,8 +539,14 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 func (m *merger) mergeMaps(ov, nv reflect.Value) {
 	for _, key := range nv.MapKeys() {
 		if !ov.MapIndex(key).IsValid() {
-			Log.Debugf("Setting %v to %#v", key.Interface(), nv.MapIndex(key).Interface())
-			ov.SetMapIndex(key, nv.MapIndex(key))
+			Log.Debugf("B Setting %v to %#v", key.Interface(), nv.MapIndex(key).Interface())
+			ovElem := reflect.New(ov.Type().Elem()).Elem()
+			m.assignValue(ovElem, nv.MapIndex(key))
+			if ov.IsNil() {
+				ov.Set(reflect.MakeMap(ov.Type()))
+			}
+			Log.Debugf("C Setting %v to %#v", key.Interface(), ovElem.Interface())
+			ov.SetMapIndex(key, ovElem)
 		} else {
 			ovi := reflect.ValueOf(ov.MapIndex(key).Interface())
 			nvi := reflect.ValueOf(nv.MapIndex(key).Interface())
@@ -581,7 +603,9 @@ Outer:
 			}
 		}
 		Log.Debugf("Appending %v to %v", niv.Interface(), ov)
-		ov = reflect.Append(ov, niv)
+		ovElem := reflect.New(ov.Type().Elem())
+		m.assignValue(ovElem.Elem(), niv)
+		ov = reflect.Append(ov, ovElem.Elem())
 	}
 	return ov
 }

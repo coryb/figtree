@@ -530,6 +530,101 @@ func TestMergeMapWithStructUsingOptions(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
+	dest := struct {
+		Strings ListStringOption
+	}{}
+
+	src := map[string]interface{}{
+		"strings": []string{
+			"abc",
+			"def",
+		},
+	}
+
+	Merge(&dest, &src)
+
+	expected := struct {
+		Strings ListStringOption
+	}{
+		ListStringOption{
+			StringOption{"merge", true, "abc"},
+			StringOption{"merge", true, "def"},
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeMapWithStructUsingListOptions(t *testing.T) {
+	dest := map[string]interface{}{
+		"strings": []string{},
+	}
+
+	src := struct {
+		Strings ListStringOption
+	}{
+		Strings: ListStringOption{
+			NewStringOption("abc"),
+			NewStringOption("def"),
+		},
+	}
+
+	Merge(&dest, &src)
+	expected := map[string]interface{}{
+		"strings": []string{"abc", "def"},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeStructUsingMapOptionsWithMap(t *testing.T) {
+	dest := struct {
+		Strings MapStringOption
+	}{}
+
+	src := map[string]interface{}{
+		"strings": map[string]interface{}{
+			"key1": "val1",
+			"key2": "val2",
+		},
+	}
+
+	Merge(&dest, &src)
+
+	expected := struct {
+		Strings MapStringOption
+	}{
+		Strings: MapStringOption{
+			"key1": StringOption{"merge", true, "val1"},
+			"key2": StringOption{"merge", true, "val2"},
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeMapWithStructUsingMapOptions(t *testing.T) {
+	dest := map[string]interface{}{
+		"strings": map[string]string{},
+	}
+
+	src := struct {
+		Strings MapStringOption
+	}{
+		Strings: MapStringOption{
+			"key1": NewStringOption("val1"),
+			"key2": NewStringOption("val2"),
+		},
+	}
+
+	Merge(&dest, &src)
+	expected := map[string]interface{}{
+		"strings": map[string]string{
+			"key1": "val1",
+			"key2": "val2",
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 	dest := struct {
 		FieldName string
