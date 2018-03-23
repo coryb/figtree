@@ -85,6 +85,10 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 }
 
 func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) (err error) {
+	if !reflect.ValueOf(options).IsValid() {
+		return fmt.Errorf("options argument [%#v] is not valid", options)
+	}
+
 	f.PopulateEnv(options)
 
 	defer func(mapType, iface reflect.Type) {
@@ -358,6 +362,9 @@ func isDefault(v reflect.Value) bool {
 }
 
 func isEmpty(v reflect.Value) bool {
+	if !v.IsValid() {
+		return true
+	}
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
@@ -420,6 +427,9 @@ func (m *merger) assignValue(dest, src reflect.Value) {
 			destOptionValue := reflect.ValueOf(option.GetValue())
 			// map interface type to real-ish type:
 			src = reflect.ValueOf(src.Interface())
+			if !src.IsValid() {
+				return
+			}
 			if src.Type().AssignableTo(destOptionValue.Type()) {
 				option.SetValue(src.Interface())
 				option.SetSource(m.sourceFile)
@@ -547,6 +557,9 @@ func (m *merger) mergeMaps(ov, nv reflect.Value) {
 		} else {
 			ovi := reflect.ValueOf(ov.MapIndex(key).Interface())
 			nvi := reflect.ValueOf(nv.MapIndex(key).Interface())
+			if !nvi.IsValid() {
+				continue
+			}
 			switch ovi.Kind() {
 			case reflect.Map:
 				Log.Debugf("Merging: %v with %v", ovi.Interface(), nvi.Interface())
@@ -559,7 +572,7 @@ func (m *merger) mergeMaps(ov, nv reflect.Value) {
 				ov.SetMapIndex(key, m.mergeArrays(ovi, nvi))
 			default:
 				if isEmpty(ovi) {
-					if nvi.Type().AssignableTo(ovi.Type()) {
+					if !ovi.IsValid() || nvi.Type().AssignableTo(ovi.Type()) {
 						ov.SetMapIndex(key, nvi)
 					} else {
 						// to check for the Option interface we need the Addr of the value, but

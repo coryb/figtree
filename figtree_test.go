@@ -808,3 +808,169 @@ func TestMakeMergeStructWithJson(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, input, string(output))
 }
+
+func TestMergeWithZeros(t *testing.T) {
+	var zero interface{}
+	dest := map[string]interface{}{
+		"value": zero,
+	}
+	src := map[string]interface{}{
+		"value": zero,
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"value": zero,
+	}, dest)
+
+	dest = map[string]interface{}{
+		"value": StringOption{},
+	}
+	src = map[string]interface{}{
+		"value": zero,
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"value": StringOption{},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"value": zero,
+	}
+	src = map[string]interface{}{
+		"value": StringOption{},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"value": StringOption{},
+	}, dest)
+
+	// Lists
+	dest = map[string]interface{}{
+		"list": []interface{}{},
+	}
+	src = map[string]interface{}{
+		"list": []interface{}{zero},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": []interface{}{zero},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"list": []interface{}{StringOption{}},
+	}
+	src = map[string]interface{}{
+		"list": []interface{}{zero},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": []interface{}{StringOption{}, zero},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"list": []interface{}{zero},
+	}
+	src = map[string]interface{}{
+		"list": []interface{}{StringOption{}},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": []interface{}{zero, StringOption{}},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"list": []interface{}{},
+	}
+	src = map[string]interface{}{
+		"list": ListStringOption{StringOption{}},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": []interface{}{StringOption{}},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"list": ListStringOption{StringOption{}},
+	}
+	src = map[string]interface{}{
+		"list": []interface{}{zero},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": ListStringOption{StringOption{}},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"list": []interface{}{zero},
+	}
+	src = map[string]interface{}{
+		"list": ListStringOption{StringOption{}},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"list": []interface{}{zero, StringOption{}},
+	}, dest)
+
+	// Maps
+	dest = map[string]interface{}{
+		"map": map[string]interface{}{},
+	}
+	src = map[string]interface{}{
+		"map": map[string]interface{}{
+			"key": zero,
+		},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"map": map[string]interface{}{
+			"key": zero,
+		},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"map": zero,
+	}
+	src = map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}
+	src = map[string]interface{}{
+		"map": zero,
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}, dest)
+
+	dest = map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}
+	src = map[string]interface{}{
+		"map": map[string]interface{}{
+			"key": zero,
+		},
+	}
+	Merge(&dest, &src)
+	assert.Equal(t, map[string]interface{}{
+		"map": MapStringOption{
+			"key": StringOption{},
+		},
+	}, dest)
+}
