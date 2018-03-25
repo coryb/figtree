@@ -2,15 +2,29 @@ package figtree
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"path"
 	"reflect"
+	"runtime"
 	"testing"
 
 	yaml "gopkg.in/coryb/yaml.v2"
 	logging "gopkg.in/op/go-logging.v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+type info struct {
+	name string
+	line string
+}
+
+func line() string {
+	_, file, line, _ := runtime.Caller(1)
+	return fmt.Sprintf("%s:%d", path.Base(file), line)
+}
 
 func init() {
 	StringifyValue = false
@@ -284,7 +298,7 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 
 	err := LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
-	assert.Exactly(t, expected, opts)
+	require.Exactly(t, expected, opts)
 }
 
 func TestMergeMapWithStruct(t *testing.T) {
@@ -811,166 +825,500 @@ func TestMakeMergeStructWithJson(t *testing.T) {
 
 func TestMergeWithZeros(t *testing.T) {
 	var zero interface{}
-	dest := map[string]interface{}{
-		"value": zero,
-	}
-	src := map[string]interface{}{
-		"value": zero,
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"value": zero,
-	}, dest)
-
-	dest = map[string]interface{}{
-		"value": StringOption{},
-	}
-	src = map[string]interface{}{
-		"value": zero,
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"value": StringOption{},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"value": zero,
-	}
-	src = map[string]interface{}{
-		"value": StringOption{},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"value": StringOption{},
-	}, dest)
-
-	// Lists
-	dest = map[string]interface{}{
-		"list": []interface{}{},
-	}
-	src = map[string]interface{}{
-		"list": []interface{}{zero},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": []interface{}{zero},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"list": []interface{}{StringOption{}},
-	}
-	src = map[string]interface{}{
-		"list": []interface{}{zero},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": []interface{}{StringOption{}, zero},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"list": []interface{}{zero},
-	}
-	src = map[string]interface{}{
-		"list": []interface{}{StringOption{}},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": []interface{}{zero, StringOption{}},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"list": []interface{}{},
-	}
-	src = map[string]interface{}{
-		"list": ListStringOption{StringOption{}},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": []interface{}{StringOption{}},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"list": ListStringOption{StringOption{}},
-	}
-	src = map[string]interface{}{
-		"list": []interface{}{zero},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": ListStringOption{StringOption{}},
-	}, dest)
-
-	dest = map[string]interface{}{
-		"list": []interface{}{zero},
-	}
-	src = map[string]interface{}{
-		"list": ListStringOption{StringOption{}},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"list": []interface{}{zero, StringOption{}},
-	}, dest)
-
-	// Maps
-	dest = map[string]interface{}{
-		"map": map[string]interface{}{},
-	}
-	src = map[string]interface{}{
-		"map": map[string]interface{}{
-			"key": zero,
+	tests := []struct {
+		info info
+		dest map[string]interface{}
+		src  map[string]interface{}
+		want map[string]interface{}
+	}{
+		{
+			info: info{"zero to nil", line()},
+			dest: map[string]interface{}{},
+			src: map[string]interface{}{
+				"value": zero,
+			},
+			want: map[string]interface{}{
+				"value": zero,
+			},
+		},
+		{
+			info: info{"zero to zero", line()},
+			dest: map[string]interface{}{
+				"value": zero,
+			},
+			src: map[string]interface{}{
+				"value": zero,
+			},
+			want: map[string]interface{}{
+				"value": zero,
+			},
+		},
+		{
+			info: info{"zero to StringOption", line()},
+			dest: map[string]interface{}{
+				"value": StringOption{},
+			},
+			src: map[string]interface{}{
+				"value": zero,
+			},
+			want: map[string]interface{}{
+				"value": StringOption{},
+			},
+		},
+		{
+			info: info{"StringOption to zero", line()},
+			dest: map[string]interface{}{
+				"value": zero,
+			},
+			src: map[string]interface{}{
+				"value": StringOption{},
+			},
+			want: map[string]interface{}{
+				"value": StringOption{},
+			},
+		},
+		{
+			info: info{"list zero to nil", line()},
+			dest: map[string]interface{}{
+				"value": nil,
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+		},
+		{
+			info: info{"list zero to empty", line()},
+			dest: map[string]interface{}{
+				"value": []interface{}{},
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+		},
+		{
+			info: info{"list zero to StringOption", line()},
+			dest: map[string]interface{}{
+				"value": []interface{}{StringOption{}},
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{StringOption{}, zero},
+			},
+		},
+		{
+			info: info{"list StringOption to zero", line()},
+			dest: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{StringOption{}},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{zero, StringOption{}},
+			},
+		},
+		{
+			info: info{"list StringOption to empty", line()},
+			dest: map[string]interface{}{
+				"value": []interface{}{},
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{StringOption{}},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{StringOption{}},
+			},
+		},
+		{
+			info: info{"zero to ListStringOption", line()},
+			dest: map[string]interface{}{
+				"value": ListStringOption{StringOption{}},
+			},
+			src: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			want: map[string]interface{}{
+				"value": ListStringOption{StringOption{}},
+			},
+		},
+		{
+			info: info{"ListStringOption to zero", line()},
+			dest: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+			src: map[string]interface{}{
+				"value": ListStringOption{StringOption{}},
+			},
+			want: map[string]interface{}{
+				"value": []interface{}{zero},
+			},
+		},
+		{
+			info: info{"map zero to nil", line()},
+			dest: map[string]interface{}{
+				"value": nil,
+			},
+			src: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+			want: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+		},
+		{
+			info: info{"map zero to empty", line()},
+			dest: map[string]interface{}{
+				"value": map[string]interface{}{},
+			},
+			src: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+			want: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+		},
+		{
+			info: info{"MapStringOption to zero", line()},
+			dest: map[string]interface{}{
+				"value": zero,
+			},
+			src: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+			want: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+		},
+		{
+			info: info{"map zero to StringOption", line()},
+			dest: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+			src: map[string]interface{}{
+				"value": zero,
+			},
+			want: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+		},
+		{
+			info: info{"map zero key to StringOption", line()},
+			dest: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+			src: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+			want: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+		},
+		{
+			info: info{"map StringOption to zero key", line()},
+			dest: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": zero,
+				},
+			},
+			src: map[string]interface{}{
+				"value": MapStringOption{
+					"key": StringOption{},
+				},
+			},
+			want: map[string]interface{}{
+				"value": map[string]interface{}{
+					"key": StringOption{},
+				},
+			},
 		},
 	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"map": map[string]interface{}{
-			"key": zero,
-		},
-	}, dest)
 
-	dest = map[string]interface{}{
-		"map": zero,
+	for _, tt := range tests {
+		require.True(t,
+			t.Run(tt.info.name, func(t *testing.T) {
+				// assert.NotPanics(t, func() {
+				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				Log.Debugf("%s", tt.info.name)
+				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				Merge(&tt.dest, &tt.src)
+				// })
+				assert.Equal(t, tt.want, tt.dest, tt.info.line)
+			}),
+		)
 	}
-	src = map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
-		},
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
-		},
-	}, dest)
+}
 
-	dest = map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
+func TestMergeStructsWithZeros(t *testing.T) {
+	var zero interface{}
+	tests := []struct {
+		info info
+		dest interface{}
+		src  interface{}
+		want interface{}
+		line string
+	}{
+		{
+			info: info{"bare nil", line()},
+			dest: struct {
+				Value interface{}
+			}{},
+			src: struct {
+				Value interface{}
+			}{zero},
+			want: struct {
+				Value interface{}
+			}{zero},
 		},
-	}
-	src = map[string]interface{}{
-		"map": zero,
-	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
+		{
+			info: info{"bare zero", line()},
+			dest: struct {
+				Value interface{}
+			}{zero},
+			src: struct {
+				Value interface{}
+			}{zero},
+			want: struct {
+				Value interface{}
+			}{zero},
 		},
-	}, dest)
+		{
+			info: info{"bare StringOption", line()},
+			dest: struct {
+				Value interface{}
+			}{StringOption{}},
+			src: struct {
+				Value interface{}
+			}{StringOption{}},
+			want: struct {
+				Value interface{}
+			}{StringOption{}},
+		},
+		{
+			info: info{"bare StringOptions to zero", line()},
+			dest: struct {
+				Value interface{}
+			}{zero},
+			src: struct {
+				Value StringOption
+			}{StringOption{}},
+			want: struct {
+				Value interface{}
+			}{zero},
+		},
+		{
+			info: info{"list zero to nil", line()},
+			dest: struct {
+				Value interface{}
+			}{},
+			src: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+		},
+		{
+			info: info{"list zero to empty", line()},
+			dest: struct {
+				Value interface{}
+			}{[]interface{}{}},
+			src: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+		},
+		{
+			info: info{"list zero to StringOption", line()},
+			dest: struct {
+				Value interface{}
+			}{[]interface{}{StringOption{}}},
+			src: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{StringOption{}, zero}},
+		},
+		{
+			info: info{"list StringOption to zero", line()},
+			dest: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			src: struct {
+				Value interface{}
+			}{[]interface{}{StringOption{}}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{zero, StringOption{}}},
+		},
+		{
+			info: info{"list ListStringOption to empty list", line()},
+			line: line(),
+			dest: struct {
+				Value interface{}
+			}{[]interface{}{}},
+			src: struct {
+				Value ListStringOption
+			}{ListStringOption{StringOption{}}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+		},
+		{
 
-	dest = map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
+			info: info{"list zero list to ListStringOption", line()},
+			dest: struct {
+				Value ListStringOption
+			}{ListStringOption{StringOption{}}},
+			src: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			want: struct {
+				Value ListStringOption
+			}{ListStringOption{StringOption{}}},
+		},
+		{
+			info: info{"list ListStringOption to zero list", line()},
+			dest: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+			src: struct {
+				Value ListStringOption
+			}{ListStringOption{StringOption{}}},
+			want: struct {
+				Value interface{}
+			}{[]interface{}{zero}},
+		},
+		{
+			info: info{"map zero to nil", line()},
+			dest: struct {
+				Value interface{}
+			}{},
+			src: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+			want: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+		},
+		{
+			info: info{"map zero to empty", line()},
+			dest: struct {
+				Value interface{}
+			}{map[string]interface{}{}},
+			src: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+			want: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+		},
+		{
+			info: info{"map StringOption to zero", line()},
+			dest: struct {
+				Value interface{}
+			}{zero},
+			src: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+			want: struct {
+				Value interface{}
+			}{map[string]interface{}{"key": zero}},
+		},
+		{
+			info: info{"MapStringOption StringOption to zero", line()},
+			dest: struct {
+				Value interface{}
+			}{zero},
+			src: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
+			want: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
+		},
+		{
+			info: info{"zero to MapStringOption StringOption", line()},
+			dest: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
+			src: struct {
+				Value interface{}
+			}{zero},
+			want: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
+		},
+		{
+			info: info{"map zero to MapStringOption StringOption", line()},
+			dest: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
+			src: struct {
+				Value interface{}
+			}{map[string]interface{}{
+				"key": zero,
+			}},
+			want: struct {
+				Value interface{}
+			}{MapStringOption{
+				"key": StringOption{},
+			}},
 		},
 	}
-	src = map[string]interface{}{
-		"map": map[string]interface{}{
-			"key": zero,
-		},
+	for _, tt := range tests {
+		require.True(t,
+			t.Run(tt.info.name, func(t *testing.T) {
+				// assert.NotPanics(t, func() {
+				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				Log.Debugf("%s", tt.info.name)
+				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				Merge(&tt.dest, &tt.src)
+				// })
+				assert.Equal(t, tt.want, tt.dest, tt.info.line)
+			}),
+		)
 	}
-	Merge(&dest, &src)
-	assert.Equal(t, map[string]interface{}{
-		"map": MapStringOption{
-			"key": StringOption{},
-		},
-	}, dest)
 }

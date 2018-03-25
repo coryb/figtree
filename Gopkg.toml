@@ -1,4 +1,3 @@
-
 # Gopkg.toml example
 #
 # Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
@@ -20,12 +19,19 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+[prune]
+  go-tests = true
+  unused-packages = true
+  non-go = true
 
 [[constraint]]
   name = "github.com/cheekybits/genny"
+  branch = "master"
+  source = "github.com/coryb/genny"
 
 [[constraint]]
   name = "github.com/fatih/camelcase"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/pkg/errors"
@@ -41,6 +47,7 @@
 
 [[constraint]]
   name = "gopkg.in/coryb/yaml.v2"
+  branch = "v2"
 
 [[constraint]]
   name = "gopkg.in/op/go-logging.v1"

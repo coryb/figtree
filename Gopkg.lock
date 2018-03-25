@@ -4,7 +4,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/alecthomas/template"
-  packages = [".","parse"]
+  packages = [
+    ".",
+    "parse"
+  ]
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
 
 [[projects]]
@@ -18,6 +21,7 @@
   name = "github.com/cheekybits/genny"
   packages = ["generic"]
   revision = "9127e812e1e9e501ce899a18121d316ecb52e4ba"
+  source = "github.com/coryb/genny"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -43,7 +47,10 @@
 
 [[projects]]
   name = "github.com/stretchr/testify"
-  packages = ["assert"]
+  packages = [
+    "assert",
+    "require"
+  ]
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
@@ -68,6 +75,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1879d7c016fcc8e210ca7fdeed4b099f4e7fc931d34ff47a170222c60eea8aab"
+  inputs-digest = "3f56166c5e219a476609b98112eabdcd392e1fb573531e594c6e68e44bede533"
   solver-name = "gps-cdcl"
   solver-version = 1
