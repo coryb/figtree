@@ -235,6 +235,10 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 		} else if typ.Kind() == reflect.Map {
 			for _, key := range v.MapKeys() {
 				keyval := reflect.ValueOf(v.MapIndex(key).Interface())
+				// skip invalid (ie nil) key values
+				if !keyval.IsValid() {
+					continue
+				}
 				if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
 					keyval = makeMergeStruct(keyval.Elem())
 				} else if keyval.Kind() == reflect.Map {
@@ -276,6 +280,10 @@ func mapToStruct(src reflect.Value) reflect.Value {
 	for _, key := range src.MapKeys() {
 		structFieldName := camelCase(key.String())
 		keyval := reflect.ValueOf(src.MapIndex(key).Interface())
+		// skip invalid (ie nil) key values
+		if !keyval.IsValid() {
+			continue
+		}
 		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
 			keyval = mapToStruct(keyval.Elem()).Addr()
 			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))

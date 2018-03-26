@@ -705,6 +705,7 @@ func TestMakeMergeStruct(t *testing.T) {
 		"map": map[string]interface{}{
 			"mapkey": "mapval2",
 		},
+		"nilmap": nil,
 	}
 
 	got := MakeMergeStruct(input)
@@ -1073,6 +1074,15 @@ func TestMergeWithZeros(t *testing.T) {
 				Merge(&tt.dest, &tt.src)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
+
+				got := MakeMergeStruct(tt.dest)
+				Merge(got, tt.dest)
+				Merge(got, tt.src)
+
+				expected := MakeMergeStruct(tt.want)
+				Merge(expected, tt.want)
+
+				assert.Equal(t, expected, got, tt.info.line)
 			}),
 		)
 	}
@@ -1318,6 +1328,16 @@ func TestMergeStructsWithZeros(t *testing.T) {
 				Merge(&tt.dest, &tt.src)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
+
+				got := MakeMergeStruct(tt.dest)
+				Merge(got, tt.dest)
+				Merge(got, tt.src)
+
+				expected := MakeMergeStruct(tt.want)
+				Merge(expected, tt.want)
+
+				assert.Equal(t, expected, got, tt.info.line)
+
 			}),
 		)
 	}
