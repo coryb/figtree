@@ -17,13 +17,6 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/cheekybits/genny"
-  packages = ["generic"]
-  revision = "9127e812e1e9e501ce899a18121d316ecb52e4ba"
-  source = "github.com/coryb/genny"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
