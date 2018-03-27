@@ -221,7 +221,6 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					continue
 				}
 				if f, ok := foundFields[field.Name]; ok {
-					Log.Debugf("attempting to merge %s with %s", f.Type.Name(), field.Type.Name())
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
 							// we have 2 fields with the same name and they are both structs, so we need
