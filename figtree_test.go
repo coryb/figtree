@@ -371,6 +371,46 @@ func TestMergeMapsIntoStructWithNull(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeStringIntoStringOption(t *testing.T) {
+	src1 := struct {
+		Value StringOption
+	}{}
+
+	src2 := struct {
+		Value string
+	}{"val1"}
+
+	dest := MakeMergeStruct(src1, src2)
+
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		Value StringOption
+	}{StringOption{"merge", true, "val1"}}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeStringOptions(t *testing.T) {
+	src1 := struct {
+		Value StringOption
+	}{}
+
+	src2 := struct {
+		Value StringOption
+	}{NewStringOption("val1")}
+
+	dest := MakeMergeStruct(src1, src2)
+
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		Value StringOption
+	}{StringOption{"default", true, "val1"}}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMergeMapWithStruct(t *testing.T) {
 	dest := map[string]interface{}{
 		"mapkey": "mapval1",

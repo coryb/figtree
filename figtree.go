@@ -221,12 +221,15 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					continue
 				}
 				if f, ok := foundFields[field.Name]; ok {
-					if f.Type.Kind() == reflect.Struct {
-						// we have 2 fields with the same name and they are both structs, so we need
-						// to merge the existig struct with the new one in case they are different
-						newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
-						f.Type = newval.Type()
-						foundFields[field.Name] = f
+					Log.Debugf("attempting to merge %s with %s", f.Type.Name(), field.Type.Name())
+					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
+						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
+							// we have 2 fields with the same name and they are both structs, so we need
+							// to merge the existig struct with the new one in case they are different
+							newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
+							f.Type = newval.Type()
+							foundFields[field.Name] = f
+						}
 					}
 					// field already found, skip
 					continue
@@ -260,7 +263,7 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					Tag:  reflect.StructTag(fmt.Sprintf(`json:"%s" yaml:"%s"`, key.String(), key.String())),
 				}
 				if f, ok := foundFields[field.Name]; ok {
-					if f.Type.Kind() == reflect.Struct {
+					if f.Type.Kind() == reflect.Struct && t.Kind() == reflect.Struct {
 						// we have 2 fields with the same name and they are both structs, so we need
 						// to merge the existig struct with the new one in case they are different
 						newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
