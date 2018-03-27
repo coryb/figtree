@@ -301,11 +301,82 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	require.Exactly(t, expected, opts)
 }
 
+func TestMergeMapsWithNull(t *testing.T) {
+	dest := map[string]interface{}{
+		"requires": map[string]interface{}{
+			"pkgA": nil,
+			"pkgB": ">1.2.3",
+		},
+	}
+
+	src := map[string]interface{}{
+		"requires": map[string]interface{}{
+			"pkgC": "<1.2.3",
+			"pkgD": nil,
+		},
+	}
+
+	Merge(dest, src)
+
+	expected := map[string]interface{}{
+		"requires": map[string]interface{}{
+			"pkgA": nil,
+			"pkgB": ">1.2.3",
+			"pkgC": "<1.2.3",
+			"pkgD": nil,
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeMapsIntoStructWithNull(t *testing.T) {
+	src1 := map[string]interface{}{
+		"requires": map[string]interface{}{
+			"pkgA": nil,
+			"pkgB": ">1.2.3",
+		},
+	}
+
+	src2 := map[string]interface{}{
+		"requires": map[string]interface{}{
+			"pkgC": "<1.2.3",
+			"pkgD": nil,
+		},
+	}
+
+	dest := MakeMergeStruct(src1, src2)
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		Requires struct {
+			PkgA interface{} `json:"pkgA" yaml:"pkgA"`
+			PkgB string      `json:"pkgB" yaml:"pkgB"`
+			PkgC string      `json:"pkgC" yaml:"pkgC"`
+			PkgD interface{} `json:"pkgD" yaml:"pkgD"`
+		} `json:"requires" yaml:"requires"`
+	}{
+		struct {
+			PkgA interface{} `json:"pkgA" yaml:"pkgA"`
+			PkgB string      `json:"pkgB" yaml:"pkgB"`
+			PkgC string      `json:"pkgC" yaml:"pkgC"`
+			PkgD interface{} `json:"pkgD" yaml:"pkgD"`
+		}{
+			PkgA: nil,
+			PkgB: ">1.2.3",
+			PkgC: "<1.2.3",
+			PkgD: nil,
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMergeMapWithStruct(t *testing.T) {
 	dest := map[string]interface{}{
 		"mapkey": "mapval1",
 		"map": map[string]interface{}{
-			"mapkey": "mapval2",
+			"mapkey":  "mapval2",
+			"nullkey": nil,
 		},
 	}
 
@@ -331,6 +402,7 @@ func TestMergeMapWithStruct(t *testing.T) {
 		"struct-field": "field1",
 		"map": map[string]interface{}{
 			"mapkey":       "mapval2",
+			"nullkey":      nil,
 			"struct-field": "field2",
 		},
 	}
@@ -359,32 +431,36 @@ func TestMergeStructWithMap(t *testing.T) {
 	src := map[string]interface{}{
 		"mapkey": "mapval1",
 		"map": map[string]interface{}{
-			"mapkey": "mapval2",
+			"mapkey":  "mapval2",
+			"nullkey": nil,
 		},
 	}
 
-	m := &merger{}
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	merged := MakeMergeStruct(&dest, &src)
+	Merge(merged, &dest)
+	Merge(merged, &src)
 
 	expected := struct {
-		StructField string
-		Mapkey      string
-		Map         struct {
-			StructField string
+		Map struct {
 			Mapkey      string
+			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
+			StructField string
 		}
+		Mapkey      string
+		StructField string
 	}{
-		StructField: "field1",
-		Mapkey:      "mapval1",
 		Map: struct {
-			StructField string
 			Mapkey      string
+			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
+			StructField string
 		}{
-			StructField: "field2",
 			Mapkey:      "mapval2",
+			StructField: "field2",
 		},
+		Mapkey:      "mapval1",
+		StructField: "field1",
 	}
-	assert.Equal(t, expected, dest)
+	assert.Equal(t, &expected, merged)
 }
 
 func TestMergeStructUsingOptionsWithMap(t *testing.T) {

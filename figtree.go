@@ -205,8 +205,7 @@ func inlineField(field reflect.StructField) bool {
 }
 
 func makeMergeStruct(values ...reflect.Value) reflect.Value {
-	fields := []reflect.StructField{}
-	foundFields := map[string]struct{}{}
+	foundFields := map[string]reflect.StructField{}
 	for i := 0; i < len(values); i++ {
 		v := values[i]
 		if v.Kind() == reflect.Ptr {
@@ -221,7 +220,14 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					// unexported field, skip
 					continue
 				}
-				if _, ok := foundFields[field.Name]; ok {
+				if f, ok := foundFields[field.Name]; ok {
+					if f.Type.Kind() == reflect.Struct {
+						// we have 2 fields with the same name and they are both structs, so we need
+						// to merge the existig struct with the new one in case they are different
+						newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
+						f.Type = newval.Type()
+						foundFields[field.Name] = f
+					}
 					// field already found, skip
 					continue
 				}
@@ -229,36 +235,50 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					values = append(values, v.Field(i))
 					continue
 				}
-				foundFields[field.Name] = struct{}{}
-				fields = append(fields, field)
+				foundFields[field.Name] = field
 			}
 		} else if typ.Kind() == reflect.Map {
 			for _, key := range v.MapKeys() {
 				keyval := reflect.ValueOf(v.MapIndex(key).Interface())
-				// skip invalid (ie nil) key values
-				if !keyval.IsValid() {
-					continue
-				}
 				if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
 					keyval = makeMergeStruct(keyval.Elem())
 				} else if keyval.Kind() == reflect.Map {
 					keyval = makeMergeStruct(keyval).Elem()
 				}
+				var t reflect.Type
+				if !keyval.IsValid() {
+					// this nonsense is to create a generic `interface{}` type.  There is
+					// probably an easier to do this, but it eludes me at the moment.
+					var dummy interface{}
+					t = reflect.ValueOf(&dummy).Elem().Type()
+				} else {
+					t = reflect.ValueOf(keyval.Interface()).Type()
+				}
 				field = reflect.StructField{
 					Name: camelCase(key.String()),
-					Type: reflect.ValueOf(keyval.Interface()).Type(),
+					Type: t,
 					Tag:  reflect.StructTag(fmt.Sprintf(`json:"%s" yaml:"%s"`, key.String(), key.String())),
 				}
-				if _, ok := foundFields[field.Name]; ok {
+				if f, ok := foundFields[field.Name]; ok {
+					if f.Type.Kind() == reflect.Struct {
+						// we have 2 fields with the same name and they are both structs, so we need
+						// to merge the existig struct with the new one in case they are different
+						newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
+						f.Type = newval.Type()
+						foundFields[field.Name] = f
+					}
 					// field already found, skip
 					continue
 				}
-				foundFields[field.Name] = struct{}{}
-				fields = append(fields, field)
+				foundFields[field.Name] = field
 			}
 		}
 	}
 
+	fields := []reflect.StructField{}
+	for _, value := range foundFields {
+		fields = append(fields, value)
+	}
 	sort.Slice(fields, func(i, j int) bool {
 		return fields[i].Name < fields[j].Name
 	})
