@@ -263,11 +263,13 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 				}
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && t.Kind() == reflect.Struct {
-						// we have 2 fields with the same name and they are both structs, so we need
-						// to merge the existig struct with the new one in case they are different
-						newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
-						f.Type = newval.Type()
-						foundFields[field.Name] = f
+						if fName, tName := f.Type.Name(), t.Name(); fName == "" || tName == "" || fName != tName {
+							// we have 2 fields with the same name and they are both structs, so we need
+							// to merge the existig struct with the new one in case they are different
+							newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
+							f.Type = newval.Type()
+							foundFields[field.Name] = f
+						}
 					}
 					// field already found, skip
 					continue

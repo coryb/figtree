@@ -411,6 +411,53 @@ func TestMergeStringOptions(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeMapStringIntoStringOption(t *testing.T) {
+	src1 := map[string]interface{}{
+		"map": MapStringOption{},
+	}
+
+	src2 := map[string]interface{}{
+		"map": MapStringOption{
+			"key": NewStringOption("val1"),
+		},
+	}
+	dest := MakeMergeStruct(src1, src2)
+
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		Map struct {
+			Key StringOption `json:"key" yaml:"key"`
+		} `json:"map" yaml:"map"`
+	}{
+		Map: struct {
+			Key StringOption `json:"key" yaml:"key"`
+		}{StringOption{"default", true, "val1"}},
+	}
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeMapStringOptions(t *testing.T) {
+	src1 := struct {
+		Value StringOption
+	}{}
+
+	src2 := struct {
+		Value StringOption
+	}{NewStringOption("val1")}
+
+	dest := MakeMergeStruct(src1, src2)
+
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		Value StringOption
+	}{StringOption{"default", true, "val1"}}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMergeMapWithStruct(t *testing.T) {
 	dest := map[string]interface{}{
 		"mapkey": "mapval1",
