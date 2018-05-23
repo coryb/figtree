@@ -35,7 +35,8 @@ func TestOptionsExecConfigD3(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, true},
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -65,7 +66,8 @@ func TestOptionsExecConfigD2(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, false},
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -92,7 +94,8 @@ func TestOptionsExecConfigD1(t *testing.T) {
 		Bool1:  BoolOption{"exec.yml", true, true},
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -125,7 +128,8 @@ func TestBuiltinExecConfigD3(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -157,7 +161,8 @@ func TestBuiltinExecConfigD2(t *testing.T) {
 		Bool1: true,
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -184,7 +189,8 @@ func TestBuiltinExecConfigD1(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadAllConfigs("exec.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("exec.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }

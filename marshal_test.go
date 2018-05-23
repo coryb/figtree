@@ -14,7 +14,8 @@ func TestOptionsMarshalYAML(t *testing.T) {
 	opts := TestOptions{}
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
-	err := LoadAllConfigs("figtree.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	StringifyValue = true
@@ -50,7 +51,8 @@ func TestOptionsMarshalJSON(t *testing.T) {
 	opts := TestOptions{}
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
-	err := LoadAllConfigs("figtree.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	StringifyValue = true

@@ -20,7 +20,9 @@ func TestOptionsEnv(t *testing.T) {
 	}()
 
 	os.Clearenv()
-	err := LoadAllConfigs("figtree.yml", &opts)
+
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	got := []string{}
@@ -55,8 +57,10 @@ func TestOptionsNamedEnv(t *testing.T) {
 	}()
 
 	os.Clearenv()
-	fig := NewFigTree()
+
+	fig := newFigTreeFromEnv()
 	fig.EnvPrefix = "TEST"
+
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
@@ -87,7 +91,9 @@ func TestBuiltinEnv(t *testing.T) {
 	defer os.Chdir("..")
 
 	os.Clearenv()
-	err := LoadAllConfigs("figtree.yml", &opts)
+
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	got := []string{}

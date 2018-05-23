@@ -32,7 +32,8 @@ func TestOptionsStopConfigD3(t *testing.T) {
 		Bool1:  BoolOption{"stop.yml", true, true},
 	}
 
-	err := LoadAllConfigs("stop.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("stop.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -59,7 +60,8 @@ func TestOptionsStopConfigD2(t *testing.T) {
 		Bool1:  BoolOption{"stop.yml", true, false},
 	}
 
-	err := LoadAllConfigs("stop.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("stop.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -89,7 +91,8 @@ func TestBuiltinStopConfigD3(t *testing.T) {
 		Bool1:  true,
 	}
 
-	err := LoadAllConfigs("stop.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("stop.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -116,7 +119,8 @@ func TestBuiltinStopConfigD2(t *testing.T) {
 		Bool1:  false,
 	}
 
-	err := LoadAllConfigs("stop.yml", &opts)
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("stop.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
