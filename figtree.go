@@ -29,24 +29,20 @@ type Logger interface {
 var Log Logger = logging.MustGetLogger("figtree")
 
 type FigTree struct {
+	Home      string
+	WorkDir   string
 	ConfigDir string
 	Defaults  interface{}
 	EnvPrefix string
 	stop      bool
 }
 
-func NewFigTree() *FigTree {
+func NewFigTree(home, workDir, envPrefix string) *FigTree {
 	return &FigTree{
-		EnvPrefix: "FIGTREE",
+		Home:      home,
+		WorkDir:   workDir,
+		EnvPrefix: envPrefix,
 	}
-}
-
-func LoadAllConfigs(configFile string, options interface{}) error {
-	return NewFigTree().LoadAllConfigs(configFile, options)
-}
-
-func LoadConfig(configFile string, options interface{}) error {
-	return NewFigTree().LoadConfig(configFile, options)
 }
 
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
@@ -57,7 +53,7 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 		configFile = path.Join(f.ConfigDir, configFile)
 	}
 
-	paths := FindParentPaths(configFile)
+	paths := FindParentPaths(f.Home, f.WorkDir, configFile)
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
 	// iterate paths in reverse
@@ -131,12 +127,7 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 }
 
 func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
-	basePath, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	rel, err := filepath.Rel(basePath, file)
+	rel, err := filepath.Rel(f.WorkDir, file)
 	if err != nil {
 		rel = file
 	}
