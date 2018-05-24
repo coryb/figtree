@@ -28,6 +28,16 @@ type Logger interface {
 
 var Log Logger = logging.MustGetLogger("figtree")
 
+func ApplyChangeSet(changeSet map[string]*string) {
+	for k, v := range changeSet {
+		if v != nil {
+			os.Setenv(k, *v)
+		} else {
+			os.Unsetenv(k)
+		}
+	}
+}
+
 type FigTree struct {
 	Home      string
 	WorkDir   string
@@ -45,7 +55,7 @@ func NewFigTree(home, workDir, envPrefix string) *FigTree {
 	}
 }
 
-func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
+func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (changeSet map[string]*string, err error) {
 	// reset from any previous config parsing runs
 	f.stop = false
 
@@ -57,12 +67,18 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
 	// iterate paths in reverse
+	changeSet = make(map[string]*string)
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		err := f.LoadConfig(file, options)
+		configEnvSet, err := f.LoadConfig(file, options)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		for k, v := range configEnvSet {
+			changeSet[k] = v
+		}
+
 		if f.stop {
 			break
 		}
@@ -75,17 +91,18 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 			reflect.ValueOf(options),
 			reflect.ValueOf(f.Defaults),
 		)
-		f.PopulateEnv(options)
+		populateEnvSet := f.PopulateEnv(options)
+		for k, v := range populateEnvSet {
+			changeSet[k] = v
+		}
 	}
-	return nil
+	return changeSet, nil
 }
 
-func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) (err error) {
+func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) (changeSet map[string]*string, err error) {
 	if !reflect.ValueOf(options).IsValid() {
-		return fmt.Errorf("options argument [%#v] is not valid", options)
+		return nil, fmt.Errorf("options argument [%#v] is not valid", options)
 	}
-
-	f.PopulateEnv(options)
 
 	defer func(mapType, iface reflect.Type) {
 		yaml.DefaultMapType = mapType
@@ -104,13 +121,13 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	// look for config settings first
 	err = yaml.Unmarshal(config, m)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
+		return nil, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
 	}
 
 	// then parse document into requested struct
 	err = yaml.Unmarshal(config, tmp)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
+		return nil, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
 	}
 
 	m.setSource(reflect.ValueOf(tmp))
@@ -118,15 +135,15 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		reflect.ValueOf(options),
 		reflect.ValueOf(tmp),
 	)
-	f.PopulateEnv(options)
+	changeSet = f.PopulateEnv(options)
 	if m.Config.Stop {
 		f.stop = true
-		return nil
+		return changeSet, nil
 	}
-	return nil
+	return changeSet, nil
 }
 
-func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
+func (f *FigTree) LoadConfig(file string, options interface{}) (changeSet map[string]*string, err error) {
 	rel, err := filepath.Rel(f.WorkDir, file)
 	if err != nil {
 		rel = file
@@ -146,12 +163,12 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (err error) {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
+				return nil, errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
 			}
 			return f.LoadConfigBytes(stdout.Bytes(), rel, options)
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 var camelCaseWords = regexp.MustCompile("[0-9A-Za-z]+")
@@ -722,7 +739,9 @@ func (f *FigTree) formatEnvValue(value reflect.Value) (string, bool) {
 	return "", false
 }
 
-func (f *FigTree) PopulateEnv(data interface{}) {
+func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
+	changeSet = make(map[string]*string)
+
 	options := reflect.ValueOf(data)
 	if options.Kind() == reflect.Ptr {
 		options = reflect.ValueOf(options.Elem().Interface())
@@ -745,9 +764,9 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 				envName := f.formatEnvName(name)
 				val, ok := f.formatEnvValue(options.MapIndex(key))
 				if ok {
-					os.Setenv(envName, val)
+					changeSet[envName] = &val
 				} else {
-					os.Unsetenv(envName)
+					changeSet[envName] = nil
 				}
 			}
 		}
@@ -767,7 +786,10 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 					// if we have a tag like: `figtree:",inline"` then we
 					// want to the field as a top level member and not serialize
 					// the raw struct to json, so just recurse here
-					f.PopulateEnv(options.Field(i).Interface())
+					nestedEnvSet := f.PopulateEnv(options.Field(i).Interface())
+					for k, v := range nestedEnvSet {
+						changeSet[k] = v
+					}
 					continue
 				}
 				// next look for `figtree:"env,..."` to set the env name to that
@@ -784,10 +806,12 @@ func (f *FigTree) PopulateEnv(data interface{}) {
 			envName := f.formatEnvName(name)
 			val, ok := f.formatEnvValue(options.Field(i))
 			if ok {
-				os.Setenv(envName, val)
+				changeSet[envName] = &val
 			} else {
-				os.Unsetenv(envName)
+				changeSet[envName] = nil
 			}
 		}
 	}
+
+	return changeSet
 }

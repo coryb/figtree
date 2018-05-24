@@ -87,7 +87,7 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -120,7 +120,7 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -150,7 +150,7 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -161,7 +161,7 @@ func TestOptionsCorrupt(t *testing.T) {
 	defer os.Chdir("..")
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("corrupt.yml", &opts)
+	_, err := fig.LoadAllConfigs("corrupt.yml", &opts)
 	assert.NotNil(t, err)
 }
 
@@ -196,7 +196,7 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -231,7 +231,7 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -261,7 +261,7 @@ func TestBuiltinLoadConfigD1(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -272,7 +272,7 @@ func TestBuiltinCorrupt(t *testing.T) {
 	defer os.Chdir("..")
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("corrupt.yml", &opts)
+	_, err := fig.LoadAllConfigs("corrupt.yml", &opts)
 	assert.NotNil(t, err)
 }
 
@@ -310,7 +310,7 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	_, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 	require.Exactly(t, expected, opts)
 }
