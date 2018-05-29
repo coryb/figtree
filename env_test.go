@@ -22,8 +22,10 @@ func TestOptionsEnv(t *testing.T) {
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
+
+	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -61,8 +63,10 @@ func TestOptionsNamedEnv(t *testing.T) {
 	fig := newFigTreeFromEnv()
 	fig.EnvPrefix = "TEST"
 
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
+
+	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -93,8 +97,10 @@ func TestBuiltinEnv(t *testing.T) {
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
+
+	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
