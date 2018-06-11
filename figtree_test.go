@@ -495,7 +495,7 @@ func TestMergeMapWithStruct(t *testing.T) {
 		},
 	}
 
-	m := &merger{}
+	m := NewMerger()
 	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
 
 	expected := map[string]interface{}{
@@ -837,7 +837,7 @@ func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 		},
 	}
 
-	m := &merger{}
+	m := NewMerger()
 	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
 
 	expected := struct {
@@ -863,7 +863,7 @@ func TestMergeStructsWithDestEmbedded(t *testing.T) {
 		FieldName: "field1",
 	}
 
-	m := &merger{}
+	m := NewMerger()
 	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
 
 	expected := struct {
@@ -1515,6 +1515,50 @@ func TestMergeStructsWithZeros(t *testing.T) {
 
 				assert.Equal(t, expected, got, tt.info.line)
 
+			}),
+		)
+	}
+}
+
+func TestMergeStructsWithPreservedMaps(t *testing.T) {
+	tests := []struct {
+		info   info
+		src    interface{}
+		want   interface{}
+		merger *Merger
+	}{
+		{
+			info: info{"convert map to struct by default", line()},
+			src: map[string]interface{}{
+				"map": map[string]string{"key": "value"},
+			},
+			want: &struct {
+				Map struct {
+					Key string `json:"key" yaml:"key"`
+				} `json:"map" yaml:"map"`
+			}{},
+			merger: NewMerger(),
+		}, {
+			info: info{"preserve map when converting to struct", line()},
+			src: map[string]interface{}{
+				"map":   map[string]string{"key": "value"},
+				"other": map[string]string{"key": "value"},
+			},
+			want: &struct {
+				Map   map[string]string `json:"map" yaml:"map"`
+				Other struct {
+					Key string `json:"key" yaml:"key"`
+				} `json:"other" yaml:"other"`
+			}{},
+			merger: NewMerger(PreserveMap("map")),
+		},
+	}
+
+	for _, tt := range tests {
+		require.True(t,
+			t.Run(tt.info.name, func(t *testing.T) {
+				got := tt.merger.MakeMergeStruct(tt.src)
+				assert.Equal(t, tt.want, got)
 			}),
 		)
 	}

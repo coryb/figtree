@@ -86,7 +86,7 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (change
 
 	// apply defaults at the end to set any undefined fields
 	if f.Defaults != nil {
-		m := &merger{sourceFile: "default"}
+		m := NewMerger(WithSourceFile("default"))
 		m.mergeStructs(
 			reflect.ValueOf(options),
 			reflect.ValueOf(f.Defaults),
@@ -112,7 +112,7 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	yaml.IfaceType = yaml.DefaultMapType.Elem()
 
-	m := &merger{sourceFile: source}
+	m := NewMerger(WithSourceFile(source))
 	type tmpOpts struct {
 		Config ConfigOptions
 	}
@@ -182,11 +182,44 @@ func camelCase(name string) string {
 
 }
 
+type Merger struct {
+	sourceFile  string
+	preserveMap map[string]struct{}
+	Config      ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
+}
+
+type MergeOption func(*Merger)
+
+func WithSourceFile(source string) func(*Merger) {
+	return func(m *Merger) {
+		m.sourceFile = source
+	}
+}
+
+func PreserveMap(keys ...string) func(*Merger) {
+	return func(m *Merger) {
+		for _, key := range keys {
+			m.preserveMap[key] = struct{}{}
+		}
+	}
+}
+
+func NewMerger(options ...MergeOption) *Merger {
+	m := &Merger{
+		sourceFile:  "merge",
+		preserveMap: make(map[string]struct{}),
+	}
+	for _, opt := range options {
+		opt(m)
+	}
+	return m
+}
+
 // Merge will attempt to merge the data from src into dst.  They shoud be either both maps or both structs.
 // The structs do not need to have the same structure, but any field name that exists in both
 // structs will must be the same type.
 func Merge(dst, src interface{}) {
-	m := &merger{sourceFile: "merge"}
+	m := NewMerger()
 	m.mergeStructs(reflect.ValueOf(dst), reflect.ValueOf(src))
 }
 
@@ -195,11 +228,16 @@ func Merge(dst, src interface{}) {
 // If there are multiple structs with the same field names, the first appearance of that name
 // will be used.
 func MakeMergeStruct(structs ...interface{}) interface{} {
+	m := NewMerger()
+	return m.MakeMergeStruct(structs...)
+}
+
+func (m *Merger) MakeMergeStruct(structs ...interface{}) interface{} {
 	values := []reflect.Value{}
 	for _, data := range structs {
 		values = append(values, reflect.ValueOf(data))
 	}
-	return makeMergeStruct(values...).Interface()
+	return m.makeMergeStruct(values...).Interface()
 }
 
 func inlineField(field reflect.StructField) bool {
@@ -212,7 +250,7 @@ func inlineField(field reflect.StructField) bool {
 	return false
 }
 
-func makeMergeStruct(values ...reflect.Value) reflect.Value {
+func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 	foundFields := map[string]reflect.StructField{}
 	for i := 0; i < len(values); i++ {
 		v := values[i]
@@ -232,8 +270,8 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
 							// we have 2 fields with the same name and they are both structs, so we need
-							// to merge the existig struct with the new one in case they are different
-							newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
+							// to merge the existing struct with the new one in case they are different
+							newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
 							f.Type = newval.Type()
 							foundFields[field.Name] = f
 						}
@@ -250,10 +288,12 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 		} else if typ.Kind() == reflect.Map {
 			for _, key := range v.MapKeys() {
 				keyval := reflect.ValueOf(v.MapIndex(key).Interface())
-				if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
-					keyval = makeMergeStruct(keyval.Elem())
-				} else if keyval.Kind() == reflect.Map {
-					keyval = makeMergeStruct(keyval).Elem()
+				if _, ok := m.preserveMap[key.String()]; !ok {
+					if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
+						keyval = m.makeMergeStruct(keyval.Elem())
+					} else if keyval.Kind() == reflect.Map {
+						keyval = m.makeMergeStruct(keyval).Elem()
+					}
 				}
 				var t reflect.Type
 				if !keyval.IsValid() {
@@ -274,7 +314,7 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 						if fName, tName := f.Type.Name(), t.Name(); fName == "" || tName == "" || fName != tName {
 							// we have 2 fields with the same name and they are both structs, so we need
 							// to merge the existig struct with the new one in case they are different
-							newval := makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
+							newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
 							f.Type = newval.Type()
 							foundFields[field.Name] = f
 						}
@@ -298,17 +338,16 @@ func makeMergeStruct(values ...reflect.Value) reflect.Value {
 	return reflect.New(newType)
 }
 
-func mapToStruct(src reflect.Value) reflect.Value {
+func (m *Merger) mapToStruct(src reflect.Value) reflect.Value {
 	if src.Kind() != reflect.Map {
 		return reflect.Value{}
 	}
 
-	dest := makeMergeStruct(src)
+	dest := m.makeMergeStruct(src)
 	if dest.Kind() == reflect.Ptr {
 		dest = dest.Elem()
 	}
 
-	m := merger{}
 	for _, key := range src.MapKeys() {
 		structFieldName := camelCase(key.String())
 		keyval := reflect.ValueOf(src.MapIndex(key).Interface())
@@ -317,10 +356,10 @@ func mapToStruct(src reflect.Value) reflect.Value {
 			continue
 		}
 		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
-			keyval = mapToStruct(keyval.Elem()).Addr()
+			keyval = m.mapToStruct(keyval.Elem()).Addr()
 			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
 		} else if keyval.Kind() == reflect.Map {
-			keyval = mapToStruct(keyval)
+			keyval = m.mapToStruct(keyval)
 			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
 		} else {
 			dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
@@ -357,11 +396,6 @@ type ConfigOptions struct {
 	// Merge     bool     `json:"merge,omitempty" yaml:"merge,omitempty"`
 }
 
-type merger struct {
-	sourceFile string
-	Config     ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
-}
-
 func yamlFieldName(sf reflect.StructField) string {
 	if tag, ok := sf.Tag.Lookup("yaml"); ok {
 		// with yaml:"foobar,omitempty"
@@ -378,7 +412,7 @@ func yamlFieldName(sf reflect.StructField) string {
 	return strings.Join(parts, "-")
 }
 
-func (m *merger) mustOverwrite(name string) bool {
+func (m *Merger) mustOverwrite(name string) bool {
 	for _, prop := range m.Config.Overwrite {
 		if name == prop {
 			return true
@@ -410,7 +444,7 @@ func isSame(v1, v2 reflect.Value) bool {
 }
 
 // recursively set the Source attribute of the Options
-func (m *merger) setSource(v reflect.Value) {
+func (m *Merger) setSource(v reflect.Value) {
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
@@ -454,7 +488,7 @@ func (m *merger) setSource(v reflect.Value) {
 	}
 }
 
-func (m *merger) assignValue(dest, src reflect.Value, overwrite bool) {
+func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 	if src.Type().AssignableTo(dest.Type()) {
 		if (isZero(dest) || isDefault(dest) || overwrite) && !isZero(src) {
 			dest.Set(src)
@@ -513,7 +547,7 @@ func fromInterface(v reflect.Value) (reflect.Value, func()) {
 	return v, func() {}
 }
 
-func (m *merger) mergeStructs(ov, nv reflect.Value) {
+func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 	ov = reflect.Indirect(ov)
 	nv = reflect.Indirect(nv)
 
@@ -533,7 +567,7 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	}
 
 	if ov.Kind() == reflect.Struct && nv.Kind() == reflect.Map {
-		nv = mapToStruct(nv)
+		nv = m.mapToStruct(nv)
 	}
 
 	if !ov.IsValid() || !nv.IsValid() {
@@ -604,7 +638,7 @@ func (m *merger) mergeStructs(ov, nv reflect.Value) {
 	}
 }
 
-func (m *merger) mergeMaps(ov, nv reflect.Value) {
+func (m *Merger) mergeMaps(ov, nv reflect.Value) {
 	for _, key := range nv.MapKeys() {
 		if !ov.MapIndex(key).IsValid() {
 			ovElem := reflect.New(ov.Type().Elem()).Elem()
@@ -656,7 +690,7 @@ func (m *merger) mergeMaps(ov, nv reflect.Value) {
 	}
 }
 
-func (m *merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
+func (m *Merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
 Outer:
 	for ni := 0; ni < nv.Len(); ni++ {
 		niv := nv.Index(ni)
