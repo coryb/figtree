@@ -38,32 +38,66 @@ func ApplyChangeSet(changeSet map[string]*string) {
 	}
 }
 
-type FigTree struct {
-	Home      string
-	WorkDir   string
-	ConfigDir string
-	Defaults  interface{}
-	EnvPrefix string
-	stop      bool
+type Option func(*FigTree)
+
+func WithHome(home string) Option {
+	return func(f *FigTree) {
+		f.home = home
+	}
 }
 
-func NewFigTree(home, workDir, envPrefix string) *FigTree {
-	return &FigTree{
-		Home:      home,
-		WorkDir:   workDir,
-		EnvPrefix: envPrefix,
+func WithCwd(cwd string) Option {
+	return func(f *FigTree) {
+		f.workDir = cwd
 	}
+}
+
+func WithEnvPrefix(env string) Option {
+	return func(f *FigTree) {
+		f.envPrefix = env
+	}
+}
+
+func WithConfigDir(dir string) Option {
+	return func(f *FigTree) {
+		f.configDir = dir
+	}
+}
+
+type PreProcessor func([]byte) ([]byte, error)
+
+func WithPreProcessor(pp PreProcessor) Option {
+	return func(f *FigTree) {
+		f.preProcessor = pp
+	}
+}
+
+type FigTree struct {
+	home         string
+	workDir      string
+	configDir    string
+	envPrefix    string
+	preProcessor PreProcessor
+	stop         bool
+}
+
+func NewFigTree(opts ...Option) *FigTree {
+	fig := &FigTree{}
+	for _, opt := range opts {
+		opt(fig)
+	}
+	return fig
 }
 
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (changeSet map[string]*string, err error) {
 	// reset from any previous config parsing runs
 	f.stop = false
 
-	if f.ConfigDir != "" {
-		configFile = path.Join(f.ConfigDir, configFile)
+	if f.configDir != "" {
+		configFile = path.Join(f.configDir, configFile)
 	}
 
-	paths := FindParentPaths(f.Home, f.WorkDir, configFile)
+	paths := FindParentPaths(f.home, f.workDir, configFile)
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
 	// iterate paths in reverse
@@ -84,18 +118,6 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (change
 		}
 	}
 
-	// apply defaults at the end to set any undefined fields
-	if f.Defaults != nil {
-		m := NewMerger(WithSourceFile("default"))
-		m.mergeStructs(
-			reflect.ValueOf(options),
-			reflect.ValueOf(f.Defaults),
-		)
-		populateEnvSet := f.PopulateEnv(options)
-		for k, v := range populateEnvSet {
-			changeSet[k] = v
-		}
-	}
 	return changeSet, nil
 }
 
@@ -111,6 +133,13 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 
 	yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	yaml.IfaceType = yaml.DefaultMapType.Elem()
+
+	if f.preProcessor != nil {
+		config, err = f.preProcessor(config)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	m := NewMerger(WithSourceFile(source))
 	type tmpOpts struct {
@@ -144,7 +173,7 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 }
 
 func (f *FigTree) LoadConfig(file string, options interface{}) (changeSet map[string]*string, err error) {
-	rel, err := filepath.Rel(f.WorkDir, file)
+	rel, err := filepath.Rel(f.workDir, file)
 	if err != nil {
 		rel = file
 	}
@@ -190,13 +219,13 @@ type Merger struct {
 
 type MergeOption func(*Merger)
 
-func WithSourceFile(source string) func(*Merger) {
+func WithSourceFile(source string) MergeOption {
 	return func(m *Merger) {
 		m.sourceFile = source
 	}
 }
 
-func PreserveMap(keys ...string) func(*Merger) {
+func PreserveMap(keys ...string) MergeOption {
 	return func(m *Merger) {
 		for _, key := range keys {
 			m.preserveMap[key] = struct{}{}
@@ -423,7 +452,7 @@ func (m *Merger) mustOverwrite(name string) bool {
 
 func isDefault(v reflect.Value) bool {
 	if v.CanAddr() {
-		if option, ok := v.Addr().Interface().(Option); ok {
+		if option, ok := v.Addr().Interface().(option); ok {
 			if option.GetSource() == "default" {
 				return true
 			}
@@ -463,7 +492,7 @@ func (m *Merger) setSource(v reflect.Value) {
 		}
 	case reflect.Struct:
 		if v.CanAddr() {
-			if option, ok := v.Addr().Interface().(Option); ok {
+			if option, ok := v.Addr().Interface().(option); ok {
 				if option.IsDefined() {
 					option.SetSource(m.sourceFile)
 				}
@@ -497,7 +526,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 		return
 	}
 	if dest.CanAddr() {
-		if option, ok := dest.Addr().Interface().(Option); ok {
+		if option, ok := dest.Addr().Interface().(option); ok {
 			destOptionValue := reflect.ValueOf(option.GetValue())
 			// map interface type to real-ish type:
 			src = reflect.ValueOf(src.Interface())
@@ -519,7 +548,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 	// Option interface.
 	srcCopy := reflect.New(src.Type()).Elem()
 	srcCopy.Set(src)
-	if option, ok := srcCopy.Addr().Interface().(Option); ok {
+	if option, ok := srcCopy.Addr().Interface().(option); ok {
 		srcOptionValue := reflect.ValueOf(option.GetValue())
 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
 			m.assignValue(dest, srcOptionValue, overwrite)
@@ -630,7 +659,7 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 			}
 		case reflect.Struct:
 			// only merge structs if they are not an Option type:
-			if _, ok := ovField.Addr().Interface().(Option); !ok {
+			if _, ok := ovField.Addr().Interface().(option); !ok {
 				Log.Debugf("Merging Struct: %v with %v", ovField, nvField)
 				m.mergeStructs(ovField, nvField)
 			}
@@ -677,7 +706,7 @@ func (m *Merger) mergeMaps(ov, nv reflect.Value) {
 						// it, meh not optimal
 						newVal := reflect.New(nvi.Type())
 						newVal.Elem().Set(nvi)
-						if nOption, ok := newVal.Interface().(Option); ok {
+						if nOption, ok := newVal.Interface().(option); ok {
 							ov.SetMapIndex(key, reflect.ValueOf(nOption.GetValue()))
 							continue
 						}
@@ -701,8 +730,8 @@ Outer:
 		for oi := 0; oi < ov.Len(); oi++ {
 			oiv := ov.Index(oi)
 			if oiv.CanAddr() && nvElem.CanAddr() {
-				if oOption, ok := oiv.Addr().Interface().(Option); ok {
-					if nOption, ok := nvElem.Addr().Interface().(Option); ok {
+				if oOption, ok := oiv.Addr().Interface().(option); ok {
+					if nOption, ok := nvElem.Addr().Interface().(option); ok {
 						if reflect.DeepEqual(oOption.GetValue(), nOption.GetValue()) {
 							continue Outer
 						}
@@ -720,7 +749,7 @@ Outer:
 }
 
 func (f *FigTree) formatEnvName(name string) string {
-	name = fmt.Sprintf("%s_%s", f.EnvPrefix, strings.ToUpper(name))
+	name = fmt.Sprintf("%s_%s", f.envPrefix, strings.ToUpper(name))
 
 	return strings.Map(func(r rune) rune {
 		if unicode.IsDigit(r) || unicode.IsLetter(r) {

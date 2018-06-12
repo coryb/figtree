@@ -60,8 +60,7 @@ func TestOptionsNamedEnv(t *testing.T) {
 
 	os.Clearenv()
 
-	fig := newFigTreeFromEnv()
-	fig.EnvPrefix = "TEST"
+	fig := newFigTreeFromEnv(WithEnvPrefix("TEST"))
 
 	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)

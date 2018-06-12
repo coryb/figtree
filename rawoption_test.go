@@ -10,7 +10,7 @@ import (
 )
 
 func TestOptionInterface(t *testing.T) {
-	f := func(_ Option) bool {
+	f := func(_ option) bool {
 		return true
 	}
 

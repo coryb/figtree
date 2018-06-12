@@ -31,9 +31,15 @@ func init() {
 	logging.SetLevel(logging.NOTICE, "")
 }
 
-func newFigTreeFromEnv() *FigTree {
+func newFigTreeFromEnv(opts ...Option) *FigTree {
 	cwd, _ := os.Getwd()
-	return NewFigTree(os.Getenv("HOME"), cwd, "FIGTREE")
+	opts = append([]Option{
+		WithHome(os.Getenv("HOME")),
+		WithCwd(cwd),
+		WithEnvPrefix("FIGTREE"),
+	}, opts...)
+
+	return NewFigTree(opts...)
 }
 
 type TestOptions struct {
