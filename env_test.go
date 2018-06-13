@@ -122,3 +122,39 @@ func TestBuiltinEnv(t *testing.T) {
 
 	assert.Equal(t, expected, got)
 }
+
+func TestTag(t *testing.T) {
+	os.Clearenv()
+
+	dest := struct {
+		DefaultEnv  string `yaml:"default-env"`
+		OverrideEnv string `yaml:"override-env" figtree:"OVERRIDE_ENV"`
+		NoEnv       string `yaml:"no-env" figtree:"-"`
+		MultiEnv    string `yaml:"multi-env" figtree:"MULTIA;MULTIB"`
+	}{}
+
+	input := `
+default-env: abc
+override-env: def
+no-env: ghi
+multi-env: jkl
+`
+
+	fig := newFigTreeFromEnv()
+	changeSet, err := fig.LoadConfigBytes([]byte(input), "test", &dest)
+	assert.NoError(t, err)
+
+	ApplyChangeSet(changeSet)
+
+	got := os.Environ()
+	sort.StringSlice(got).Sort()
+
+	expected := []string{
+		"FIGTREE_DEFAULT_ENV=abc",
+		"FIGTREE_MULTIA=jkl",
+		"FIGTREE_MULTIB=jkl",
+		"FIGTREE_OVERRIDE_ENV=def",
+	}
+
+	assert.Equal(t, expected, got)
+}

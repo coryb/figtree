@@ -872,7 +872,7 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 				continue
 			}
 
-			name := strings.Join(camelcase.Split(structField.Name), "_")
+			envNames := []string{strings.Join(camelcase.Split(structField.Name), "_")}
 
 			if tag := structField.Tag.Get("figtree"); tag != "" {
 				if strings.HasSuffix(tag, ",inline") {
@@ -892,16 +892,17 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 					if parts[0] == "-" {
 						continue
 					}
-					name = parts[0]
+					envNames = strings.Split(parts[0], ";")
 				}
 			}
-
-			envName := f.formatEnvName(name)
-			val, ok := f.formatEnvValue(options.Field(i))
-			if ok {
-				changeSet[envName] = &val
-			} else {
-				changeSet[envName] = nil
+			for _, name := range envNames {
+				envName := f.formatEnvName(name)
+				val, ok := f.formatEnvValue(options.Field(i))
+				if ok {
+					changeSet[envName] = &val
+				} else {
+					changeSet[envName] = nil
+				}
 			}
 		}
 	}
