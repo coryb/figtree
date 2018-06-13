@@ -1569,3 +1569,57 @@ func TestMergeStructsWithPreservedMaps(t *testing.T) {
 		)
 	}
 }
+
+func TestFigtreePreProcessor(t *testing.T) {
+	input := []byte(`
+bad-name: good-value
+good-name: bad-value
+ok-name: want-array
+`)
+
+	pp := func(in []byte) ([]byte, error) {
+		raw := map[string]interface{}{}
+		if err := yaml.Unmarshal(in, &raw); err != nil {
+			return in, err
+		}
+
+		// rename "bad-name" key to "fixed-name"
+		if val, ok := raw["bad-name"]; ok {
+			delete(raw, "bad-name")
+			raw["fixed-name"] = val
+		}
+
+		// reset "bad-value" key to "good-value"
+		if val, ok := raw["good-name"]; ok {
+			if t, ok := val.(string); ok && t != "fixed-value" {
+				raw["good-name"] = "fixed-value"
+			}
+		}
+
+		// migrate "ok-name" value from string to list of strings
+		if val, ok := raw["ok-name"]; ok {
+			if t, ok := val.(string); ok {
+				raw["ok-name"] = []string{t}
+			}
+		}
+		return yaml.Marshal(raw)
+	}
+
+	fig := newFigTreeFromEnv(WithPreProcessor(pp))
+
+	dest := struct {
+		FixedName string   `yaml:"fixed-name"`
+		GoodName  string   `yaml:"good-name"`
+		OkName    []string `yaml:"ok-name"`
+	}{}
+
+	want := struct {
+		FixedName string   `yaml:"fixed-name"`
+		GoodName  string   `yaml:"good-name"`
+		OkName    []string `yaml:"ok-name"`
+	}{"good-value", "fixed-value", []string{"want-array"}}
+
+	_, err := fig.LoadConfigBytes(input, "test", &dest)
+	assert.NoError(t, err)
+	assert.Equal(t, want, dest)
+}

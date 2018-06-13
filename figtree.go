@@ -137,7 +137,7 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	if f.preProcessor != nil {
 		config, err = f.preProcessor(config)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "Failed to process config file: %s", source)
 		}
 	}
 
@@ -198,6 +198,36 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (changeSet map[st
 		}
 	}
 	return nil, nil
+}
+
+func FindParentPaths(homedir, cwd, fileName string) []string {
+	paths := make([]string, 0)
+
+	// special case if homedir is not in current path then check there anyway
+	if !strings.HasPrefix(cwd, homedir) {
+		file := path.Join(homedir, fileName)
+		if _, err := os.Stat(file); err == nil {
+			paths = append(paths, filepath.FromSlash(file))
+		}
+	}
+
+	var dir string
+	for _, part := range strings.Split(cwd, string(os.PathSeparator)) {
+		if part == "" && dir == "" {
+			dir = "/"
+		} else {
+			dir = path.Join(dir, part)
+		}
+		file := path.Join(dir, fileName)
+		if _, err := os.Stat(file); err == nil {
+			paths = append(paths, filepath.FromSlash(file))
+		}
+	}
+	return paths
+}
+
+func (f *FigTree) FindParentPaths(fileName string) []string {
+	return FindParentPaths(f.home, f.workDir, fileName)
 }
 
 var camelCaseWords = regexp.MustCompile("[0-9A-Za-z]+")
