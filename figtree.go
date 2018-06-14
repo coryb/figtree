@@ -89,6 +89,26 @@ func NewFigTree(opts ...Option) *FigTree {
 	return fig
 }
 
+func (f *FigTree) WithHome(home string) {
+	WithHome(home)(f)
+}
+
+func (f *FigTree) WithCwd(cwd string) {
+	WithCwd(cwd)(f)
+}
+
+func (f *FigTree) WithEnvPrefix(env string) {
+	WithEnvPrefix(env)(f)
+}
+
+func (f *FigTree) WithConfigDir(dir string) {
+	WithConfigDir(dir)(f)
+}
+
+func (f *FigTree) WithPreProcessor(pp PreProcessor) {
+	WithPreProcessor(pp)(f)
+}
+
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (changeSet map[string]*string, err error) {
 	// reset from any previous config parsing runs
 	f.stop = false
