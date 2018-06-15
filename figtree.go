@@ -19,14 +19,17 @@ import (
 	"github.com/pkg/errors"
 
 	yaml "gopkg.in/coryb/yaml.v2"
-	logging "gopkg.in/op/go-logging.v1"
 )
 
 type Logger interface {
 	Debugf(format string, args ...interface{})
 }
 
-var Log Logger = logging.MustGetLogger("figtree")
+type nullLogger struct{}
+
+func (*nullLogger) Debugf(string, ...interface{}) {}
+
+var Log Logger = &nullLogger{}
 
 func ApplyChangeSet(changeSet map[string]*string) {
 	for k, v := range changeSet {
