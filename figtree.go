@@ -773,28 +773,40 @@ func (m *Merger) mergeMaps(ov, nv reflect.Value) {
 }
 
 func (m *Merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
+	var zero interface{}
 Outer:
 	for ni := 0; ni < nv.Len(); ni++ {
 		niv := nv.Index(ni)
 
-		nvElem := reflect.New(ov.Type().Elem()).Elem()
-		m.assignValue(nvElem, niv, false)
+		n := niv
+		if n.CanAddr() {
+			if nOption, ok := n.Addr().Interface().(option); ok {
+				if !nOption.IsDefined() {
+					continue
+				}
+				n = reflect.ValueOf(nOption.GetValue())
+			}
+		}
+
+		if reflect.DeepEqual(n.Interface(), zero) {
+			continue
+		}
 
 		for oi := 0; oi < ov.Len(); oi++ {
-			oiv := ov.Index(oi)
-			if oiv.CanAddr() && nvElem.CanAddr() {
-				if oOption, ok := oiv.Addr().Interface().(option); ok {
-					if nOption, ok := nvElem.Addr().Interface().(option); ok {
-						if reflect.DeepEqual(oOption.GetValue(), nOption.GetValue()) {
-							continue Outer
-						}
-					}
+			o := ov.Index(oi)
+			if o.CanAddr() {
+				if oOption, ok := o.Addr().Interface().(option); ok {
+					o = reflect.ValueOf(oOption.GetValue())
 				}
 			}
-			if reflect.DeepEqual(nvElem.Interface(), oiv.Interface()) {
+			if reflect.DeepEqual(n.Interface(), o.Interface()) {
 				continue Outer
 			}
 		}
+
+		nvElem := reflect.New(ov.Type().Elem()).Elem()
+		m.assignValue(nvElem, niv, false)
+
 		Log.Debugf("Appending %v to %v", nvElem.Interface(), ov)
 		ov = reflect.Append(ov, nvElem)
 	}

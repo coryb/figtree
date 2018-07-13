@@ -777,6 +777,36 @@ func TestMergeMapWithStructUsingListOptions(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
+func TestMergeStructWithListUsingListOptions(t *testing.T) {
+	dest := struct {
+		Property []interface{}
+	}{
+		Property: []interface{}{
+			"abc",
+		},
+	}
+
+	src := struct {
+		Property ListStringOption
+	}{
+		Property: ListStringOption{
+			NewStringOption("abc"),
+			NewStringOption("def"),
+		},
+	}
+
+	Merge(&dest, &src)
+	expected := struct {
+		Property []interface{}
+	}{
+		Property: []interface{}{
+			"abc",
+			NewStringOption("def"),
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
+
 func TestMergeStructUsingMapOptionsWithMap(t *testing.T) {
 	dest := struct {
 		Strings MapStringOption
@@ -1082,7 +1112,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{zero},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{zero},
+				"value": []interface{}{},
 			},
 		},
 		{
@@ -1094,7 +1124,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{zero},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{StringOption{}, zero},
+				"value": []interface{}{StringOption{}},
 			},
 		},
 		{
@@ -1350,7 +1380,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{zero}},
 			want: struct {
 				Value interface{}
-			}{[]interface{}{zero}},
+			}{[]interface{}{}},
 		},
 		{
 			info: info{"list zero to StringOption", line()},
@@ -1362,7 +1392,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{zero}},
 			want: struct {
 				Value interface{}
-			}{[]interface{}{StringOption{}, zero}},
+			}{[]interface{}{StringOption{}}},
 		},
 		{
 			info: info{"list StringOption to zero", line()},
@@ -1387,7 +1417,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{ListStringOption{StringOption{}}},
 			want: struct {
 				Value interface{}
-			}{[]interface{}{zero}},
+			}{[]interface{}{}},
 		},
 		{
 
