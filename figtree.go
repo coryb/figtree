@@ -128,6 +128,11 @@ func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
 	WithApplyChangeSet(apply)(f)
 }
 
+func (f *FigTree) Copy() *FigTree {
+	cp = *f
+	return &cp
+}
+
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	// reset from any previous config parsing runs
 	f.stop = false
