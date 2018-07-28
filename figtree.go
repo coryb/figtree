@@ -95,7 +95,11 @@ type FigTree struct {
 }
 
 func NewFigTree(opts ...Option) *FigTree {
+	wd, _ := os.Getwd()
 	fig := &FigTree{
+		home:           os.Getenv("HOME"),
+		workDir:        wd,
+		envPrefix:      "FIGTREE",
 		applyChangeSet: defaultApplyChangeSet,
 	}
 	for _, opt := range opts {
