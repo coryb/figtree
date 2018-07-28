@@ -22,10 +22,8 @@ func TestOptionsEnv(t *testing.T) {
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
-	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
-
-	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -62,10 +60,8 @@ func TestOptionsNamedEnv(t *testing.T) {
 
 	fig := newFigTreeFromEnv(WithEnvPrefix("TEST"))
 
-	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
-
-	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -96,10 +92,8 @@ func TestBuiltinEnv(t *testing.T) {
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
-	changeSet, err := fig.LoadAllConfigs("figtree.yml", &opts)
+	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
-
-	ApplyChangeSet(changeSet)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -141,10 +135,8 @@ multi-env: jkl
 `
 
 	fig := newFigTreeFromEnv()
-	changeSet, err := fig.LoadConfigBytes([]byte(input), "test", &dest)
+	err := fig.LoadConfigBytes([]byte(input), "test", &dest)
 	assert.NoError(t, err)
-
-	ApplyChangeSet(changeSet)
 
 	got := os.Environ()
 	sort.StringSlice(got).Sort()

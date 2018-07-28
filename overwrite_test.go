@@ -36,7 +36,7 @@ func TestOptionsOverwriteConfigD3(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	_, err := fig.LoadAllConfigs("overwrite.yml", &opts)
+	err := fig.LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -66,7 +66,7 @@ func TestOptionsOverwriteConfigD2(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	_, err := fig.LoadAllConfigs("overwrite.yml", &opts)
+	err := fig.LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -96,7 +96,7 @@ func TestBuiltinOverwriteConfigD3(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	_, err := fig.LoadAllConfigs("overwrite.yml", &opts)
+	err := fig.LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
@@ -128,7 +128,7 @@ func TestBuiltinOverwriteConfigD2(t *testing.T) {
 	}
 
 	fig := newFigTreeFromEnv()
-	_, err := fig.LoadAllConfigs("overwrite.yml", &opts)
+	err := fig.LoadAllConfigs("overwrite.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }

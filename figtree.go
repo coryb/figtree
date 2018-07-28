@@ -31,7 +31,7 @@ func (*nullLogger) Debugf(string, ...interface{}) {}
 
 var Log Logger = &nullLogger{}
 
-func ApplyChangeSet(changeSet map[string]*string) {
+func defaultApplyChangeSet(changeSet map[string]*string) error {
 	for k, v := range changeSet {
 		if v != nil {
 			os.Setenv(k, *v)
@@ -39,6 +39,7 @@ func ApplyChangeSet(changeSet map[string]*string) {
 			os.Unsetenv(k)
 		}
 	}
+	return nil
 }
 
 type Option func(*FigTree)
@@ -67,6 +68,14 @@ func WithConfigDir(dir string) Option {
 	}
 }
 
+type ChangeSetFunc func(map[string]*string) error
+
+func WithApplyChangeSet(apply ChangeSetFunc) Option {
+	return func(f *FigTree) {
+		f.applyChangeSet = apply
+	}
+}
+
 type PreProcessor func([]byte) ([]byte, error)
 
 func WithPreProcessor(pp PreProcessor) Option {
@@ -76,16 +85,19 @@ func WithPreProcessor(pp PreProcessor) Option {
 }
 
 type FigTree struct {
-	home         string
-	workDir      string
-	configDir    string
-	envPrefix    string
-	preProcessor PreProcessor
-	stop         bool
+	home           string
+	workDir        string
+	configDir      string
+	envPrefix      string
+	preProcessor   PreProcessor
+	stop           bool
+	applyChangeSet ChangeSetFunc
 }
 
 func NewFigTree(opts ...Option) *FigTree {
-	fig := &FigTree{}
+	fig := &FigTree{
+		applyChangeSet: defaultApplyChangeSet,
+	}
 	for _, opt := range opts {
 		opt(fig)
 	}
@@ -112,7 +124,11 @@ func (f *FigTree) WithPreProcessor(pp PreProcessor) {
 	WithPreProcessor(pp)(f)
 }
 
-func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (changeSet map[string]*string, err error) {
+func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
+	WithApplyChangeSet(apply)(f)
+}
+
+func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	// reset from any previous config parsing runs
 	f.stop = false
 
@@ -124,29 +140,22 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) (change
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
 	// iterate paths in reverse
-	changeSet = make(map[string]*string)
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		configEnvSet, err := f.LoadConfig(file, options)
-		if err != nil {
-			return nil, err
-		}
-
-		for k, v := range configEnvSet {
-			changeSet[k] = v
+		if err := f.LoadConfig(file, options); err != nil {
+			return err
 		}
 
 		if f.stop {
 			break
 		}
 	}
-
-	return changeSet, nil
+	return nil
 }
 
-func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) (changeSet map[string]*string, err error) {
+func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) error {
 	if !reflect.ValueOf(options).IsValid() {
-		return nil, fmt.Errorf("options argument [%#v] is not valid", options)
+		return fmt.Errorf("options argument [%#v] is not valid", options)
 	}
 
 	defer func(mapType, iface reflect.Type) {
@@ -157,10 +166,11 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	yaml.IfaceType = yaml.DefaultMapType.Elem()
 
+	var err error
 	if f.preProcessor != nil {
 		config, err = f.preProcessor(config)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to process config file: %s", source)
+			return errors.Wrapf(err, "Failed to process config file: %s", source)
 		}
 	}
 
@@ -173,13 +183,13 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	// look for config settings first
 	err = yaml.Unmarshal(config, m)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
+		return errors.Wrapf(err, "Unable to parse %s", source)
 	}
 
 	// then parse document into requested struct
 	err = yaml.Unmarshal(config, tmp)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("Unable to parse %s", source))
+		return errors.Wrapf(err, "Unable to parse %s", source)
 	}
 
 	m.setSource(reflect.ValueOf(tmp))
@@ -187,15 +197,15 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		reflect.ValueOf(options),
 		reflect.ValueOf(tmp),
 	)
-	changeSet = f.PopulateEnv(options)
+	changeSet := f.PopulateEnv(options)
 	if m.Config.Stop {
 		f.stop = true
-		return changeSet, nil
+		return f.applyChangeSet(changeSet)
 	}
-	return changeSet, nil
+	return f.applyChangeSet(changeSet)
 }
 
-func (f *FigTree) LoadConfig(file string, options interface{}) (changeSet map[string]*string, err error) {
+func (f *FigTree) LoadConfig(file string, options interface{}) error {
 	rel, err := filepath.Rel(f.workDir, file)
 	if err != nil {
 		rel = file
@@ -215,12 +225,12 @@ func (f *FigTree) LoadConfig(file string, options interface{}) (changeSet map[st
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr))
+				return errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
 			}
 			return f.LoadConfigBytes(stdout.Bytes(), rel, options)
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 func FindParentPaths(homedir, cwd, fileName string) []string {
