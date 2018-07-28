@@ -128,8 +128,14 @@ func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
 	WithApplyChangeSet(apply)(f)
 }
 
+func (f *FigTree) WithIgnoreChangeSet() {
+	WithApplyChangeSet(func(_ map[string]*string) error {
+		return nil
+	})(f)
+}
+
 func (f *FigTree) Copy() *FigTree {
-	cp = *f
+	cp := *f
 	return &cp
 }
 
