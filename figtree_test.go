@@ -1653,3 +1653,36 @@ ok-name: want-array
 	assert.NoError(t, err)
 	assert.Equal(t, want, dest)
 }
+
+func TestMergeMapWithCopy(t *testing.T) {
+	type mss = map[string]string
+
+	dest := struct {
+		Map mss
+	}{}
+
+	src1 := struct {
+		Map mss
+	}{
+		mss{
+			"key": "value",
+		},
+	}
+
+	src2 := struct {
+		Map mss
+	}{
+		mss{
+			"otherkey": "othervalue",
+		},
+	}
+
+	Merge(&dest, &src1)
+	assert.Equal(t, mss{"key": "value"}, dest.Map)
+
+	Merge(&dest, &src2)
+	assert.Equal(t, mss{"key": "value", "otherkey": "othervalue"}, dest.Map)
+
+	// verify that src1 was unmodified
+	assert.Equal(t, mss{"key": "value"}, src1.Map)
+}

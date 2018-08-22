@@ -598,7 +598,14 @@ func (m *Merger) setSource(v reflect.Value) {
 func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 	if src.Type().AssignableTo(dest.Type()) {
 		if (isZero(dest) || isDefault(dest) || overwrite) && !isZero(src) {
-			dest.Set(src)
+			if src.Kind() == reflect.Map {
+				// maps are mutable, so create a brand new shiny one
+				dup := reflect.New(src.Type()).Elem()
+				m.mergeMaps(dup, src)
+				dest.Set(dup)
+			} else {
+				dest.Set(src)
+			}
 			return
 		}
 		return
