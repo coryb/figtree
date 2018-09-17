@@ -1706,3 +1706,23 @@ func TestMergeBoolString(t *testing.T) {
 
 	assert.Equal(t, expected, dest)
 }
+
+func TestMergeStringBoot(t *testing.T) {
+	src1 := struct {
+		EnableThing StringOption
+	}{NewStringOption("true")}
+
+	src2 := map[string]interface{}{
+		"enable-thing": true,
+	}
+
+	dest := MakeMergeStruct(src1, src2)
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		EnableThing StringOption
+	}{StringOption{Source: "merge", Defined: true, Value: "true"}}
+
+	assert.Equal(t, expected, dest)
+}
