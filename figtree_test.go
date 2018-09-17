@@ -1686,3 +1686,23 @@ func TestMergeMapWithCopy(t *testing.T) {
 	// verify that src1 was unmodified
 	assert.Equal(t, mss{"key": "value"}, src1.Map)
 }
+
+func TestMergeBoolString(t *testing.T) {
+	src1 := struct {
+		EnableThing BoolOption
+	}{NewBoolOption(true)}
+
+	src2 := map[string]interface{}{
+		"enable-thing": "true",
+	}
+
+	dest := MakeMergeStruct(src1, src2)
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		EnableThing BoolOption
+	}{BoolOption{Source: "merge", Defined: true, Value: true}}
+
+	assert.Equal(t, expected, dest)
+}

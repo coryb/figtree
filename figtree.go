@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -624,9 +625,18 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 				option.SetSource(m.sourceFile)
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
 				return
-			} else {
-				panic(fmt.Errorf("%s is not assinable to %s", src.Type(), destOptionValue.Type()))
 			}
+			if destOptionValue.Kind() == reflect.Bool && src.Kind() == reflect.String {
+				b, err := strconv.ParseBool(src.Interface().(string))
+				if err != nil {
+					panic(fmt.Errorf("%s is not assignable to %s, invalid bool value: %s", src.Type(), destOptionValue.Type(), err))
+				}
+				option.SetValue(b)
+				option.SetSource(m.sourceFile)
+				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, b)
+				return
+			}
+			panic(fmt.Errorf("%s is not assignable to %s", src.Type(), destOptionValue.Type()))
 		}
 	}
 	// make copy so we can reliably Addr it to see if it fits the
