@@ -174,14 +174,6 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		return fmt.Errorf("options argument [%#v] is not valid", options)
 	}
 
-	defer func(mapType, iface reflect.Type) {
-		yaml.DefaultMapType = mapType
-		yaml.IfaceType = iface
-	}(yaml.DefaultMapType, yaml.IfaceType)
-
-	yaml.DefaultMapType = reflect.TypeOf(map[string]interface{}{})
-	yaml.IfaceType = yaml.DefaultMapType.Elem()
-
 	var err error
 	if f.preProcessor != nil {
 		config, err = f.preProcessor(config)

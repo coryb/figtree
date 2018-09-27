@@ -196,9 +196,19 @@ type decoder struct {
 var (
 	mapItemType    = reflect.TypeOf(MapItem{})
 	durationType   = reflect.TypeOf(time.Duration(0))
-	DefaultMapType = reflect.TypeOf(map[interface{}]interface{}{})
+	DefaultMapType = reflect.TypeOf(map[string]interface{}{})
 	IfaceType      = DefaultMapType.Elem()
 )
+
+func UseMapType(mapType reflect.Type) {
+	DefaultMapType = mapType
+	IfaceType = mapType.Elem()
+}
+
+func RestoreMapType() {
+	DefaultMapType = reflect.TypeOf(map[string]interface{}{})
+	IfaceType = DefaultMapType.Elem()
+}
 
 func newDecoder(strict bool) *decoder {
 	d := &decoder{mapType: DefaultMapType, strict: strict}
