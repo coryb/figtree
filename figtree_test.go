@@ -1707,7 +1707,7 @@ func TestMergeBoolString(t *testing.T) {
 	assert.Equal(t, expected, dest)
 }
 
-func TestMergeStringBoot(t *testing.T) {
+func TestMergeStringBool(t *testing.T) {
 	src1 := struct {
 		EnableThing StringOption
 	}{NewStringOption("true")}
@@ -1723,6 +1723,26 @@ func TestMergeStringBoot(t *testing.T) {
 	expected := &struct {
 		EnableThing StringOption
 	}{StringOption{Source: "merge", Defined: true, Value: "true"}}
+
+	assert.Equal(t, expected, dest)
+}
+
+func TestMergeStringFloat64(t *testing.T) {
+	src1 := struct {
+		SomeThing StringOption
+	}{NewStringOption("true")}
+
+	src2 := map[string]interface{}{
+		"some-thing": 42.0,
+	}
+
+	dest := MakeMergeStruct(src1, src2)
+	Merge(dest, src1)
+	Merge(dest, src2)
+
+	expected := &struct {
+		SomeThing StringOption
+	}{StringOption{Source: "merge", Defined: true, Value: "42"}}
 
 	assert.Equal(t, expected, dest)
 }

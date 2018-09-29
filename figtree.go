@@ -628,8 +628,8 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, b)
 				return
 			}
-			if destOptionValue.Kind() == reflect.String && src.Kind() == reflect.Bool {
-				option.SetValue(strconv.FormatBool(src.Interface().(bool)))
+			if destOptionValue.Kind() == reflect.String && src.Kind() != reflect.String {
+				option.SetValue(fmt.Sprintf("%v", src.Interface()))
 				option.SetSource(m.sourceFile)
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
 				return
