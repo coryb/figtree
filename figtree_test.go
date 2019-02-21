@@ -1746,3 +1746,26 @@ func TestMergeStringFloat64(t *testing.T) {
 
 	assert.Equal(t, expected, dest)
 }
+
+func TestMergeDefaults(t *testing.T) {
+	src1 := &struct {
+		SomeThing StringOption
+	}{NewStringOption("foo")}
+
+	src2 := &struct {
+		SomeThing StringOption
+	}{NewStringOption("bar")}
+
+	dest := MakeMergeStruct(src1, src2)
+	Merge(dest, src1)
+
+	expected := &struct {
+		SomeThing StringOption
+	}{StringOption{Source: "default", Defined: true, Value: "foo"}}
+
+	assert.Equal(t, expected, dest)
+
+	Merge(dest, src2)
+
+	assert.Equal(t, expected, dest)
+}
