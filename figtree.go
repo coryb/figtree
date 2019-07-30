@@ -243,6 +243,14 @@ func (f *FigTree) LoadConfig(file string, options interface{}) error {
 
 func FindParentPaths(homedir, cwd, fileName string) []string {
 	paths := make([]string, 0)
+	if filepath.IsAbs(fileName) {
+		// dont recursively look for files when fileName is an abspath
+		_, err := os.Stat(fileName)
+		if err == nil {
+			paths = append(paths, fileName)
+		}
+		return paths
+	}
 
 	// special case if homedir is not in current path then check there anyway
 	if !strings.HasPrefix(cwd, homedir) {
