@@ -958,9 +958,9 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 			}
 
 			envNames := []string{strings.Join(camelcase.Split(structField.Name), "_")}
-
+			formatName := true
 			if tag := structField.Tag.Get("figtree"); tag != "" {
-				if strings.HasSuffix(tag, ",inline") {
+				if strings.Contains(tag, ",inline") {
 					// if we have a tag like: `figtree:",inline"` then we
 					// want to the field as a top level member and not serialize
 					// the raw struct to json, so just recurse here
@@ -969,6 +969,9 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 						changeSet[k] = v
 					}
 					continue
+				}
+				if strings.Contains(tag, ",raw") {
+					formatName = false
 				}
 				// next look for `figtree:"env,..."` to set the env name to that
 				parts := strings.Split(tag, ",")
@@ -981,7 +984,10 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 				}
 			}
 			for _, name := range envNames {
-				envName := f.formatEnvName(name)
+				envName := name
+				if formatName {
+					envName = f.formatEnvName(name)
+				}
 				val, ok := f.formatEnvValue(options.Field(i))
 				if ok {
 					changeSet[envName] = &val
