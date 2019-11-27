@@ -19,8 +19,6 @@ func TestOptionsOverwriteConfigD3(t *testing.T) {
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{"../overwrite.yml", true, "d2arr1val1"})
 	arr1 = append(arr1, StringOption{"../overwrite.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../../overwrite.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../../overwrite.yml", true, "d1arr1val2"})
 
 	expected := TestOptions{
 		String1:    StringOption{"../overwrite.yml", true, "d2str1val1"},
@@ -49,8 +47,6 @@ func TestOptionsOverwriteConfigD2(t *testing.T) {
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{"overwrite.yml", true, "d2arr1val1"})
 	arr1 = append(arr1, StringOption{"overwrite.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../overwrite.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../overwrite.yml", true, "d1arr1val2"})
 
 	expected := TestOptions{
 		String1:    StringOption{"overwrite.yml", true, "d2str1val1"},
@@ -79,8 +75,6 @@ func TestBuiltinOverwriteConfigD3(t *testing.T) {
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
 	arr1 = append(arr1, "d2arr1val2")
-	arr1 = append(arr1, "d1arr1val1")
-	arr1 = append(arr1, "d1arr1val2")
 
 	expected := TestBuiltin{
 		String1:    "d2str1val1",
@@ -109,8 +103,6 @@ func TestBuiltinOverwriteConfigD2(t *testing.T) {
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
 	arr1 = append(arr1, "d2arr1val2")
-	arr1 = append(arr1, "d1arr1val1")
-	arr1 = append(arr1, "d1arr1val2")
 
 	expected := TestBuiltin{
 		String1:    "d2str1val1",
@@ -122,9 +114,7 @@ func TestBuiltinOverwriteConfigD2(t *testing.T) {
 		},
 		Int1:   111,
 		Float1: 1.11,
-		// note this will be true from d1/overwrite.yml since the
-		// d1/d2/overwrite.yml set it to false which is a zero value
-		Bool1: true,
+		Bool1:  false,
 	}
 
 	fig := newFigTreeFromEnv()

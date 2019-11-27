@@ -85,14 +85,20 @@ func WithPreProcessor(pp PreProcessor) Option {
 	}
 }
 
+func WithoutExec() Option {
+	return func(f *FigTree) {
+		f.exec = false
+	}
+}
+
 type FigTree struct {
 	home           string
 	workDir        string
 	configDir      string
 	envPrefix      string
 	preProcessor   PreProcessor
-	stop           bool
 	applyChangeSet ChangeSetFunc
+	exec           bool
 }
 
 func NewFigTree(opts ...Option) *FigTree {
@@ -102,6 +108,7 @@ func NewFigTree(opts ...Option) *FigTree {
 		workDir:        wd,
 		envPrefix:      "FIGTREE",
 		applyChangeSet: defaultApplyChangeSet,
+		exec:           true,
 	}
 	for _, opt := range opts {
 		opt(fig)
@@ -139,15 +146,16 @@ func (f *FigTree) WithIgnoreChangeSet() {
 	})(f)
 }
 
+func (f *FigTree) WithoutExec() {
+	WithoutExec()(f)
+}
+
 func (f *FigTree) Copy() *FigTree {
 	cp := *f
 	return &cp
 }
 
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
-	// reset from any previous config parsing runs
-	f.stop = false
-
 	if f.configDir != "" {
 		configFile = path.Join(f.configDir, configFile)
 	}
@@ -155,21 +163,50 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	paths := FindParentPaths(f.home, f.workDir, configFile)
 	paths = append([]string{fmt.Sprintf("/etc/%s", configFile)}, paths...)
 
+	configSources := []ConfigSource{}
 	// iterate paths in reverse
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		if err := f.LoadConfig(file, options); err != nil {
+		cs, err := f.readFile(file)
+		if err != nil {
 			return err
 		}
-
-		if f.stop {
-			break
+		if cs == nil {
+			// no file contents to parse, file likely does not exist
+			continue
 		}
+		configSources = append(configSources, *cs)
+	}
+	return f.LoadAllConfigSources(configSources, options)
+}
+
+type ConfigSource struct {
+	Config   []byte
+	Filename string
+}
+
+func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface{}) error {
+	m := NewMerger()
+	for _, source := range sources {
+		m.sourceFile = source.Filename
+		err := f.loadConfigBytes(m, source.Config, options)
+		if m.Config.Stop {
+			return err
+		}
+		if err != nil {
+			return err
+		}
+		m.advance()
 	}
 	return nil
 }
 
 func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) error {
+	m := NewMerger(WithSourceFile(source))
+	return f.loadConfigBytes(m, config, options)
+}
+
+func (f *FigTree) loadConfigBytes(m *Merger, config []byte, options interface{}) error {
 	if !reflect.ValueOf(options).IsValid() {
 		return fmt.Errorf("options argument [%#v] is not valid", options)
 	}
@@ -178,26 +215,21 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 	if f.preProcessor != nil {
 		config, err = f.preProcessor(config)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to process config file: %s", source)
+			return errors.Wrapf(err, "Failed to process config file: %s", m.sourceFile)
 		}
-	}
-
-	m := NewMerger(WithSourceFile(source))
-	type tmpOpts struct {
-		Config ConfigOptions
 	}
 
 	tmp := reflect.New(reflect.ValueOf(options).Elem().Type()).Interface()
 	// look for config settings first
 	err = yaml.Unmarshal(config, m)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to parse %s", source)
+		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
 	}
 
 	// then parse document into requested struct
 	err = yaml.Unmarshal(config, tmp)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to parse %s", source)
+		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
 	}
 
 	m.setSource(reflect.ValueOf(tmp))
@@ -206,25 +238,38 @@ func (f *FigTree) LoadConfigBytes(config []byte, source string, options interfac
 		reflect.ValueOf(tmp),
 	)
 	changeSet := f.PopulateEnv(options)
-	if m.Config.Stop {
-		f.stop = true
-		return f.applyChangeSet(changeSet)
-	}
 	return f.applyChangeSet(changeSet)
 }
 
 func (f *FigTree) LoadConfig(file string, options interface{}) error {
+	cs, err := f.readFile(file)
+	if err != nil {
+		return err
+	}
+	if cs == nil {
+		// no file contents to parse, file likely does not exist
+		return nil
+	}
+	return f.LoadConfigBytes(cs.Config, cs.Filename, options)
+}
+
+func (f *FigTree) readFile(file string) (*ConfigSource, error) {
 	rel, err := filepath.Rel(f.workDir, file)
 	if err != nil {
 		rel = file
 	}
 
 	if stat, err := os.Stat(file); err == nil {
-		if stat.Mode()&0111 == 0 {
-			Log.Debugf("Loading config %s", file)
-			if data, err := ioutil.ReadFile(file); err == nil {
-				return f.LoadConfigBytes(data, rel, options)
+		if stat.Mode()&0111 == 0 || !f.exec {
+			Log.Debugf("Reading config %s", file)
+			data, err := ioutil.ReadFile(file)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Failed to read %s", rel)
 			}
+			return &ConfigSource{
+				Config:   data,
+				Filename: rel,
+			}, nil
 		} else {
 			Log.Debugf("Found Executable Config file: %s", file)
 			// it is executable, so run it and try to parse the output
@@ -233,12 +278,15 @@ func (f *FigTree) LoadConfig(file string, options interface{}) error {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
+				return nil, errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
 			}
-			return f.LoadConfigBytes(stdout.Bytes(), rel, options)
+			return &ConfigSource{
+				Config:   stdout.Bytes(),
+				Filename: rel,
+			}, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func FindParentPaths(homedir, cwd, fileName string) []string {
@@ -294,6 +342,7 @@ type Merger struct {
 	sourceFile  string
 	preserveMap map[string]struct{}
 	Config      ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
+	ignore      []string
 }
 
 type MergeOption func(*Merger)
@@ -321,6 +370,26 @@ func NewMerger(options ...MergeOption) *Merger {
 		opt(m)
 	}
 	return m
+}
+
+// advance will move all the current overwrite properties to
+// the ignore properties, then reset the overwrite properties.
+// This is used after a document has be processed so the next
+// document does not modify overwritten fields.
+func (m *Merger) advance() {
+	for _, overwrite := range m.Config.Overwrite {
+		found := false
+		for _, ignore := range m.ignore {
+			if ignore == overwrite {
+				found = true
+				break
+			}
+		}
+		if !found {
+			m.ignore = append(m.ignore, overwrite)
+		}
+	}
+	m.Config.Overwrite = nil
 }
 
 // Merge will attempt to merge the data from src into dst.  They shoud be either both maps or both structs.
@@ -522,6 +591,15 @@ func yamlFieldName(sf reflect.StructField) string {
 
 func (m *Merger) mustOverwrite(name string) bool {
 	for _, prop := range m.Config.Overwrite {
+		if name == prop {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Merger) mustIgnore(name string) bool {
+	for _, prop := range m.ignore {
 		if name == prop {
 			return true
 		}
@@ -741,6 +819,10 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		ovField := ov.FieldByName(nvStructField.Name)
 		ovField, restore := fromInterface(ovField)
 		defer restore()
+
+		if m.mustIgnore(fieldName) {
+			continue
+		}
 
 		if (isZero(ovField) || isDefault(ovField) || m.mustOverwrite(fieldName)) && !isSame(ovField, nvField) {
 			Log.Debugf("Setting %s to %#v", nv.Type().Field(i).Name, nvField.Interface())
