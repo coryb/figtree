@@ -85,6 +85,38 @@ func WithPreProcessor(pp PreProcessor) Option {
 	}
 }
 
+type FilterOut func([]byte) bool
+
+func WithFilterOut(filt FilterOut) Option {
+	return func(f *FigTree) {
+		f.filterOut = filt
+	}
+}
+
+func defaultFilterOut() FilterOut {
+	// looking for:
+	// ```
+	// config:
+	//   stop: true|false
+	// ```
+	configStop := struct {
+		Config struct {
+			Stop bool `json:"stop" yaml:"stop"`
+		} `json:"config" yaml:"config"`
+	}{}
+	return func(config []byte) bool {
+		// if previous parse found a stop we should abort here
+		if configStop.Config.Stop {
+			return true
+		}
+		// now check if current doc has a stop
+		yaml.Unmarshal(config, &configStop)
+		// even if current doc has a stop, we should continue to
+		// process it, we dont want to process the "next" document
+		return false
+	}
+}
+
 func WithoutExec() Option {
 	return func(f *FigTree) {
 		f.exec = false
@@ -99,6 +131,7 @@ type FigTree struct {
 	preProcessor   PreProcessor
 	applyChangeSet ChangeSetFunc
 	exec           bool
+	filterOut      FilterOut
 }
 
 func NewFigTree(opts ...Option) *FigTree {
@@ -134,6 +167,10 @@ func (f *FigTree) WithConfigDir(dir string) {
 
 func (f *FigTree) WithPreProcessor(pp PreProcessor) {
 	WithPreProcessor(pp)(f)
+}
+
+func (f *FigTree) WithFilterOut(filt FilterOut) {
+	WithFilterOut(filt)(f)
 }
 
 func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
@@ -187,12 +224,19 @@ type ConfigSource struct {
 
 func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface{}) error {
 	m := NewMerger()
+	filterOut := f.filterOut
+	if filterOut == nil {
+		filterOut = defaultFilterOut()
+	}
+
 	for _, source := range sources {
+		skip := filterOut(source.Config)
+		if skip {
+			continue
+		}
+
 		m.sourceFile = source.Filename
 		err := f.loadConfigBytes(m, source.Config, options)
-		if m.Config.Stop {
-			return err
-		}
 		if err != nil {
 			return err
 		}
@@ -569,8 +613,6 @@ func structToMap(src reflect.Value) reflect.Value {
 
 type ConfigOptions struct {
 	Overwrite []string `json:"overwrite,omitempty" yaml:"overwrite,omitempty"`
-	Stop      bool     `json:"stop,omitempty" yaml:"stop,omitempty"`
-	// Merge     bool     `json:"merge,omitempty" yaml:"merge,omitempty"`
 }
 
 func yamlFieldName(sf reflect.StructField) string {
