@@ -204,7 +204,7 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	// iterate paths in reverse
 	for i := len(paths) - 1; i >= 0; i-- {
 		file := paths[i]
-		cs, err := f.readFile(file)
+		cs, err := f.ReadFile(file)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func (f *FigTree) loadConfigBytes(m *Merger, config []byte, options interface{})
 }
 
 func (f *FigTree) LoadConfig(file string, options interface{}) error {
-	cs, err := f.readFile(file)
+	cs, err := f.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -297,7 +297,11 @@ func (f *FigTree) LoadConfig(file string, options interface{}) error {
 	return f.LoadConfigBytes(cs.Config, cs.Filename, options)
 }
 
-func (f *FigTree) readFile(file string) (*ConfigSource, error) {
+// ReadFile will return a ConfigSource for given file path.  If the
+// file is executable (and WithoutExec was not used), it will execute
+// the file and return the stdout otherwise it will return the file
+// contents directly.
+func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 	rel, err := filepath.Rel(f.workDir, file)
 	if err != nil {
 		rel = file
