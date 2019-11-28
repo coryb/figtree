@@ -230,6 +230,10 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 	}
 
 	for _, source := range sources {
+		// automatically skip empty configs
+		if len(source.Config) == 0 {
+			continue
+		}
 		skip := filterOut(source.Config)
 		if skip {
 			continue
