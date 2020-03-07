@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	yaml "gopkg.in/coryb/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 	logging "gopkg.in/op/go-logging.v1"
 
 	"github.com/stretchr/testify/assert"

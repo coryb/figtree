@@ -18,8 +18,7 @@ import (
 
 	"github.com/fatih/camelcase"
 	"github.com/pkg/errors"
-
-	yaml "gopkg.in/coryb/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Logger interface {
@@ -93,7 +92,7 @@ func WithFilterOut(filt FilterOut) Option {
 	}
 }
 
-func defaultFilterOut() FilterOut {
+func defaultFilterOut(f *FigTree) FilterOut {
 	// looking for:
 	// ```
 	// config:
@@ -110,10 +109,16 @@ func defaultFilterOut() FilterOut {
 			return true
 		}
 		// now check if current doc has a stop
-		yaml.Unmarshal(config, &configStop)
+		f.unmarshal(config, &configStop)
 		// even if current doc has a stop, we should continue to
 		// process it, we dont want to process the "next" document
 		return false
+	}
+}
+
+func WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) Option {
+	return func(f *FigTree) {
+		f.unmarshal = unmarshaller
 	}
 }
 
@@ -132,6 +137,7 @@ type FigTree struct {
 	applyChangeSet ChangeSetFunc
 	exec           bool
 	filterOut      FilterOut
+	unmarshal      func(in []byte, out interface{}) error
 }
 
 func NewFigTree(opts ...Option) *FigTree {
@@ -142,6 +148,7 @@ func NewFigTree(opts ...Option) *FigTree {
 		envPrefix:      "FIGTREE",
 		applyChangeSet: defaultApplyChangeSet,
 		exec:           true,
+		unmarshal:      yaml.Unmarshal,
 	}
 	for _, opt := range opts {
 		opt(fig)
@@ -171,6 +178,10 @@ func (f *FigTree) WithPreProcessor(pp PreProcessor) {
 
 func (f *FigTree) WithFilterOut(filt FilterOut) {
 	WithFilterOut(filt)(f)
+}
+
+func (f *FigTree) WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) {
+	WithUnmarshaller(unmarshaller)(f)
 }
 
 func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
@@ -226,7 +237,7 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 	m := NewMerger()
 	filterOut := f.filterOut
 	if filterOut == nil {
-		filterOut = defaultFilterOut()
+		filterOut = defaultFilterOut(f)
 	}
 
 	for _, source := range sources {
@@ -269,13 +280,13 @@ func (f *FigTree) loadConfigBytes(m *Merger, config []byte, options interface{})
 
 	tmp := reflect.New(reflect.ValueOf(options).Elem().Type()).Interface()
 	// look for config settings first
-	err = yaml.Unmarshal(config, m)
+	err = f.unmarshal(config, m)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
 	}
 
 	// then parse document into requested struct
-	err = yaml.Unmarshal(config, tmp)
+	err = f.unmarshal(config, tmp)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
 	}

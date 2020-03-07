@@ -1,14 +1,23 @@
 package figtree
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"testing"
 
-	yaml "gopkg.in/coryb/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func yamlMarshal(opts interface{}) (string, error) {
+	buf := &bytes.Buffer{}
+	enc := yaml.NewEncoder(buf)
+	enc.SetIndent(2)
+	err := enc.Encode(opts)
+	return buf.String(), err
+}
 
 func TestOptionsMarshalYAML(t *testing.T) {
 	opts := TestOptions{}
@@ -22,7 +31,7 @@ func TestOptionsMarshalYAML(t *testing.T) {
 	defer func() {
 		StringifyValue = false
 	}()
-	got, err := yaml.Marshal(&opts)
+	got, err := yamlMarshal(&opts)
 	assert.Nil(t, err)
 
 	expected := `str1: d3str1val1

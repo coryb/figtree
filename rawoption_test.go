@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	yaml "gopkg.in/coryb/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 )

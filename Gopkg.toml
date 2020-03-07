@@ -46,8 +46,8 @@
   version = "2.2.4"
 
 [[constraint]]
-  name = "gopkg.in/coryb/yaml.v2"
-  branch = "v2"
+  name = "gopkg.in/yaml.v3"
+  branch = "v3"
 
 [[constraint]]
   name = "gopkg.in/op/go-logging.v1"

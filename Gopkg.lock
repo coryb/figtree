@@ -30,10 +30,10 @@
   version = "v1.1.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/fatih/camelcase"
   packages = ["."]
-  revision = "44e46d280b43ec1531bb25252440e34f1b800b65"
-  version = "v1.0.0"
+  revision = "9db1b65eb38bb28986b93b521af1b7891ee1b04d"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -63,20 +63,20 @@
   version = "v2.2.6"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/coryb/yaml.v2"
-  packages = ["."]
-  revision = "8d7e9dd8463dc57eee64303b48220796e06b5493"
-
-[[projects]]
   name = "gopkg.in/op/go-logging.v1"
   packages = ["."]
   revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
   version = "v1"
 
+[[projects]]
+  branch = "v3"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  revision = "4206685974f28e3178b35fa198a59899aa4dee3a"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3f56166c5e219a476609b98112eabdcd392e1fb573531e594c6e68e44bede533"
+  inputs-digest = "c78a3380155c7dc2bf9b0ad525e9dea19c7ef60848c1f3178cbcc2d09615dff0"
   solver-name = "gps-cdcl"
   solver-version = 1
