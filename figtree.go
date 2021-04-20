@@ -761,7 +761,9 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 				Log.Debugf("assignValue: src isValid: %t", src.IsValid())
 				return
 			}
-			if src.Type().AssignableTo(destOptionValue.Type()) {
+			// if destOptionValue is a Zero value then the Type call will panic.  If it
+			// dest is zero, we should just overwrite it with src anyway.
+			if isZero(destOptionValue) || src.Type().AssignableTo(destOptionValue.Type()) {
 				option.SetValue(src.Interface())
 				option.SetSource(m.sourceFile)
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
@@ -796,7 +798,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 			m.assignValue(dest, srcOptionValue, overwrite)
 			return
 		} else {
-			panic(fmt.Errorf("%s is not assinable to %s", srcOptionValue.Type(), dest.Type()))
+			panic(fmt.Errorf("%s is not assignable to %s", srcOptionValue.Type(), dest.Type()))
 		}
 	}
 }
