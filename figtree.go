@@ -341,7 +341,7 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return nil, errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
+				return nil, errors.Wrapf(err, "%s is executable and it failed:\n%s", file, cmd.Stderr)
 			}
 			return &ConfigSource{
 				Config:   stdout.Bytes(),
