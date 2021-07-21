@@ -500,8 +500,8 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 		typ := v.Type()
 		var field reflect.StructField
 		if typ.Kind() == reflect.Struct {
-			for i := 0; i < typ.NumField(); i++ {
-				field = typ.Field(i)
+			for j := 0; j < typ.NumField(); j++ {
+				field = typ.Field(j)
 				if field.PkgPath != "" {
 					// unexported field, skip
 					continue
@@ -520,7 +520,9 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					continue
 				}
 				if inlineField(field) {
-					values = append(values, v.Field(i))
+					// insert inline after this value, it will have a higher
+					// "type" priority than later values
+					values = append(values[:i+1], append([]reflect.Value{v.Field(j)}, values[i+1:]...)...)
 					continue
 				}
 				foundFields[field.Name] = field

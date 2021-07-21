@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"testing"
 
-	yaml "gopkg.in/yaml.v3"
 	logging "gopkg.in/op/go-logging.v1"
+	yaml "gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -956,7 +956,7 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 
 func TestMakeMergeStructWithInline(t *testing.T) {
 	type Inner struct {
-		InnerString string
+		InnerString StringOption `json:"inner-string" yaml:"inner-string"`
 	}
 
 	outer := struct {
@@ -971,7 +971,7 @@ func TestMakeMergeStructWithInline(t *testing.T) {
 
 	got := MakeMergeStruct(outer, other)
 	assert.IsType(t, (*struct {
-		InnerString string
+		InnerString StringOption `json:"inner-string" yaml:"inner-string"`
 		OtherString string
 		OuterString string
 	})(nil), got)
@@ -983,8 +983,8 @@ func TestMakeMergeStructWithInline(t *testing.T) {
 
 	got = MakeMergeStruct(outer, otherMap)
 	assert.IsType(t, (*struct {
-		InnerString string `json:"inner-string" yaml:"inner-string"`
-		OtherString string `json:"other-string" yaml:"other-string"`
+		InnerString StringOption `json:"inner-string" yaml:"inner-string"`
+		OtherString string       `json:"other-string" yaml:"other-string"`
 		OuterString string
 	})(nil), got)
 }
