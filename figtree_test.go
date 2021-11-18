@@ -570,6 +570,60 @@ func TestMergeStructWithMap(t *testing.T) {
 	assert.Equal(t, &expected, merged)
 }
 
+func TestMergeStructWithMapArbitraryNaming(t *testing.T) {
+	// Go struct field names should not matter
+	dest := struct {
+		MyStructField string `yaml:"struct-field"`
+		MyMapkey      string `yaml:"mapkey"`
+		MyMap         struct {
+			MyStructField string `yaml:"struct-field"`
+			MyMapkey      string `yaml:"mapkey"`
+		} `yaml:"map"`
+	}{
+		MyStructField: "field1",
+		MyMap: struct {
+			MyStructField string `yaml:"struct-field"`
+			MyMapkey      string `yaml:"mapkey"`
+		}{
+			MyStructField: "field2",
+		},
+	}
+
+	src := map[string]interface{}{
+		"mapkey": "mapval1",
+		"map": map[string]interface{}{
+			"mapkey":  "mapval2",
+			"nullkey": nil,
+		},
+	}
+
+	merged := MakeMergeStruct(&dest, &src)
+	Merge(merged, &dest)
+	Merge(merged, &src)
+
+	expected := struct {
+		Map struct {
+			Mapkey      string      `yaml:"mapkey"`
+			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
+			StructField string      `yaml:"struct-field"`
+		} `yaml:"map"`
+		Mapkey      string `yaml:"mapkey"`
+		StructField string `yaml:"struct-field"`
+	}{
+		Map: struct {
+			Mapkey      string      `yaml:"mapkey"`
+			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
+			StructField string      `yaml:"struct-field"`
+		}{
+			Mapkey:      "mapval2",
+			StructField: "field2",
+		},
+		Mapkey:      "mapval1",
+		StructField: "field1",
+	}
+	assert.Equal(t, &expected, merged)
+}
+
 func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 	dest := struct {
 		Bool    BoolOption
@@ -591,22 +645,22 @@ func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 	}{}
 
 	src := map[string]interface{}{
-		"bool":    true,
-		"byte":    byte(10),
-		"float32": float32(1.23),
-		"float64": float64(2.34),
-		"int16":   int16(123),
-		"int32":   int32(234),
-		"int64":   int64(345),
-		"int8":    int8(127),
-		"int":     int(456),
-		"rune":    rune('a'),
-		"string":  "stringval",
-		"uint16":  uint16(123),
-		"uint32":  uint32(234),
-		"uint64":  uint64(345),
-		"uint8":   uint8(255),
-		"uint":    uint(456),
+		"bool":     true,
+		"byte":     byte(10),
+		"float-32": float32(1.23),
+		"float-64": float64(2.34),
+		"int-16":   int16(123),
+		"int-32":   int32(234),
+		"int-64":   int64(345),
+		"int-8":    int8(127),
+		"int":      int(456),
+		"rune":     rune('a'),
+		"string":   "stringval",
+		"uint-16":  uint16(123),
+		"uint-32":  uint32(234),
+		"uint-64":  uint64(345),
+		"uint-8":   uint8(255),
+		"uint":     uint(456),
 	}
 
 	Merge(&dest, &src)

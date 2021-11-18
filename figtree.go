@@ -506,6 +506,10 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					// unexported field, skip
 					continue
 				}
+				// For consistency with YAML data, determine a canonical field name based on the YAML tag.
+				// Do not rely on the Go struct field name unless there is no YAML tag.
+				field.Name = camelCase(yamlFieldName(field))
+
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
@@ -850,6 +854,25 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		return
 	}
 
+	ovFieldTypesByYAML := make(map[string]reflect.StructField)
+	ovFieldValuesByYAML := make(map[string]reflect.Value)
+
+	var populateYAMLMaps func(reflect.Value)
+	populateYAMLMaps = func(ov reflect.Value) {
+		for i := 0; i < ov.NumField(); i++ {
+			fieldType := ov.Type().Field(i)
+			yamlName := yamlFieldName(fieldType)
+			if _, ok := ovFieldTypesByYAML[yamlName]; !ok {
+				ovFieldTypesByYAML[yamlName] = fieldType
+				ovFieldValuesByYAML[yamlName] = ov.Field(i)
+			}
+			if fieldType.Anonymous && reflect.Indirect(ov.Field(i)).Type().Kind() == reflect.Struct {
+				populateYAMLMaps(reflect.Indirect(ov.Field(i)))
+			}
+		}
+	}
+	populateYAMLMaps(ov)
+
 	for i := 0; i < nv.NumField(); i++ {
 		nvField := nv.Field(i)
 		if nvField.Kind() == reflect.Interface {
@@ -860,7 +883,8 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		}
 
 		nvStructField := nv.Type().Field(i)
-		ovStructField, ok := ov.Type().FieldByName(nvStructField.Name)
+		fieldName := yamlFieldName(nvStructField)
+		ovStructField, ok := ovFieldTypesByYAML[fieldName]
 		if !ok {
 			if nvStructField.Anonymous {
 				// this is an embedded struct, and the destination does not contain
@@ -879,9 +903,8 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 			// unexported field, skipping
 			continue
 		}
-		fieldName := yamlFieldName(ovStructField)
 
-		ovField := ov.FieldByName(nvStructField.Name)
+		ovField := ovFieldValuesByYAML[fieldName]
 		ovField, restore := fromInterface(ovField)
 		defer restore()
 
