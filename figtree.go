@@ -645,7 +645,9 @@ func yamlFieldName(sf reflect.StructField) string {
 		// with yaml:"foobar,omitempty"
 		// we just want to the "foobar" part
 		parts := strings.Split(tag, ",")
-		return parts[0]
+		if parts[0] != "" && parts[0] != "-" {
+			return parts[0]
+		}
 	}
 	// guess the field name from reversing camel case
 	// so "FooBar" becomes "foo-bar"
