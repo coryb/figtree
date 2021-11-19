@@ -506,9 +506,8 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					// unexported field, skip
 					continue
 				}
-				// For consistency with YAML data, determine a canonical field name based on the YAML tag.
-				// Do not rely on the Go struct field name unless there is no YAML tag.
-				field.Name = camelCase(yamlFieldName(field))
+
+				field.Name = canonicalFieldName(field)
 
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
@@ -656,6 +655,21 @@ func yamlFieldName(sf reflect.StructField) string {
 		parts[i] = strings.ToLower(parts[i])
 	}
 	return strings.Join(parts, "-")
+}
+
+func canonicalFieldName(sf reflect.StructField) string {
+	if tag, ok := sf.Tag.Lookup("figtree"); ok {
+		for _, part := range strings.Split(tag, ",") {
+			if strings.HasPrefix(part, "name=") {
+				return strings.TrimPrefix(part, "name=")
+			}
+		}
+	}
+
+	// For consistency with YAML data, determine a canonical field name
+	// based on the YAML tag. Do not rely on the Go struct field name unless
+	// there is no YAML tag.
+	return camelCase(yamlFieldName(sf))
 }
 
 func (m *Merger) mustOverwrite(name string) bool {
@@ -1152,7 +1166,13 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 					if parts[0] == "-" {
 						continue
 					}
-					envNames = strings.Split(parts[0], ";")
+					for _, part := range parts {
+						if strings.HasPrefix(part, "name=") {
+							continue
+						}
+						envNames = strings.Split(part, ";")
+						break
+					}
 				}
 			}
 			for _, name := range envNames {
