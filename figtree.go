@@ -882,6 +882,10 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 				ovFieldTypesByYAML[yamlName] = fieldType
 				ovFieldValuesByYAML[yamlName] = ov.Field(i)
 			}
+		}
+
+		for i := 0; i < ov.NumField(); i++ {
+			fieldType := ov.Type().Field(i)
 			if fieldType.Anonymous && reflect.Indirect(ov.Field(i)).Type().Kind() == reflect.Struct {
 				populateYAMLMaps(reflect.Indirect(ov.Field(i)))
 			}
