@@ -506,6 +506,9 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					// unexported field, skip
 					continue
 				}
+
+				field.Name = canonicalFieldName(field)
+
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
@@ -641,7 +644,9 @@ func yamlFieldName(sf reflect.StructField) string {
 		// with yaml:"foobar,omitempty"
 		// we just want to the "foobar" part
 		parts := strings.Split(tag, ",")
-		return parts[0]
+		if parts[0] != "" && parts[0] != "-" {
+			return parts[0]
+		}
 	}
 	// guess the field name from reversing camel case
 	// so "FooBar" becomes "foo-bar"
@@ -650,6 +655,21 @@ func yamlFieldName(sf reflect.StructField) string {
 		parts[i] = strings.ToLower(parts[i])
 	}
 	return strings.Join(parts, "-")
+}
+
+func canonicalFieldName(sf reflect.StructField) string {
+	if tag, ok := sf.Tag.Lookup("figtree"); ok {
+		for _, part := range strings.Split(tag, ",") {
+			if strings.HasPrefix(part, "name=") {
+				return strings.TrimPrefix(part, "name=")
+			}
+		}
+	}
+
+	// For consistency with YAML data, determine a canonical field name
+	// based on the YAML tag. Do not rely on the Go struct field name unless
+	// there is no YAML tag.
+	return camelCase(yamlFieldName(sf))
 }
 
 func (m *Merger) mustOverwrite(name string) bool {
@@ -850,6 +870,29 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		return
 	}
 
+	ovFieldTypesByYAML := make(map[string]reflect.StructField)
+	ovFieldValuesByYAML := make(map[string]reflect.Value)
+
+	var populateYAMLMaps func(reflect.Value)
+	populateYAMLMaps = func(ov reflect.Value) {
+		for i := 0; i < ov.NumField(); i++ {
+			fieldType := ov.Type().Field(i)
+			yamlName := yamlFieldName(fieldType)
+			if _, ok := ovFieldTypesByYAML[yamlName]; !ok {
+				ovFieldTypesByYAML[yamlName] = fieldType
+				ovFieldValuesByYAML[yamlName] = ov.Field(i)
+			}
+		}
+
+		for i := 0; i < ov.NumField(); i++ {
+			fieldType := ov.Type().Field(i)
+			if fieldType.Anonymous && reflect.Indirect(ov.Field(i)).Type().Kind() == reflect.Struct {
+				populateYAMLMaps(reflect.Indirect(ov.Field(i)))
+			}
+		}
+	}
+	populateYAMLMaps(ov)
+
 	for i := 0; i < nv.NumField(); i++ {
 		nvField := nv.Field(i)
 		if nvField.Kind() == reflect.Interface {
@@ -860,7 +903,8 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		}
 
 		nvStructField := nv.Type().Field(i)
-		ovStructField, ok := ov.Type().FieldByName(nvStructField.Name)
+		fieldName := yamlFieldName(nvStructField)
+		ovStructField, ok := ovFieldTypesByYAML[fieldName]
 		if !ok {
 			if nvStructField.Anonymous {
 				// this is an embedded struct, and the destination does not contain
@@ -879,9 +923,8 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 			// unexported field, skipping
 			continue
 		}
-		fieldName := yamlFieldName(ovStructField)
 
-		ovField := ov.FieldByName(nvStructField.Name)
+		ovField := ovFieldValuesByYAML[fieldName]
 		ovField, restore := fromInterface(ovField)
 		defer restore()
 
@@ -1127,7 +1170,13 @@ func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 					if parts[0] == "-" {
 						continue
 					}
-					envNames = strings.Split(parts[0], ";")
+					for _, part := range parts {
+						if strings.HasPrefix(part, "name=") {
+							continue
+						}
+						envNames = strings.Split(part, ";")
+						break
+					}
 				}
 			}
 			for _, name := range envNames {
