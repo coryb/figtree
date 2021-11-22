@@ -2,12 +2,16 @@ package figtree
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOptionsExecConfigD3(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestOptions{}
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
@@ -25,10 +29,10 @@ func TestOptionsExecConfigD3(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../exec.yml", true, "d1map1val0"},
-			"key1": StringOption{"../exec.yml", true, "d2map1val1"},
-			"key2": StringOption{"exec.yml", true, "d3map1val2"},
-			"key3": StringOption{"exec.yml", true, "d3map1val3"},
+			"key0": {"../../exec.yml", true, "d1map1val0"},
+			"key1": {"../exec.yml", true, "d2map1val1"},
+			"key2": {"exec.yml", true, "d3map1val2"},
+			"key3": {"exec.yml", true, "d3map1val3"},
 		},
 		Int1:   IntOption{"exec.yml", true, 333},
 		Float1: Float32Option{"exec.yml", true, 3.33},
@@ -42,6 +46,9 @@ func TestOptionsExecConfigD3(t *testing.T) {
 }
 
 func TestOptionsExecConfigD2(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestOptions{}
 	os.Chdir("d1/d2")
 	defer os.Chdir("../..")
@@ -57,9 +64,9 @@ func TestOptionsExecConfigD2(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../exec.yml", true, "d1map1val0"},
-			"key1": StringOption{"exec.yml", true, "d2map1val1"},
-			"key2": StringOption{"exec.yml", true, "d2map1val2"},
+			"key0": {"../exec.yml", true, "d1map1val0"},
+			"key1": {"exec.yml", true, "d2map1val1"},
+			"key2": {"exec.yml", true, "d2map1val2"},
 		},
 		Int1:   IntOption{"exec.yml", true, 222},
 		Float1: Float32Option{"exec.yml", true, 2.22},
@@ -73,6 +80,9 @@ func TestOptionsExecConfigD2(t *testing.T) {
 }
 
 func TestOptionsExecConfigD1(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestOptions{}
 	os.Chdir("d1")
 	defer os.Chdir("..")
@@ -86,8 +96,8 @@ func TestOptionsExecConfigD1(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"exec.yml", true, "d1map1val0"},
-			"key1": StringOption{"exec.yml", true, "d1map1val1"},
+			"key0": {"exec.yml", true, "d1map1val0"},
+			"key1": {"exec.yml", true, "d1map1val1"},
 		},
 		Int1:   IntOption{"exec.yml", true, 111},
 		Float1: Float32Option{"exec.yml", true, 1.11},
@@ -101,6 +111,9 @@ func TestOptionsExecConfigD1(t *testing.T) {
 }
 
 func TestBuiltinExecConfigD3(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestBuiltin{}
 	os.Chdir("d1/d2/d3")
 	defer os.Chdir("../../..")
@@ -135,6 +148,9 @@ func TestBuiltinExecConfigD3(t *testing.T) {
 }
 
 func TestBuiltinExecConfigD2(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestBuiltin{}
 	os.Chdir("d1/d2")
 	defer os.Chdir("../..")
@@ -168,6 +184,9 @@ func TestBuiltinExecConfigD2(t *testing.T) {
 }
 
 func TestBuiltinExecConfigD1(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skipf("Exec tests assume unix environment")
+	}
 	opts := TestBuiltin{}
 	os.Chdir("d1")
 	defer os.Chdir("..")

@@ -5,9 +5,9 @@ GENERATOR_SRC = \
 GENERATED_SRC = $(GENERATOR_SRC:%.go=gen-%.go)
 
 test: $(GENERATED_SRC)
-	go test -t
+	go test -v ./...
 
 gen-%.go: %.go
-	go generate
+	go generate ./...
 
 .PHONY: test

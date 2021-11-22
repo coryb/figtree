@@ -9,12 +9,14 @@ import (
 	"fmt"
 )
 
+// BoolOption hold data for configuration fields of type bool
 type BoolOption struct {
 	Source  string
 	Defined bool
 	Value   bool
 }
 
+// NewBoolOption returns a default configuration object of type bool
 func NewBoolOption(dflt bool) BoolOption {
 	return BoolOption{
 		Source:  "default",
@@ -23,23 +25,29 @@ func NewBoolOption(dflt bool) BoolOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewBoolOption are defined by default)
 func (o BoolOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *BoolOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *BoolOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type bool) of the option
 func (o BoolOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the bool.  This is useful with kingpin option parser
 func (o *BoolOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -50,7 +58,8 @@ func (o *BoolOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *BoolOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(bool); ok {
 		o.Value = v
@@ -61,6 +70,8 @@ func (o *BoolOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type bool.
 func (o *BoolOption) SetValue(v interface{}) error {
 	if val, ok := v.(bool); ok {
 		o.Value = val
@@ -70,6 +81,8 @@ func (o *BoolOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -79,6 +92,8 @@ func (o *BoolOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *BoolOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -88,6 +103,8 @@ func (o *BoolOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the bool value when marshalling
+// the data structure.
 func (o BoolOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -104,6 +121,8 @@ func (o BoolOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the bool value when marshalling
+// the data structure.
 func (o BoolOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -128,6 +147,7 @@ func (o BoolOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapBoolOption is a map of options.
 type MapBoolOption map[string]BoolOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -154,6 +174,7 @@ func (o MapBoolOption) String() string {
 	return fmt.Sprintf("%v", map[string]BoolOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapBoolOption) Map() map[string]bool {
 	tmp := map[string]bool{}
 	for k, v := range o {
@@ -162,7 +183,8 @@ func (o MapBoolOption) Map() map[string]bool {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapBoolOption) WriteAnswer(name string, value interface{}) error {
 	tmp := BoolOption{}
 	if v, ok := value.(bool); ok {
@@ -175,14 +197,13 @@ func (o *MapBoolOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapBoolOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListBoolOption is a slice of BoolOption
 type ListBoolOption []BoolOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -194,7 +215,8 @@ func (o *ListBoolOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListBoolOption) WriteAnswer(name string, value interface{}) error {
 	tmp := BoolOption{}
 	if v, ok := value.(bool); ok {
@@ -218,6 +240,7 @@ func (o ListBoolOption) String() string {
 	return fmt.Sprintf("%v", []BoolOption(o))
 }
 
+// Append will add the provided bool to the slice with NewBoolOption
 func (o ListBoolOption) Append(values ...bool) ListBoolOption {
 	results := o
 	for _, val := range values {
@@ -226,6 +249,7 @@ func (o ListBoolOption) Append(values ...bool) ListBoolOption {
 	return results
 }
 
+// Slice returns raw []bool data stored in the ListBoolOption
 func (o ListBoolOption) Slice() []bool {
 	tmp := []bool{}
 	for _, elem := range o {
@@ -234,20 +258,21 @@ func (o ListBoolOption) Slice() []bool {
 	return tmp
 }
 
+// IsDefined will return true if the ListBoolOption has one or more options
+// in the slice.
 func (o ListBoolOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ByteOption hold data for configuration fields of type byte
 type ByteOption struct {
 	Source  string
 	Defined bool
 	Value   byte
 }
 
+// NewByteOption returns a default configuration object of type byte
 func NewByteOption(dflt byte) ByteOption {
 	return ByteOption{
 		Source:  "default",
@@ -256,23 +281,29 @@ func NewByteOption(dflt byte) ByteOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewByteOption are defined by default)
 func (o ByteOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *ByteOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *ByteOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type byte) of the option
 func (o ByteOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the byte.  This is useful with kingpin option parser
 func (o *ByteOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -283,7 +314,8 @@ func (o *ByteOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ByteOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(byte); ok {
 		o.Value = v
@@ -294,6 +326,8 @@ func (o *ByteOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type byte.
 func (o *ByteOption) SetValue(v interface{}) error {
 	if val, ok := v.(byte); ok {
 		o.Value = val
@@ -303,6 +337,8 @@ func (o *ByteOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *ByteOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -312,6 +348,8 @@ func (o *ByteOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *ByteOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -321,6 +359,8 @@ func (o *ByteOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the byte value when marshalling
+// the data structure.
 func (o ByteOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -337,6 +377,8 @@ func (o ByteOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the byte value when marshalling
+// the data structure.
 func (o ByteOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -361,6 +403,7 @@ func (o ByteOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapByteOption is a map of options.
 type MapByteOption map[string]ByteOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -387,6 +430,7 @@ func (o MapByteOption) String() string {
 	return fmt.Sprintf("%v", map[string]ByteOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapByteOption) Map() map[string]byte {
 	tmp := map[string]byte{}
 	for k, v := range o {
@@ -395,7 +439,8 @@ func (o MapByteOption) Map() map[string]byte {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapByteOption) WriteAnswer(name string, value interface{}) error {
 	tmp := ByteOption{}
 	if v, ok := value.(byte); ok {
@@ -408,14 +453,13 @@ func (o *MapByteOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapByteOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListByteOption is a slice of ByteOption
 type ListByteOption []ByteOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -427,7 +471,8 @@ func (o *ListByteOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListByteOption) WriteAnswer(name string, value interface{}) error {
 	tmp := ByteOption{}
 	if v, ok := value.(byte); ok {
@@ -451,6 +496,7 @@ func (o ListByteOption) String() string {
 	return fmt.Sprintf("%v", []ByteOption(o))
 }
 
+// Append will add the provided byte to the slice with NewByteOption
 func (o ListByteOption) Append(values ...byte) ListByteOption {
 	results := o
 	for _, val := range values {
@@ -459,6 +505,7 @@ func (o ListByteOption) Append(values ...byte) ListByteOption {
 	return results
 }
 
+// Slice returns raw []byte data stored in the ListByteOption
 func (o ListByteOption) Slice() []byte {
 	tmp := []byte{}
 	for _, elem := range o {
@@ -467,20 +514,21 @@ func (o ListByteOption) Slice() []byte {
 	return tmp
 }
 
+// IsDefined will return true if the ListByteOption has one or more options
+// in the slice.
 func (o ListByteOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Complex128Option hold data for configuration fields of type complex128
 type Complex128Option struct {
 	Source  string
 	Defined bool
 	Value   complex128
 }
 
+// NewComplex128Option returns a default configuration object of type complex128
 func NewComplex128Option(dflt complex128) Complex128Option {
 	return Complex128Option{
 		Source:  "default",
@@ -489,23 +537,29 @@ func NewComplex128Option(dflt complex128) Complex128Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewComplex128Option are defined by default)
 func (o Complex128Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Complex128Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Complex128Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type complex128) of the option
 func (o Complex128Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the complex128.  This is useful with kingpin option parser
 func (o *Complex128Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -516,7 +570,8 @@ func (o *Complex128Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Complex128Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(complex128); ok {
 		o.Value = v
@@ -527,6 +582,8 @@ func (o *Complex128Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type complex128.
 func (o *Complex128Option) SetValue(v interface{}) error {
 	if val, ok := v.(complex128); ok {
 		o.Value = val
@@ -536,6 +593,8 @@ func (o *Complex128Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -545,6 +604,8 @@ func (o *Complex128Option) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Complex128Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -554,6 +615,8 @@ func (o *Complex128Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the complex128 value when marshalling
+// the data structure.
 func (o Complex128Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -570,6 +633,8 @@ func (o Complex128Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the complex128 value when marshalling
+// the data structure.
 func (o Complex128Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -594,6 +659,7 @@ func (o Complex128Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapComplex128Option is a map of options.
 type MapComplex128Option map[string]Complex128Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -620,6 +686,7 @@ func (o MapComplex128Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex128Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapComplex128Option) Map() map[string]complex128 {
 	tmp := map[string]complex128{}
 	for k, v := range o {
@@ -628,7 +695,8 @@ func (o MapComplex128Option) Map() map[string]complex128 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapComplex128Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Complex128Option{}
 	if v, ok := value.(complex128); ok {
@@ -641,14 +709,13 @@ func (o *MapComplex128Option) WriteAnswer(name string, value interface{}) error 
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapComplex128Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListComplex128Option is a slice of Complex128Option
 type ListComplex128Option []Complex128Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -660,7 +727,8 @@ func (o *ListComplex128Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListComplex128Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Complex128Option{}
 	if v, ok := value.(complex128); ok {
@@ -684,6 +752,7 @@ func (o ListComplex128Option) String() string {
 	return fmt.Sprintf("%v", []Complex128Option(o))
 }
 
+// Append will add the provided complex128 to the slice with NewComplex128Option
 func (o ListComplex128Option) Append(values ...complex128) ListComplex128Option {
 	results := o
 	for _, val := range values {
@@ -692,6 +761,7 @@ func (o ListComplex128Option) Append(values ...complex128) ListComplex128Option 
 	return results
 }
 
+// Slice returns raw []complex128 data stored in the ListComplex128Option
 func (o ListComplex128Option) Slice() []complex128 {
 	tmp := []complex128{}
 	for _, elem := range o {
@@ -700,20 +770,21 @@ func (o ListComplex128Option) Slice() []complex128 {
 	return tmp
 }
 
+// IsDefined will return true if the ListComplex128Option has one or more options
+// in the slice.
 func (o ListComplex128Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Complex64Option hold data for configuration fields of type complex64
 type Complex64Option struct {
 	Source  string
 	Defined bool
 	Value   complex64
 }
 
+// NewComplex64Option returns a default configuration object of type complex64
 func NewComplex64Option(dflt complex64) Complex64Option {
 	return Complex64Option{
 		Source:  "default",
@@ -722,23 +793,29 @@ func NewComplex64Option(dflt complex64) Complex64Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewComplex64Option are defined by default)
 func (o Complex64Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Complex64Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Complex64Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type complex64) of the option
 func (o Complex64Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the complex64.  This is useful with kingpin option parser
 func (o *Complex64Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -749,7 +826,8 @@ func (o *Complex64Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Complex64Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(complex64); ok {
 		o.Value = v
@@ -760,6 +838,8 @@ func (o *Complex64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type complex64.
 func (o *Complex64Option) SetValue(v interface{}) error {
 	if val, ok := v.(complex64); ok {
 		o.Value = val
@@ -769,6 +849,8 @@ func (o *Complex64Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Complex64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -778,6 +860,8 @@ func (o *Complex64Option) UnmarshalYAML(unmarshal func(interface{}) error) error
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Complex64Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -787,6 +871,8 @@ func (o *Complex64Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the complex64 value when marshalling
+// the data structure.
 func (o Complex64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -803,6 +889,8 @@ func (o Complex64Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the complex64 value when marshalling
+// the data structure.
 func (o Complex64Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -827,6 +915,7 @@ func (o Complex64Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapComplex64Option is a map of options.
 type MapComplex64Option map[string]Complex64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -853,6 +942,7 @@ func (o MapComplex64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Complex64Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapComplex64Option) Map() map[string]complex64 {
 	tmp := map[string]complex64{}
 	for k, v := range o {
@@ -861,7 +951,8 @@ func (o MapComplex64Option) Map() map[string]complex64 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapComplex64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Complex64Option{}
 	if v, ok := value.(complex64); ok {
@@ -874,14 +965,13 @@ func (o *MapComplex64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapComplex64Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListComplex64Option is a slice of Complex64Option
 type ListComplex64Option []Complex64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -893,7 +983,8 @@ func (o *ListComplex64Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListComplex64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Complex64Option{}
 	if v, ok := value.(complex64); ok {
@@ -917,6 +1008,7 @@ func (o ListComplex64Option) String() string {
 	return fmt.Sprintf("%v", []Complex64Option(o))
 }
 
+// Append will add the provided complex64 to the slice with NewComplex64Option
 func (o ListComplex64Option) Append(values ...complex64) ListComplex64Option {
 	results := o
 	for _, val := range values {
@@ -925,6 +1017,7 @@ func (o ListComplex64Option) Append(values ...complex64) ListComplex64Option {
 	return results
 }
 
+// Slice returns raw []complex64 data stored in the ListComplex64Option
 func (o ListComplex64Option) Slice() []complex64 {
 	tmp := []complex64{}
 	for _, elem := range o {
@@ -933,20 +1026,21 @@ func (o ListComplex64Option) Slice() []complex64 {
 	return tmp
 }
 
+// IsDefined will return true if the ListComplex64Option has one or more options
+// in the slice.
 func (o ListComplex64Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ErrorOption hold data for configuration fields of type error
 type ErrorOption struct {
 	Source  string
 	Defined bool
 	Value   error
 }
 
+// NewErrorOption returns a default configuration object of type error
 func NewErrorOption(dflt error) ErrorOption {
 	return ErrorOption{
 		Source:  "default",
@@ -955,23 +1049,29 @@ func NewErrorOption(dflt error) ErrorOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewErrorOption are defined by default)
 func (o ErrorOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *ErrorOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *ErrorOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type error) of the option
 func (o ErrorOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the error.  This is useful with kingpin option parser
 func (o *ErrorOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -982,7 +1082,8 @@ func (o *ErrorOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ErrorOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(error); ok {
 		o.Value = v
@@ -993,6 +1094,8 @@ func (o *ErrorOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type error.
 func (o *ErrorOption) SetValue(v interface{}) error {
 	if val, ok := v.(error); ok {
 		o.Value = val
@@ -1002,6 +1105,8 @@ func (o *ErrorOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -1011,6 +1116,8 @@ func (o *ErrorOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *ErrorOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -1020,6 +1127,8 @@ func (o *ErrorOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the error value when marshalling
+// the data structure.
 func (o ErrorOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -1036,6 +1145,8 @@ func (o ErrorOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the error value when marshalling
+// the data structure.
 func (o ErrorOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -1060,6 +1171,7 @@ func (o ErrorOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapErrorOption is a map of options.
 type MapErrorOption map[string]ErrorOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1086,6 +1198,7 @@ func (o MapErrorOption) String() string {
 	return fmt.Sprintf("%v", map[string]ErrorOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapErrorOption) Map() map[string]error {
 	tmp := map[string]error{}
 	for k, v := range o {
@@ -1094,7 +1207,8 @@ func (o MapErrorOption) Map() map[string]error {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapErrorOption) WriteAnswer(name string, value interface{}) error {
 	tmp := ErrorOption{}
 	if v, ok := value.(error); ok {
@@ -1107,14 +1221,13 @@ func (o *MapErrorOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapErrorOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListErrorOption is a slice of ErrorOption
 type ListErrorOption []ErrorOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1126,7 +1239,8 @@ func (o *ListErrorOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListErrorOption) WriteAnswer(name string, value interface{}) error {
 	tmp := ErrorOption{}
 	if v, ok := value.(error); ok {
@@ -1150,6 +1264,7 @@ func (o ListErrorOption) String() string {
 	return fmt.Sprintf("%v", []ErrorOption(o))
 }
 
+// Append will add the provided error to the slice with NewErrorOption
 func (o ListErrorOption) Append(values ...error) ListErrorOption {
 	results := o
 	for _, val := range values {
@@ -1158,6 +1273,7 @@ func (o ListErrorOption) Append(values ...error) ListErrorOption {
 	return results
 }
 
+// Slice returns raw []error data stored in the ListErrorOption
 func (o ListErrorOption) Slice() []error {
 	tmp := []error{}
 	for _, elem := range o {
@@ -1166,20 +1282,21 @@ func (o ListErrorOption) Slice() []error {
 	return tmp
 }
 
+// IsDefined will return true if the ListErrorOption has one or more options
+// in the slice.
 func (o ListErrorOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Float32Option hold data for configuration fields of type float32
 type Float32Option struct {
 	Source  string
 	Defined bool
 	Value   float32
 }
 
+// NewFloat32Option returns a default configuration object of type float32
 func NewFloat32Option(dflt float32) Float32Option {
 	return Float32Option{
 		Source:  "default",
@@ -1188,23 +1305,29 @@ func NewFloat32Option(dflt float32) Float32Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewFloat32Option are defined by default)
 func (o Float32Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Float32Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Float32Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type float32) of the option
 func (o Float32Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the float32.  This is useful with kingpin option parser
 func (o *Float32Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -1215,7 +1338,8 @@ func (o *Float32Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Float32Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(float32); ok {
 		o.Value = v
@@ -1226,6 +1350,8 @@ func (o *Float32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type float32.
 func (o *Float32Option) SetValue(v interface{}) error {
 	if val, ok := v.(float32); ok {
 		o.Value = val
@@ -1235,6 +1361,8 @@ func (o *Float32Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Float32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -1244,6 +1372,8 @@ func (o *Float32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Float32Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -1253,6 +1383,8 @@ func (o *Float32Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the float32 value when marshalling
+// the data structure.
 func (o Float32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -1269,6 +1401,8 @@ func (o Float32Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the float32 value when marshalling
+// the data structure.
 func (o Float32Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -1293,6 +1427,7 @@ func (o Float32Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapFloat32Option is a map of options.
 type MapFloat32Option map[string]Float32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1319,6 +1454,7 @@ func (o MapFloat32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float32Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapFloat32Option) Map() map[string]float32 {
 	tmp := map[string]float32{}
 	for k, v := range o {
@@ -1327,7 +1463,8 @@ func (o MapFloat32Option) Map() map[string]float32 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapFloat32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Float32Option{}
 	if v, ok := value.(float32); ok {
@@ -1340,14 +1477,13 @@ func (o *MapFloat32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapFloat32Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListFloat32Option is a slice of Float32Option
 type ListFloat32Option []Float32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1359,7 +1495,8 @@ func (o *ListFloat32Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListFloat32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Float32Option{}
 	if v, ok := value.(float32); ok {
@@ -1383,6 +1520,7 @@ func (o ListFloat32Option) String() string {
 	return fmt.Sprintf("%v", []Float32Option(o))
 }
 
+// Append will add the provided float32 to the slice with NewFloat32Option
 func (o ListFloat32Option) Append(values ...float32) ListFloat32Option {
 	results := o
 	for _, val := range values {
@@ -1391,6 +1529,7 @@ func (o ListFloat32Option) Append(values ...float32) ListFloat32Option {
 	return results
 }
 
+// Slice returns raw []float32 data stored in the ListFloat32Option
 func (o ListFloat32Option) Slice() []float32 {
 	tmp := []float32{}
 	for _, elem := range o {
@@ -1399,20 +1538,21 @@ func (o ListFloat32Option) Slice() []float32 {
 	return tmp
 }
 
+// IsDefined will return true if the ListFloat32Option has one or more options
+// in the slice.
 func (o ListFloat32Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Float64Option hold data for configuration fields of type float64
 type Float64Option struct {
 	Source  string
 	Defined bool
 	Value   float64
 }
 
+// NewFloat64Option returns a default configuration object of type float64
 func NewFloat64Option(dflt float64) Float64Option {
 	return Float64Option{
 		Source:  "default",
@@ -1421,23 +1561,29 @@ func NewFloat64Option(dflt float64) Float64Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewFloat64Option are defined by default)
 func (o Float64Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Float64Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Float64Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type float64) of the option
 func (o Float64Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the float64.  This is useful with kingpin option parser
 func (o *Float64Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -1448,7 +1594,8 @@ func (o *Float64Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Float64Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(float64); ok {
 		o.Value = v
@@ -1459,6 +1606,8 @@ func (o *Float64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type float64.
 func (o *Float64Option) SetValue(v interface{}) error {
 	if val, ok := v.(float64); ok {
 		o.Value = val
@@ -1468,6 +1617,8 @@ func (o *Float64Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -1477,6 +1628,8 @@ func (o *Float64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Float64Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -1486,6 +1639,8 @@ func (o *Float64Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the float64 value when marshalling
+// the data structure.
 func (o Float64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -1502,6 +1657,8 @@ func (o Float64Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the float64 value when marshalling
+// the data structure.
 func (o Float64Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -1526,6 +1683,7 @@ func (o Float64Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapFloat64Option is a map of options.
 type MapFloat64Option map[string]Float64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1552,6 +1710,7 @@ func (o MapFloat64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Float64Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapFloat64Option) Map() map[string]float64 {
 	tmp := map[string]float64{}
 	for k, v := range o {
@@ -1560,7 +1719,8 @@ func (o MapFloat64Option) Map() map[string]float64 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapFloat64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Float64Option{}
 	if v, ok := value.(float64); ok {
@@ -1573,14 +1733,13 @@ func (o *MapFloat64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapFloat64Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListFloat64Option is a slice of Float64Option
 type ListFloat64Option []Float64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1592,7 +1751,8 @@ func (o *ListFloat64Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListFloat64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Float64Option{}
 	if v, ok := value.(float64); ok {
@@ -1616,6 +1776,7 @@ func (o ListFloat64Option) String() string {
 	return fmt.Sprintf("%v", []Float64Option(o))
 }
 
+// Append will add the provided float64 to the slice with NewFloat64Option
 func (o ListFloat64Option) Append(values ...float64) ListFloat64Option {
 	results := o
 	for _, val := range values {
@@ -1624,6 +1785,7 @@ func (o ListFloat64Option) Append(values ...float64) ListFloat64Option {
 	return results
 }
 
+// Slice returns raw []float64 data stored in the ListFloat64Option
 func (o ListFloat64Option) Slice() []float64 {
 	tmp := []float64{}
 	for _, elem := range o {
@@ -1632,20 +1794,21 @@ func (o ListFloat64Option) Slice() []float64 {
 	return tmp
 }
 
+// IsDefined will return true if the ListFloat64Option has one or more options
+// in the slice.
 func (o ListFloat64Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// IntOption hold data for configuration fields of type int
 type IntOption struct {
 	Source  string
 	Defined bool
 	Value   int
 }
 
+// NewIntOption returns a default configuration object of type int
 func NewIntOption(dflt int) IntOption {
 	return IntOption{
 		Source:  "default",
@@ -1654,23 +1817,29 @@ func NewIntOption(dflt int) IntOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewIntOption are defined by default)
 func (o IntOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *IntOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *IntOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type int) of the option
 func (o IntOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the int.  This is useful with kingpin option parser
 func (o *IntOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -1681,7 +1850,8 @@ func (o *IntOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *IntOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(int); ok {
 		o.Value = v
@@ -1692,6 +1862,8 @@ func (o *IntOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type int.
 func (o *IntOption) SetValue(v interface{}) error {
 	if val, ok := v.(int); ok {
 		o.Value = val
@@ -1701,6 +1873,8 @@ func (o *IntOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *IntOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -1710,6 +1884,8 @@ func (o *IntOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *IntOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -1719,6 +1895,8 @@ func (o *IntOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the int value when marshalling
+// the data structure.
 func (o IntOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -1735,6 +1913,8 @@ func (o IntOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the int value when marshalling
+// the data structure.
 func (o IntOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -1759,6 +1939,7 @@ func (o IntOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapIntOption is a map of options.
 type MapIntOption map[string]IntOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1785,6 +1966,7 @@ func (o MapIntOption) String() string {
 	return fmt.Sprintf("%v", map[string]IntOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapIntOption) Map() map[string]int {
 	tmp := map[string]int{}
 	for k, v := range o {
@@ -1793,7 +1975,8 @@ func (o MapIntOption) Map() map[string]int {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapIntOption) WriteAnswer(name string, value interface{}) error {
 	tmp := IntOption{}
 	if v, ok := value.(int); ok {
@@ -1806,14 +1989,13 @@ func (o *MapIntOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapIntOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListIntOption is a slice of IntOption
 type ListIntOption []IntOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -1825,7 +2007,8 @@ func (o *ListIntOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListIntOption) WriteAnswer(name string, value interface{}) error {
 	tmp := IntOption{}
 	if v, ok := value.(int); ok {
@@ -1849,6 +2032,7 @@ func (o ListIntOption) String() string {
 	return fmt.Sprintf("%v", []IntOption(o))
 }
 
+// Append will add the provided int to the slice with NewIntOption
 func (o ListIntOption) Append(values ...int) ListIntOption {
 	results := o
 	for _, val := range values {
@@ -1857,6 +2041,7 @@ func (o ListIntOption) Append(values ...int) ListIntOption {
 	return results
 }
 
+// Slice returns raw []int data stored in the ListIntOption
 func (o ListIntOption) Slice() []int {
 	tmp := []int{}
 	for _, elem := range o {
@@ -1865,20 +2050,21 @@ func (o ListIntOption) Slice() []int {
 	return tmp
 }
 
+// IsDefined will return true if the ListIntOption has one or more options
+// in the slice.
 func (o ListIntOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Int16Option hold data for configuration fields of type int16
 type Int16Option struct {
 	Source  string
 	Defined bool
 	Value   int16
 }
 
+// NewInt16Option returns a default configuration object of type int16
 func NewInt16Option(dflt int16) Int16Option {
 	return Int16Option{
 		Source:  "default",
@@ -1887,23 +2073,29 @@ func NewInt16Option(dflt int16) Int16Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewInt16Option are defined by default)
 func (o Int16Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Int16Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Int16Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type int16) of the option
 func (o Int16Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the int16.  This is useful with kingpin option parser
 func (o *Int16Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -1914,7 +2106,8 @@ func (o *Int16Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Int16Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(int16); ok {
 		o.Value = v
@@ -1925,6 +2118,8 @@ func (o *Int16Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type int16.
 func (o *Int16Option) SetValue(v interface{}) error {
 	if val, ok := v.(int16); ok {
 		o.Value = val
@@ -1934,6 +2129,8 @@ func (o *Int16Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -1943,6 +2140,8 @@ func (o *Int16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Int16Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -1952,6 +2151,8 @@ func (o *Int16Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the int16 value when marshalling
+// the data structure.
 func (o Int16Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -1968,6 +2169,8 @@ func (o Int16Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the int16 value when marshalling
+// the data structure.
 func (o Int16Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -1992,6 +2195,7 @@ func (o Int16Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapInt16Option is a map of options.
 type MapInt16Option map[string]Int16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2018,6 +2222,7 @@ func (o MapInt16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int16Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapInt16Option) Map() map[string]int16 {
 	tmp := map[string]int16{}
 	for k, v := range o {
@@ -2026,7 +2231,8 @@ func (o MapInt16Option) Map() map[string]int16 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapInt16Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int16Option{}
 	if v, ok := value.(int16); ok {
@@ -2039,14 +2245,13 @@ func (o *MapInt16Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapInt16Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListInt16Option is a slice of Int16Option
 type ListInt16Option []Int16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2058,7 +2263,8 @@ func (o *ListInt16Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListInt16Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int16Option{}
 	if v, ok := value.(int16); ok {
@@ -2082,6 +2288,7 @@ func (o ListInt16Option) String() string {
 	return fmt.Sprintf("%v", []Int16Option(o))
 }
 
+// Append will add the provided int16 to the slice with NewInt16Option
 func (o ListInt16Option) Append(values ...int16) ListInt16Option {
 	results := o
 	for _, val := range values {
@@ -2090,6 +2297,7 @@ func (o ListInt16Option) Append(values ...int16) ListInt16Option {
 	return results
 }
 
+// Slice returns raw []int16 data stored in the ListInt16Option
 func (o ListInt16Option) Slice() []int16 {
 	tmp := []int16{}
 	for _, elem := range o {
@@ -2098,20 +2306,21 @@ func (o ListInt16Option) Slice() []int16 {
 	return tmp
 }
 
+// IsDefined will return true if the ListInt16Option has one or more options
+// in the slice.
 func (o ListInt16Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Int32Option hold data for configuration fields of type int32
 type Int32Option struct {
 	Source  string
 	Defined bool
 	Value   int32
 }
 
+// NewInt32Option returns a default configuration object of type int32
 func NewInt32Option(dflt int32) Int32Option {
 	return Int32Option{
 		Source:  "default",
@@ -2120,23 +2329,29 @@ func NewInt32Option(dflt int32) Int32Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewInt32Option are defined by default)
 func (o Int32Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Int32Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Int32Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type int32) of the option
 func (o Int32Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the int32.  This is useful with kingpin option parser
 func (o *Int32Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -2147,7 +2362,8 @@ func (o *Int32Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Int32Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(int32); ok {
 		o.Value = v
@@ -2158,6 +2374,8 @@ func (o *Int32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type int32.
 func (o *Int32Option) SetValue(v interface{}) error {
 	if val, ok := v.(int32); ok {
 		o.Value = val
@@ -2167,6 +2385,8 @@ func (o *Int32Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Int32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -2176,6 +2396,8 @@ func (o *Int32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Int32Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -2185,6 +2407,8 @@ func (o *Int32Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the int32 value when marshalling
+// the data structure.
 func (o Int32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -2201,6 +2425,8 @@ func (o Int32Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the int32 value when marshalling
+// the data structure.
 func (o Int32Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -2225,6 +2451,7 @@ func (o Int32Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapInt32Option is a map of options.
 type MapInt32Option map[string]Int32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2251,6 +2478,7 @@ func (o MapInt32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int32Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapInt32Option) Map() map[string]int32 {
 	tmp := map[string]int32{}
 	for k, v := range o {
@@ -2259,7 +2487,8 @@ func (o MapInt32Option) Map() map[string]int32 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapInt32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int32Option{}
 	if v, ok := value.(int32); ok {
@@ -2272,14 +2501,13 @@ func (o *MapInt32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapInt32Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListInt32Option is a slice of Int32Option
 type ListInt32Option []Int32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2291,7 +2519,8 @@ func (o *ListInt32Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListInt32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int32Option{}
 	if v, ok := value.(int32); ok {
@@ -2315,6 +2544,7 @@ func (o ListInt32Option) String() string {
 	return fmt.Sprintf("%v", []Int32Option(o))
 }
 
+// Append will add the provided int32 to the slice with NewInt32Option
 func (o ListInt32Option) Append(values ...int32) ListInt32Option {
 	results := o
 	for _, val := range values {
@@ -2323,6 +2553,7 @@ func (o ListInt32Option) Append(values ...int32) ListInt32Option {
 	return results
 }
 
+// Slice returns raw []int32 data stored in the ListInt32Option
 func (o ListInt32Option) Slice() []int32 {
 	tmp := []int32{}
 	for _, elem := range o {
@@ -2331,20 +2562,21 @@ func (o ListInt32Option) Slice() []int32 {
 	return tmp
 }
 
+// IsDefined will return true if the ListInt32Option has one or more options
+// in the slice.
 func (o ListInt32Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Int64Option hold data for configuration fields of type int64
 type Int64Option struct {
 	Source  string
 	Defined bool
 	Value   int64
 }
 
+// NewInt64Option returns a default configuration object of type int64
 func NewInt64Option(dflt int64) Int64Option {
 	return Int64Option{
 		Source:  "default",
@@ -2353,23 +2585,29 @@ func NewInt64Option(dflt int64) Int64Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewInt64Option are defined by default)
 func (o Int64Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Int64Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Int64Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type int64) of the option
 func (o Int64Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the int64.  This is useful with kingpin option parser
 func (o *Int64Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -2380,7 +2618,8 @@ func (o *Int64Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Int64Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(int64); ok {
 		o.Value = v
@@ -2391,6 +2630,8 @@ func (o *Int64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type int64.
 func (o *Int64Option) SetValue(v interface{}) error {
 	if val, ok := v.(int64); ok {
 		o.Value = val
@@ -2400,6 +2641,8 @@ func (o *Int64Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -2409,6 +2652,8 @@ func (o *Int64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Int64Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -2418,6 +2663,8 @@ func (o *Int64Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the int64 value when marshalling
+// the data structure.
 func (o Int64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -2434,6 +2681,8 @@ func (o Int64Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the int64 value when marshalling
+// the data structure.
 func (o Int64Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -2458,6 +2707,7 @@ func (o Int64Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapInt64Option is a map of options.
 type MapInt64Option map[string]Int64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2484,6 +2734,7 @@ func (o MapInt64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int64Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapInt64Option) Map() map[string]int64 {
 	tmp := map[string]int64{}
 	for k, v := range o {
@@ -2492,7 +2743,8 @@ func (o MapInt64Option) Map() map[string]int64 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapInt64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int64Option{}
 	if v, ok := value.(int64); ok {
@@ -2505,14 +2757,13 @@ func (o *MapInt64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapInt64Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListInt64Option is a slice of Int64Option
 type ListInt64Option []Int64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2524,7 +2775,8 @@ func (o *ListInt64Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListInt64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int64Option{}
 	if v, ok := value.(int64); ok {
@@ -2548,6 +2800,7 @@ func (o ListInt64Option) String() string {
 	return fmt.Sprintf("%v", []Int64Option(o))
 }
 
+// Append will add the provided int64 to the slice with NewInt64Option
 func (o ListInt64Option) Append(values ...int64) ListInt64Option {
 	results := o
 	for _, val := range values {
@@ -2556,6 +2809,7 @@ func (o ListInt64Option) Append(values ...int64) ListInt64Option {
 	return results
 }
 
+// Slice returns raw []int64 data stored in the ListInt64Option
 func (o ListInt64Option) Slice() []int64 {
 	tmp := []int64{}
 	for _, elem := range o {
@@ -2564,20 +2818,21 @@ func (o ListInt64Option) Slice() []int64 {
 	return tmp
 }
 
+// IsDefined will return true if the ListInt64Option has one or more options
+// in the slice.
 func (o ListInt64Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Int8Option hold data for configuration fields of type int8
 type Int8Option struct {
 	Source  string
 	Defined bool
 	Value   int8
 }
 
+// NewInt8Option returns a default configuration object of type int8
 func NewInt8Option(dflt int8) Int8Option {
 	return Int8Option{
 		Source:  "default",
@@ -2586,23 +2841,29 @@ func NewInt8Option(dflt int8) Int8Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewInt8Option are defined by default)
 func (o Int8Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Int8Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Int8Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type int8) of the option
 func (o Int8Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the int8.  This is useful with kingpin option parser
 func (o *Int8Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -2613,7 +2874,8 @@ func (o *Int8Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Int8Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(int8); ok {
 		o.Value = v
@@ -2624,6 +2886,8 @@ func (o *Int8Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type int8.
 func (o *Int8Option) SetValue(v interface{}) error {
 	if val, ok := v.(int8); ok {
 		o.Value = val
@@ -2633,6 +2897,8 @@ func (o *Int8Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Int8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -2642,6 +2908,8 @@ func (o *Int8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Int8Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -2651,6 +2919,8 @@ func (o *Int8Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the int8 value when marshalling
+// the data structure.
 func (o Int8Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -2667,6 +2937,8 @@ func (o Int8Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the int8 value when marshalling
+// the data structure.
 func (o Int8Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -2691,6 +2963,7 @@ func (o Int8Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapInt8Option is a map of options.
 type MapInt8Option map[string]Int8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2717,6 +2990,7 @@ func (o MapInt8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Int8Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapInt8Option) Map() map[string]int8 {
 	tmp := map[string]int8{}
 	for k, v := range o {
@@ -2725,7 +2999,8 @@ func (o MapInt8Option) Map() map[string]int8 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapInt8Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int8Option{}
 	if v, ok := value.(int8); ok {
@@ -2738,14 +3013,13 @@ func (o *MapInt8Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapInt8Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListInt8Option is a slice of Int8Option
 type ListInt8Option []Int8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2757,7 +3031,8 @@ func (o *ListInt8Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListInt8Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Int8Option{}
 	if v, ok := value.(int8); ok {
@@ -2781,6 +3056,7 @@ func (o ListInt8Option) String() string {
 	return fmt.Sprintf("%v", []Int8Option(o))
 }
 
+// Append will add the provided int8 to the slice with NewInt8Option
 func (o ListInt8Option) Append(values ...int8) ListInt8Option {
 	results := o
 	for _, val := range values {
@@ -2789,6 +3065,7 @@ func (o ListInt8Option) Append(values ...int8) ListInt8Option {
 	return results
 }
 
+// Slice returns raw []int8 data stored in the ListInt8Option
 func (o ListInt8Option) Slice() []int8 {
 	tmp := []int8{}
 	for _, elem := range o {
@@ -2797,20 +3074,21 @@ func (o ListInt8Option) Slice() []int8 {
 	return tmp
 }
 
+// IsDefined will return true if the ListInt8Option has one or more options
+// in the slice.
 func (o ListInt8Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// RuneOption hold data for configuration fields of type rune
 type RuneOption struct {
 	Source  string
 	Defined bool
 	Value   rune
 }
 
+// NewRuneOption returns a default configuration object of type rune
 func NewRuneOption(dflt rune) RuneOption {
 	return RuneOption{
 		Source:  "default",
@@ -2819,23 +3097,29 @@ func NewRuneOption(dflt rune) RuneOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewRuneOption are defined by default)
 func (o RuneOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *RuneOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *RuneOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type rune) of the option
 func (o RuneOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the rune.  This is useful with kingpin option parser
 func (o *RuneOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -2846,7 +3130,8 @@ func (o *RuneOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *RuneOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(rune); ok {
 		o.Value = v
@@ -2857,6 +3142,8 @@ func (o *RuneOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type rune.
 func (o *RuneOption) SetValue(v interface{}) error {
 	if val, ok := v.(rune); ok {
 		o.Value = val
@@ -2866,6 +3153,8 @@ func (o *RuneOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -2875,6 +3164,8 @@ func (o *RuneOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *RuneOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -2884,6 +3175,8 @@ func (o *RuneOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the rune value when marshalling
+// the data structure.
 func (o RuneOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -2900,6 +3193,8 @@ func (o RuneOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the rune value when marshalling
+// the data structure.
 func (o RuneOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -2924,6 +3219,7 @@ func (o RuneOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapRuneOption is a map of options.
 type MapRuneOption map[string]RuneOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2950,6 +3246,7 @@ func (o MapRuneOption) String() string {
 	return fmt.Sprintf("%v", map[string]RuneOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapRuneOption) Map() map[string]rune {
 	tmp := map[string]rune{}
 	for k, v := range o {
@@ -2958,7 +3255,8 @@ func (o MapRuneOption) Map() map[string]rune {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapRuneOption) WriteAnswer(name string, value interface{}) error {
 	tmp := RuneOption{}
 	if v, ok := value.(rune); ok {
@@ -2971,14 +3269,13 @@ func (o *MapRuneOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapRuneOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListRuneOption is a slice of RuneOption
 type ListRuneOption []RuneOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -2990,7 +3287,8 @@ func (o *ListRuneOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListRuneOption) WriteAnswer(name string, value interface{}) error {
 	tmp := RuneOption{}
 	if v, ok := value.(rune); ok {
@@ -3014,6 +3312,7 @@ func (o ListRuneOption) String() string {
 	return fmt.Sprintf("%v", []RuneOption(o))
 }
 
+// Append will add the provided rune to the slice with NewRuneOption
 func (o ListRuneOption) Append(values ...rune) ListRuneOption {
 	results := o
 	for _, val := range values {
@@ -3022,6 +3321,7 @@ func (o ListRuneOption) Append(values ...rune) ListRuneOption {
 	return results
 }
 
+// Slice returns raw []rune data stored in the ListRuneOption
 func (o ListRuneOption) Slice() []rune {
 	tmp := []rune{}
 	for _, elem := range o {
@@ -3030,20 +3330,21 @@ func (o ListRuneOption) Slice() []rune {
 	return tmp
 }
 
+// IsDefined will return true if the ListRuneOption has one or more options
+// in the slice.
 func (o ListRuneOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// StringOption hold data for configuration fields of type string
 type StringOption struct {
 	Source  string
 	Defined bool
 	Value   string
 }
 
+// NewStringOption returns a default configuration object of type string
 func NewStringOption(dflt string) StringOption {
 	return StringOption{
 		Source:  "default",
@@ -3052,23 +3353,29 @@ func NewStringOption(dflt string) StringOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewStringOption are defined by default)
 func (o StringOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *StringOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *StringOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type string) of the option
 func (o StringOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the string.  This is useful with kingpin option parser
 func (o *StringOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -3079,7 +3386,8 @@ func (o *StringOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *StringOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(string); ok {
 		o.Value = v
@@ -3090,6 +3398,8 @@ func (o *StringOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type string.
 func (o *StringOption) SetValue(v interface{}) error {
 	if val, ok := v.(string); ok {
 		o.Value = val
@@ -3099,6 +3409,8 @@ func (o *StringOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *StringOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -3108,6 +3420,8 @@ func (o *StringOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *StringOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -3117,6 +3431,8 @@ func (o *StringOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the string value when marshalling
+// the data structure.
 func (o StringOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -3133,6 +3449,8 @@ func (o StringOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the string value when marshalling
+// the data structure.
 func (o StringOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -3157,6 +3475,7 @@ func (o StringOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapStringOption is a map of options.
 type MapStringOption map[string]StringOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3183,6 +3502,7 @@ func (o MapStringOption) String() string {
 	return fmt.Sprintf("%v", map[string]StringOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapStringOption) Map() map[string]string {
 	tmp := map[string]string{}
 	for k, v := range o {
@@ -3191,7 +3511,8 @@ func (o MapStringOption) Map() map[string]string {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapStringOption) WriteAnswer(name string, value interface{}) error {
 	tmp := StringOption{}
 	if v, ok := value.(string); ok {
@@ -3204,14 +3525,13 @@ func (o *MapStringOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapStringOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListStringOption is a slice of StringOption
 type ListStringOption []StringOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3223,7 +3543,8 @@ func (o *ListStringOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListStringOption) WriteAnswer(name string, value interface{}) error {
 	tmp := StringOption{}
 	if v, ok := value.(string); ok {
@@ -3247,6 +3568,7 @@ func (o ListStringOption) String() string {
 	return fmt.Sprintf("%v", []StringOption(o))
 }
 
+// Append will add the provided string to the slice with NewStringOption
 func (o ListStringOption) Append(values ...string) ListStringOption {
 	results := o
 	for _, val := range values {
@@ -3255,6 +3577,7 @@ func (o ListStringOption) Append(values ...string) ListStringOption {
 	return results
 }
 
+// Slice returns raw []string data stored in the ListStringOption
 func (o ListStringOption) Slice() []string {
 	tmp := []string{}
 	for _, elem := range o {
@@ -3263,20 +3586,21 @@ func (o ListStringOption) Slice() []string {
 	return tmp
 }
 
+// IsDefined will return true if the ListStringOption has one or more options
+// in the slice.
 func (o ListStringOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// UintOption hold data for configuration fields of type uint
 type UintOption struct {
 	Source  string
 	Defined bool
 	Value   uint
 }
 
+// NewUintOption returns a default configuration object of type uint
 func NewUintOption(dflt uint) UintOption {
 	return UintOption{
 		Source:  "default",
@@ -3285,23 +3609,29 @@ func NewUintOption(dflt uint) UintOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUintOption are defined by default)
 func (o UintOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *UintOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *UintOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uint) of the option
 func (o UintOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uint.  This is useful with kingpin option parser
 func (o *UintOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -3312,7 +3642,8 @@ func (o *UintOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *UintOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uint); ok {
 		o.Value = v
@@ -3323,6 +3654,8 @@ func (o *UintOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uint.
 func (o *UintOption) SetValue(v interface{}) error {
 	if val, ok := v.(uint); ok {
 		o.Value = val
@@ -3332,6 +3665,8 @@ func (o *UintOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -3341,6 +3676,8 @@ func (o *UintOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *UintOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -3350,6 +3687,8 @@ func (o *UintOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uint value when marshalling
+// the data structure.
 func (o UintOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -3366,6 +3705,8 @@ func (o UintOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uint value when marshalling
+// the data structure.
 func (o UintOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -3390,6 +3731,7 @@ func (o UintOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUintOption is a map of options.
 type MapUintOption map[string]UintOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3416,6 +3758,7 @@ func (o MapUintOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUintOption) Map() map[string]uint {
 	tmp := map[string]uint{}
 	for k, v := range o {
@@ -3424,7 +3767,8 @@ func (o MapUintOption) Map() map[string]uint {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUintOption) WriteAnswer(name string, value interface{}) error {
 	tmp := UintOption{}
 	if v, ok := value.(uint); ok {
@@ -3437,14 +3781,13 @@ func (o *MapUintOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUintOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUintOption is a slice of UintOption
 type ListUintOption []UintOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3456,7 +3799,8 @@ func (o *ListUintOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUintOption) WriteAnswer(name string, value interface{}) error {
 	tmp := UintOption{}
 	if v, ok := value.(uint); ok {
@@ -3480,6 +3824,7 @@ func (o ListUintOption) String() string {
 	return fmt.Sprintf("%v", []UintOption(o))
 }
 
+// Append will add the provided uint to the slice with NewUintOption
 func (o ListUintOption) Append(values ...uint) ListUintOption {
 	results := o
 	for _, val := range values {
@@ -3488,6 +3833,7 @@ func (o ListUintOption) Append(values ...uint) ListUintOption {
 	return results
 }
 
+// Slice returns raw []uint data stored in the ListUintOption
 func (o ListUintOption) Slice() []uint {
 	tmp := []uint{}
 	for _, elem := range o {
@@ -3496,20 +3842,21 @@ func (o ListUintOption) Slice() []uint {
 	return tmp
 }
 
+// IsDefined will return true if the ListUintOption has one or more options
+// in the slice.
 func (o ListUintOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Uint16Option hold data for configuration fields of type uint16
 type Uint16Option struct {
 	Source  string
 	Defined bool
 	Value   uint16
 }
 
+// NewUint16Option returns a default configuration object of type uint16
 func NewUint16Option(dflt uint16) Uint16Option {
 	return Uint16Option{
 		Source:  "default",
@@ -3518,23 +3865,29 @@ func NewUint16Option(dflt uint16) Uint16Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUint16Option are defined by default)
 func (o Uint16Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Uint16Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Uint16Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uint16) of the option
 func (o Uint16Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uint16.  This is useful with kingpin option parser
 func (o *Uint16Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -3545,7 +3898,8 @@ func (o *Uint16Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Uint16Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uint16); ok {
 		o.Value = v
@@ -3556,6 +3910,8 @@ func (o *Uint16Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uint16.
 func (o *Uint16Option) SetValue(v interface{}) error {
 	if val, ok := v.(uint16); ok {
 		o.Value = val
@@ -3565,6 +3921,8 @@ func (o *Uint16Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Uint16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -3574,6 +3932,8 @@ func (o *Uint16Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Uint16Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -3583,6 +3943,8 @@ func (o *Uint16Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uint16 value when marshalling
+// the data structure.
 func (o Uint16Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -3599,6 +3961,8 @@ func (o Uint16Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uint16 value when marshalling
+// the data structure.
 func (o Uint16Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -3623,6 +3987,7 @@ func (o Uint16Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUint16Option is a map of options.
 type MapUint16Option map[string]Uint16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3649,6 +4014,7 @@ func (o MapUint16Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint16Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUint16Option) Map() map[string]uint16 {
 	tmp := map[string]uint16{}
 	for k, v := range o {
@@ -3657,7 +4023,8 @@ func (o MapUint16Option) Map() map[string]uint16 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUint16Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint16Option{}
 	if v, ok := value.(uint16); ok {
@@ -3670,14 +4037,13 @@ func (o *MapUint16Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUint16Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUint16Option is a slice of Uint16Option
 type ListUint16Option []Uint16Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3689,7 +4055,8 @@ func (o *ListUint16Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUint16Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint16Option{}
 	if v, ok := value.(uint16); ok {
@@ -3713,6 +4080,7 @@ func (o ListUint16Option) String() string {
 	return fmt.Sprintf("%v", []Uint16Option(o))
 }
 
+// Append will add the provided uint16 to the slice with NewUint16Option
 func (o ListUint16Option) Append(values ...uint16) ListUint16Option {
 	results := o
 	for _, val := range values {
@@ -3721,6 +4089,7 @@ func (o ListUint16Option) Append(values ...uint16) ListUint16Option {
 	return results
 }
 
+// Slice returns raw []uint16 data stored in the ListUint16Option
 func (o ListUint16Option) Slice() []uint16 {
 	tmp := []uint16{}
 	for _, elem := range o {
@@ -3729,20 +4098,21 @@ func (o ListUint16Option) Slice() []uint16 {
 	return tmp
 }
 
+// IsDefined will return true if the ListUint16Option has one or more options
+// in the slice.
 func (o ListUint16Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Uint32Option hold data for configuration fields of type uint32
 type Uint32Option struct {
 	Source  string
 	Defined bool
 	Value   uint32
 }
 
+// NewUint32Option returns a default configuration object of type uint32
 func NewUint32Option(dflt uint32) Uint32Option {
 	return Uint32Option{
 		Source:  "default",
@@ -3751,23 +4121,29 @@ func NewUint32Option(dflt uint32) Uint32Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUint32Option are defined by default)
 func (o Uint32Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Uint32Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Uint32Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uint32) of the option
 func (o Uint32Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uint32.  This is useful with kingpin option parser
 func (o *Uint32Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -3778,7 +4154,8 @@ func (o *Uint32Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Uint32Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uint32); ok {
 		o.Value = v
@@ -3789,6 +4166,8 @@ func (o *Uint32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uint32.
 func (o *Uint32Option) SetValue(v interface{}) error {
 	if val, ok := v.(uint32); ok {
 		o.Value = val
@@ -3798,6 +4177,8 @@ func (o *Uint32Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -3807,6 +4188,8 @@ func (o *Uint32Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Uint32Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -3816,6 +4199,8 @@ func (o *Uint32Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uint32 value when marshalling
+// the data structure.
 func (o Uint32Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -3832,6 +4217,8 @@ func (o Uint32Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uint32 value when marshalling
+// the data structure.
 func (o Uint32Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -3856,6 +4243,7 @@ func (o Uint32Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUint32Option is a map of options.
 type MapUint32Option map[string]Uint32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3882,6 +4270,7 @@ func (o MapUint32Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint32Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUint32Option) Map() map[string]uint32 {
 	tmp := map[string]uint32{}
 	for k, v := range o {
@@ -3890,7 +4279,8 @@ func (o MapUint32Option) Map() map[string]uint32 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUint32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint32Option{}
 	if v, ok := value.(uint32); ok {
@@ -3903,14 +4293,13 @@ func (o *MapUint32Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUint32Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUint32Option is a slice of Uint32Option
 type ListUint32Option []Uint32Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -3922,7 +4311,8 @@ func (o *ListUint32Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUint32Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint32Option{}
 	if v, ok := value.(uint32); ok {
@@ -3946,6 +4336,7 @@ func (o ListUint32Option) String() string {
 	return fmt.Sprintf("%v", []Uint32Option(o))
 }
 
+// Append will add the provided uint32 to the slice with NewUint32Option
 func (o ListUint32Option) Append(values ...uint32) ListUint32Option {
 	results := o
 	for _, val := range values {
@@ -3954,6 +4345,7 @@ func (o ListUint32Option) Append(values ...uint32) ListUint32Option {
 	return results
 }
 
+// Slice returns raw []uint32 data stored in the ListUint32Option
 func (o ListUint32Option) Slice() []uint32 {
 	tmp := []uint32{}
 	for _, elem := range o {
@@ -3962,20 +4354,21 @@ func (o ListUint32Option) Slice() []uint32 {
 	return tmp
 }
 
+// IsDefined will return true if the ListUint32Option has one or more options
+// in the slice.
 func (o ListUint32Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Uint64Option hold data for configuration fields of type uint64
 type Uint64Option struct {
 	Source  string
 	Defined bool
 	Value   uint64
 }
 
+// NewUint64Option returns a default configuration object of type uint64
 func NewUint64Option(dflt uint64) Uint64Option {
 	return Uint64Option{
 		Source:  "default",
@@ -3984,23 +4377,29 @@ func NewUint64Option(dflt uint64) Uint64Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUint64Option are defined by default)
 func (o Uint64Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Uint64Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Uint64Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uint64) of the option
 func (o Uint64Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uint64.  This is useful with kingpin option parser
 func (o *Uint64Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -4011,7 +4410,8 @@ func (o *Uint64Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Uint64Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uint64); ok {
 		o.Value = v
@@ -4022,6 +4422,8 @@ func (o *Uint64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uint64.
 func (o *Uint64Option) SetValue(v interface{}) error {
 	if val, ok := v.(uint64); ok {
 		o.Value = val
@@ -4031,6 +4433,8 @@ func (o *Uint64Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Uint64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -4040,6 +4444,8 @@ func (o *Uint64Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Uint64Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -4049,6 +4455,8 @@ func (o *Uint64Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uint64 value when marshalling
+// the data structure.
 func (o Uint64Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -4065,6 +4473,8 @@ func (o Uint64Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uint64 value when marshalling
+// the data structure.
 func (o Uint64Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -4089,6 +4499,7 @@ func (o Uint64Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUint64Option is a map of options.
 type MapUint64Option map[string]Uint64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4115,6 +4526,7 @@ func (o MapUint64Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint64Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUint64Option) Map() map[string]uint64 {
 	tmp := map[string]uint64{}
 	for k, v := range o {
@@ -4123,7 +4535,8 @@ func (o MapUint64Option) Map() map[string]uint64 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUint64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint64Option{}
 	if v, ok := value.(uint64); ok {
@@ -4136,14 +4549,13 @@ func (o *MapUint64Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUint64Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUint64Option is a slice of Uint64Option
 type ListUint64Option []Uint64Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4155,7 +4567,8 @@ func (o *ListUint64Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUint64Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint64Option{}
 	if v, ok := value.(uint64); ok {
@@ -4179,6 +4592,7 @@ func (o ListUint64Option) String() string {
 	return fmt.Sprintf("%v", []Uint64Option(o))
 }
 
+// Append will add the provided uint64 to the slice with NewUint64Option
 func (o ListUint64Option) Append(values ...uint64) ListUint64Option {
 	results := o
 	for _, val := range values {
@@ -4187,6 +4601,7 @@ func (o ListUint64Option) Append(values ...uint64) ListUint64Option {
 	return results
 }
 
+// Slice returns raw []uint64 data stored in the ListUint64Option
 func (o ListUint64Option) Slice() []uint64 {
 	tmp := []uint64{}
 	for _, elem := range o {
@@ -4195,20 +4610,21 @@ func (o ListUint64Option) Slice() []uint64 {
 	return tmp
 }
 
+// IsDefined will return true if the ListUint64Option has one or more options
+// in the slice.
 func (o ListUint64Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// Uint8Option hold data for configuration fields of type uint8
 type Uint8Option struct {
 	Source  string
 	Defined bool
 	Value   uint8
 }
 
+// NewUint8Option returns a default configuration object of type uint8
 func NewUint8Option(dflt uint8) Uint8Option {
 	return Uint8Option{
 		Source:  "default",
@@ -4217,23 +4633,29 @@ func NewUint8Option(dflt uint8) Uint8Option {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUint8Option are defined by default)
 func (o Uint8Option) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *Uint8Option) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *Uint8Option) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uint8) of the option
 func (o Uint8Option) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uint8.  This is useful with kingpin option parser
 func (o *Uint8Option) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -4244,7 +4666,8 @@ func (o *Uint8Option) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *Uint8Option) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uint8); ok {
 		o.Value = v
@@ -4255,6 +4678,8 @@ func (o *Uint8Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uint8.
 func (o *Uint8Option) SetValue(v interface{}) error {
 	if val, ok := v.(uint8); ok {
 		o.Value = val
@@ -4264,6 +4689,8 @@ func (o *Uint8Option) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *Uint8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -4273,6 +4700,8 @@ func (o *Uint8Option) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *Uint8Option) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -4282,6 +4711,8 @@ func (o *Uint8Option) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uint8 value when marshalling
+// the data structure.
 func (o Uint8Option) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -4298,6 +4729,8 @@ func (o Uint8Option) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uint8 value when marshalling
+// the data structure.
 func (o Uint8Option) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -4322,6 +4755,7 @@ func (o Uint8Option) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUint8Option is a map of options.
 type MapUint8Option map[string]Uint8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4348,6 +4782,7 @@ func (o MapUint8Option) String() string {
 	return fmt.Sprintf("%v", map[string]Uint8Option(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUint8Option) Map() map[string]uint8 {
 	tmp := map[string]uint8{}
 	for k, v := range o {
@@ -4356,7 +4791,8 @@ func (o MapUint8Option) Map() map[string]uint8 {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUint8Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint8Option{}
 	if v, ok := value.(uint8); ok {
@@ -4369,14 +4805,13 @@ func (o *MapUint8Option) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUint8Option) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUint8Option is a slice of Uint8Option
 type ListUint8Option []Uint8Option
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4388,7 +4823,8 @@ func (o *ListUint8Option) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUint8Option) WriteAnswer(name string, value interface{}) error {
 	tmp := Uint8Option{}
 	if v, ok := value.(uint8); ok {
@@ -4412,6 +4848,7 @@ func (o ListUint8Option) String() string {
 	return fmt.Sprintf("%v", []Uint8Option(o))
 }
 
+// Append will add the provided uint8 to the slice with NewUint8Option
 func (o ListUint8Option) Append(values ...uint8) ListUint8Option {
 	results := o
 	for _, val := range values {
@@ -4420,6 +4857,7 @@ func (o ListUint8Option) Append(values ...uint8) ListUint8Option {
 	return results
 }
 
+// Slice returns raw []uint8 data stored in the ListUint8Option
 func (o ListUint8Option) Slice() []uint8 {
 	tmp := []uint8{}
 	for _, elem := range o {
@@ -4428,20 +4866,21 @@ func (o ListUint8Option) Slice() []uint8 {
 	return tmp
 }
 
+// IsDefined will return true if the ListUint8Option has one or more options
+// in the slice.
 func (o ListUint8Option) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// UintptrOption hold data for configuration fields of type uintptr
 type UintptrOption struct {
 	Source  string
 	Defined bool
 	Value   uintptr
 }
 
+// NewUintptrOption returns a default configuration object of type uintptr
 func NewUintptrOption(dflt uintptr) UintptrOption {
 	return UintptrOption{
 		Source:  "default",
@@ -4450,23 +4889,29 @@ func NewUintptrOption(dflt uintptr) UintptrOption {
 	}
 }
 
+// IsDefined returns if the option has been defined (things returned from
+// NewUintptrOption are defined by default)
 func (o UintptrOption) IsDefined() bool {
 	return o.Defined
 }
 
+// SetSource allows setting the config file source path for the option
 func (o *UintptrOption) SetSource(source string) {
 	o.Source = source
 }
 
+// GetSource returns the config file source path for the option
 func (o *UintptrOption) GetSource() string {
 	return o.Source
 }
 
+// GetValue returns the raw value (type uintptr) of the option
 func (o UintptrOption) GetValue() interface{} {
 	return o.Value
 }
 
-// This is useful with kingpin option parser
+// Set allows setting the value from a string.  It will be parsed from a string
+// into the uintptr.  This is useful with kingpin option parser
 func (o *UintptrOption) Set(s string) error {
 	err := convertString(s, &o.Value)
 	if err != nil {
@@ -4477,7 +4922,8 @@ func (o *UintptrOption) Set(s string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *UintptrOption) WriteAnswer(name string, value interface{}) error {
 	if v, ok := value.(uintptr); ok {
 		o.Value = v
@@ -4488,6 +4934,8 @@ func (o *UintptrOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
+// SetValue will set the option value from the provided interface. The interface
+// value must be of type uintptr.
 func (o *UintptrOption) SetValue(v interface{}) error {
 	if val, ok := v.(uintptr); ok {
 		o.Value = val
@@ -4497,6 +4945,8 @@ func (o *UintptrOption) SetValue(v interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
+// UnmarshalYAML will populate the option from the parsed results of the
+// yaml unmarshaller.
 func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal(&o.Value); err != nil {
 		return err
@@ -4506,6 +4956,8 @@ func (o *UintptrOption) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON will populate the option from the parsed results for the
+// json unmarshaller.
 func (o *UintptrOption) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
@@ -4515,6 +4967,8 @@ func (o *UintptrOption) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalYAML will convert the option to the uintptr value when marshalling
+// the data structure.
 func (o UintptrOption) MarshalYAML() (interface{}, error) {
 	if StringifyValue {
 		return o.Value, nil
@@ -4531,6 +4985,8 @@ func (o UintptrOption) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
+// MarshalJSON will convert the option to the uintptr value when marshalling
+// the data structure.
 func (o UintptrOption) MarshalJSON() ([]byte, error) {
 	if StringifyValue {
 		return json.Marshal(o.Value)
@@ -4555,6 +5011,7 @@ func (o UintptrOption) String() string {
 	return fmt.Sprintf("{Source:%s Defined:%t Value:%v}", o.Source, o.Defined, o.Value)
 }
 
+// MapUintptrOption is a map of options.
 type MapUintptrOption map[string]UintptrOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4581,6 +5038,7 @@ func (o MapUintptrOption) String() string {
 	return fmt.Sprintf("%v", map[string]UintptrOption(o))
 }
 
+// Map will return a raw map from the Option.
 func (o MapUintptrOption) Map() map[string]uintptr {
 	tmp := map[string]uintptr{}
 	for k, v := range o {
@@ -4589,7 +5047,8 @@ func (o MapUintptrOption) Map() map[string]uintptr {
 	return tmp
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *MapUintptrOption) WriteAnswer(name string, value interface{}) error {
 	tmp := UintptrOption{}
 	if v, ok := value.(uintptr); ok {
@@ -4602,14 +5061,13 @@ func (o *MapUintptrOption) WriteAnswer(name string, value interface{}) error {
 	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
+// IsDefined will return true if there is more than one key set in the map.
 func (o MapUintptrOption) IsDefined() bool {
 	// true if the map has any keys
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }
 
+// ListUintptrOption is a slice of UintptrOption
 type ListUintptrOption []UintptrOption
 
 // Set is required for kingpin interfaces to allow command line params
@@ -4621,7 +5079,8 @@ func (o *ListUintptrOption) Set(value string) error {
 	return nil
 }
 
-// This is useful with survey prompting library
+// WriteAnswer will assign the option value from the value provided during
+// a prompt.  This is useful with survey prompting library
 func (o *ListUintptrOption) WriteAnswer(name string, value interface{}) error {
 	tmp := UintptrOption{}
 	if v, ok := value.(uintptr); ok {
@@ -4645,6 +5104,7 @@ func (o ListUintptrOption) String() string {
 	return fmt.Sprintf("%v", []UintptrOption(o))
 }
 
+// Append will add the provided uintptr to the slice with NewUintptrOption
 func (o ListUintptrOption) Append(values ...uintptr) ListUintptrOption {
 	results := o
 	for _, val := range values {
@@ -4653,6 +5113,7 @@ func (o ListUintptrOption) Append(values ...uintptr) ListUintptrOption {
 	return results
 }
 
+// Slice returns raw []uintptr data stored in the ListUintptrOption
 func (o ListUintptrOption) Slice() []uintptr {
 	tmp := []uintptr{}
 	for _, elem := range o {
@@ -4661,10 +5122,9 @@ func (o ListUintptrOption) Slice() []uintptr {
 	return tmp
 }
 
+// IsDefined will return true if the ListUintptrOption has one or more options
+// in the slice.
 func (o ListUintptrOption) IsDefined() bool {
 	// true if the list is not empty
-	if len(o) > 0 {
-		return true
-	}
-	return false
+	return len(o) > 0
 }

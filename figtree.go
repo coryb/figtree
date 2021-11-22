@@ -21,6 +21,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Logger is the inferface used by figtree for logging.
 type Logger interface {
 	Debugf(format string, args ...interface{})
 }
@@ -29,6 +30,7 @@ type nullLogger struct{}
 
 func (*nullLogger) Debugf(string, ...interface{}) {}
 
+// Log is the default logger used by figtree, by default it is a null logger.
 var Log Logger = &nullLogger{}
 
 func defaultApplyChangeSet(changeSet map[string]*string) error {
@@ -42,50 +44,87 @@ func defaultApplyChangeSet(changeSet map[string]*string) error {
 	return nil
 }
 
+// Option is an interface that allows configuration of a figtree parser.
 type Option func(*FigTree)
 
+// WithHome allows setting the default "HOME" directory, used for finding
+// possible config files outside the current directory tree.  It will default
+// to `os.Getenv("HOME")`
 func WithHome(home string) Option {
 	return func(f *FigTree) {
 		f.home = home
 	}
 }
 
+// WithCwd allows setting the workingDir for the parser, the default
+// is what is returned from os.Getwd()
 func WithCwd(cwd string) Option {
 	return func(f *FigTree) {
 		f.workDir = cwd
 	}
 }
 
+// WithEnvPrefix allows customzing the prefix for env vars generated from
+// figtree.  `FIGTREE_` is the default env var prefix.
 func WithEnvPrefix(env string) Option {
 	return func(f *FigTree) {
 		f.envPrefix = env
 	}
 }
 
+// WithConfigDir allows for an optional directory requirement to config file
+// lookups.  It is prepended to the `Load` functions that take a config file
+// name.  So if we set the config dir to `myconf.d` and call
+// `LoadAllConfigs("myconf.yml")` then we will be looking recursively for
+// the presence of "myconf.d/myconf.yml" files.
 func WithConfigDir(dir string) Option {
 	return func(f *FigTree) {
 		f.configDir = dir
 	}
 }
 
+// ChangeSetFunc is the function interface required to provide a custom
+// env modifier for the provided ChangeSet (map of env var names to
+// env var values)
 type ChangeSetFunc func(map[string]*string) error
 
+// WithApplyChangeSet allows for customizing how the environment variables are
+// set.  The callback gets a map of environment variable name to the values,
+// if the value of the map is nil then this implies the env var should be unset.
+// By default the env ChangeSet is applied directly to the runtime os with
+// `os.Setenv` and `os.Unsetenv`.
 func WithApplyChangeSet(apply ChangeSetFunc) Option {
 	return func(f *FigTree) {
 		f.applyChangeSet = apply
 	}
 }
 
+// PreProcessor is the function interface used to pre-process configs before
+// being analyzed by figtree.  This can be useful to modify configs to have
+// a consistent structure, for example in case you want to modify the config
+// struct that is populated by figree but allow for backwards compatibility in
+// users config file.
 type PreProcessor func([]byte) ([]byte, error)
 
+// WithPreProcessor allows custom pre-processor to be applied to the figtree
+// parser.  By default the is no pre-processor.
 func WithPreProcessor(pp PreProcessor) Option {
 	return func(f *FigTree) {
 		f.preProcessor = pp
 	}
 }
 
+// FilterOut is a function interface used by figtree to determin if it should
+// processes a config file.  If it returns `false` then then config file will
+// be skipped.
 type FilterOut func([]byte) bool
 
+// WithFilterOut allows custom config file filters.  By default figtree will
+// skip files with this structure in the document:
+// ```
+// config:
+//   stop: true
+// ```
 func WithFilterOut(filt FilterOut) Option {
 	return func(f *FigTree) {
 		f.filterOut = filt
@@ -116,18 +155,24 @@ func defaultFilterOut(f *FigTree) FilterOut {
 	}
 }
 
+// WithUnmarshaller allows you to set the config file parser, by default it uses
+// `Unmarshal` from `gopkg.in/yaml.v3`
 func WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) Option {
 	return func(f *FigTree) {
 		f.unmarshal = unmarshaller
 	}
 }
 
+// WithoutExec will disable the possible execution of config files.  By default
+// figtree will execute config files that are detected as executable, then
+// it will process the stdout of the executable as if it were a config file.
 func WithoutExec() Option {
 	return func(f *FigTree) {
 		f.exec = false
 	}
 }
 
+// FigTree hold configuration for config tree parsing.
 type FigTree struct {
 	home           string
 	workDir        string
@@ -140,6 +185,7 @@ type FigTree struct {
 	unmarshal      func(in []byte, out interface{}) error
 }
 
+// NewFigTree returns a new config tree parser.
 func NewFigTree(opts ...Option) *FigTree {
 	wd, _ := os.Getwd()
 	fig := &FigTree{
@@ -156,53 +202,93 @@ func NewFigTree(opts ...Option) *FigTree {
 	return fig
 }
 
+// WithHome allows setting the default "HOME" directory, used for finding
+// possible config files outside the current directory tree.  It will default
+// to `os.Getenv("HOME")`
 func (f *FigTree) WithHome(home string) {
 	WithHome(home)(f)
 }
 
+// WithCwd allows setting the workingDir for the parser, the default
+// is what is returned from os.Getwd()
 func (f *FigTree) WithCwd(cwd string) {
 	WithCwd(cwd)(f)
 }
 
+// WithEnvPrefix allows customzing the prefix for env vars generated from
+// figtree.  `FIGTREE_` is the default env var prefix.
 func (f *FigTree) WithEnvPrefix(env string) {
 	WithEnvPrefix(env)(f)
 }
 
+// WithConfigDir allows for an optional directory requirement to config file
+// lookups.  It is prepended to the `Load` functions that take a config file
+// name.  So if we set the config dir to `myconf.d` and call
+// `LoadAllConfigs("myconf.yml")` then we will be looking recursively for
+// the presence of "myconf.d/myconf.yml" files.
 func (f *FigTree) WithConfigDir(dir string) {
 	WithConfigDir(dir)(f)
 }
 
+// WithPreProcessor allows custom pre-processor to be applied to the figtree
+// generator.  By default the is no pre-processor.
 func (f *FigTree) WithPreProcessor(pp PreProcessor) {
 	WithPreProcessor(pp)(f)
 }
 
+// WithFilterOut allows custom config file filters.  By default figtree will
+// skip files with this structure in the document:
+// ```
+// config:
+//   stop: true
+// ```
 func (f *FigTree) WithFilterOut(filt FilterOut) {
 	WithFilterOut(filt)(f)
 }
 
+// WithUnmarshaller allows you to set the config file parser, by default it uses
+// `Unmarshal` from `gopkg.in/yaml.v3`
 func (f *FigTree) WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) {
 	WithUnmarshaller(unmarshaller)(f)
 }
 
+// WithApplyChangeSet allows for customizing how the environment variables are
+// set.  The callback gets a map of environment variable name to the values,
+// if the value of the map is nil then this implies the env var should be unset.
+// By default the env ChangeSet is applied directly to the runtime os with
+// `os.Setenv` and `os.Unsetenv`.
 func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
 	WithApplyChangeSet(apply)(f)
 }
 
+// WithIgnoreChangeSet will update the Figtree parser to ignore any env
+// changes found during the parse.  This is used `FIGTREE_*` env vars are
+// not desired during the parse.
 func (f *FigTree) WithIgnoreChangeSet() {
 	WithApplyChangeSet(func(_ map[string]*string) error {
 		return nil
 	})(f)
 }
 
+// WithoutExec will disable the possible execution of config files.  By default
+// figtree will execute config files that are detected as executable, then
+// it will process the stdout of the executable as if it were a config file.
 func (f *FigTree) WithoutExec() {
 	WithoutExec()(f)
 }
 
+// Copy returns a copy of the figtree parser.
 func (f *FigTree) Copy() *FigTree {
 	cp := *f
 	return &cp
 }
 
+// LoadAllConfigs parses all files matching the filename in `configFile` and
+// populates the provide options interface.  It will look for files in the
+// current working directory and walk up the directory tree to the root
+// directory.  It will then look in /etc and finally the home directory for
+// the `configFile`.  "Close" properties take precedence if there are multiple
+// values for the same property in found in the config tree.
 func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	if f.configDir != "" {
 		configFile = path.Join(f.configDir, configFile)
@@ -228,11 +314,15 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 	return f.LoadAllConfigSources(configSources, options)
 }
 
+// ConfigSource holds the data from a config file to be processed.
 type ConfigSource struct {
 	Config   []byte
 	Filename string
 }
 
+// LoadAllConfigSources will parse all the sources provided and populate the
+// options interface.  The sources are processed in order, with properties
+// in the earlier sources taking precedence over the later sources.
 func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface{}) error {
 	m := NewMerger()
 	filterOut := f.filterOut
@@ -260,6 +350,8 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 	return nil
 }
 
+// LoadConfigBytes will merge in the configuration from `config` into the
+// options interface.
 func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) error {
 	m := NewMerger(WithSourceFile(source))
 	return f.loadConfigBytes(m, config, options)
@@ -300,6 +392,7 @@ func (f *FigTree) loadConfigBytes(m *Merger, config []byte, options interface{})
 	return f.applyChangeSet(changeSet)
 }
 
+// LoadConfig will merge in the config from `file` into the options interface.
 func (f *FigTree) LoadConfig(file string, options interface{}) error {
 	cs, err := f.ReadFile(file)
 	if err != nil {
@@ -333,25 +426,27 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 				Config:   data,
 				Filename: rel,
 			}, nil
-		} else {
-			Log.Debugf("Found Executable Config file: %s", file)
-			// it is executable, so run it and try to parse the output
-			cmd := exec.Command(file)
-			stdout := bytes.NewBufferString("")
-			cmd.Stdout = stdout
-			cmd.Stderr = bytes.NewBufferString("")
-			if err := cmd.Run(); err != nil {
-				return nil, errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
-			}
-			return &ConfigSource{
-				Config:   stdout.Bytes(),
-				Filename: rel,
-			}, nil
 		}
+		Log.Debugf("Found Executable Config file: %s", file)
+		// it is executable, so run it and try to parse the output
+		cmd := exec.Command(file)
+		stdout := bytes.NewBufferString("")
+		cmd.Stdout = stdout
+		cmd.Stderr = bytes.NewBufferString("")
+		if err := cmd.Run(); err != nil {
+			return nil, errors.Wrapf(err, "%s is executable, but it failed to execute:\n%s", file, cmd.Stderr)
+		}
+		return &ConfigSource{
+			Config:   stdout.Bytes(),
+			Filename: rel,
+		}, nil
 	}
 	return nil, nil
 }
 
+// FindParentPaths will walk the directory tree from `cwd` to the filesystem
+// root looking for paths that end with `fileName`.  It will also look in the
+// provided `homedir` if that is outside of `cwd`.
 func FindParentPaths(homedir, cwd, fileName string) []string {
 	paths := make([]string, 0)
 	if filepath.IsAbs(fileName) {
@@ -386,6 +481,10 @@ func FindParentPaths(homedir, cwd, fileName string) []string {
 	return paths
 }
 
+// FindParentPaths will walk the directory tree from the current working
+// directory to the filesystem root looking for paths that end with `fileName`.
+// It will also look in the HOME directory if that is outside of the current
+// working directory.
 func (f *FigTree) FindParentPaths(fileName string) []string {
 	return FindParentPaths(f.home, f.workDir, fileName)
 }
@@ -401,6 +500,8 @@ func camelCase(name string) string {
 
 }
 
+// Merger is used to merge multiple config documents into a single data
+// structure.
 type Merger struct {
 	sourceFile  string
 	preserveMap map[string]struct{}
@@ -408,14 +509,20 @@ type Merger struct {
 	ignore      []string
 }
 
+// MergeOption is the function interface to allow for custom merge behavior.
 type MergeOption func(*Merger)
 
+// WithSourceFile sets the source file path of the config file when setting
+// options into the merge structure.
 func WithSourceFile(source string) MergeOption {
 	return func(m *Merger) {
 		m.sourceFile = source
 	}
 }
 
+// PreserveMap is a list of config file field names that will be preserved
+// as raw `map[string]interface{}` rather than being converted into named
+// fields in the merge struct.
 func PreserveMap(keys ...string) MergeOption {
 	return func(m *Merger) {
 		for _, key := range keys {
@@ -424,6 +531,7 @@ func PreserveMap(keys ...string) MergeOption {
 	}
 }
 
+// NewMerger creates a merger with applied options.
 func NewMerger(options ...MergeOption) *Merger {
 	m := &Merger{
 		sourceFile:  "merge",
@@ -472,6 +580,10 @@ func MakeMergeStruct(structs ...interface{}) interface{} {
 	return m.MakeMergeStruct(structs...)
 }
 
+// MakeMergeStruct will take multiple structs and return a pointer to a zero
+// value for the anonymous struct that has all the public fields from all the
+// structs merged into one struct.  If there are multiple structs with the same
+// field names, the first appearance of that name will be used.
 func (m *Merger) MakeMergeStruct(structs ...interface{}) interface{} {
 	values := []reflect.Value{}
 	for _, data := range structs {
@@ -600,13 +712,14 @@ func (m *Merger) mapToStruct(src reflect.Value) reflect.Value {
 		if !keyval.IsValid() {
 			continue
 		}
-		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
+		switch {
+		case keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map:
 			keyval = m.mapToStruct(keyval.Elem()).Addr()
 			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
-		} else if keyval.Kind() == reflect.Map {
+		case keyval.Kind() == reflect.Map:
 			keyval = m.mapToStruct(keyval)
 			m.mergeStructs(dest.FieldByName(structFieldName), reflect.ValueOf(keyval.Interface()))
-		} else {
+		default:
 			dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
 		}
 	}
@@ -635,7 +748,12 @@ func structToMap(src reflect.Value) reflect.Value {
 	return dest
 }
 
+// ConfigOptions is the structure of properties in a document that can modify
+// the config merge behavior.
 type ConfigOptions struct {
+	// Overwrite is a list of configuration fields which will overwrite any
+	// previously set field in the merge struct, and will prevent any
+	// future modification of the merge struct or the given field.
 	Overwrite []string `json:"overwrite,omitempty" yaml:"overwrite,omitempty"`
 }
 
@@ -819,9 +937,8 @@ func (m *Merger) assignValue(dest, src reflect.Value, overwrite bool) {
 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
 			m.assignValue(dest, srcOptionValue, overwrite)
 			return
-		} else {
-			panic(fmt.Errorf("%s is not assignable to %s", srcOptionValue.Type(), dest.Type()))
 		}
+		panic(fmt.Errorf("%s is not assignable to %s", srcOptionValue.Type(), dest.Type()))
 	}
 }
 
@@ -908,7 +1025,7 @@ func (m *Merger) mergeStructs(ov, nv reflect.Value) {
 		if !ok {
 			if nvStructField.Anonymous {
 				// this is an embedded struct, and the destination does not contain
-				// the same embeded struct, so try to merge the embedded struct
+				// the same embedded struct, so try to merge the embedded struct
 				// directly with the destination
 				m.mergeStructs(ov, nvField)
 				continue
@@ -1094,19 +1211,20 @@ func (f *FigTree) formatEnvValue(value reflect.Value) (string, bool) {
 		}
 		if get, ok := t.(gettable); ok {
 			return fmt.Sprintf("%v", get.GetValue()), true
-		} else {
-			if b, err := json.Marshal(t); err == nil {
-				val := strings.TrimSpace(string(b))
-				if val == "null" {
-					return "", true
-				}
-				return val, true
+		}
+		if b, err := json.Marshal(t); err == nil {
+			val := strings.TrimSpace(string(b))
+			if val == "null" {
+				return "", true
 			}
+			return val, true
 		}
 	}
 	return "", false
 }
 
+// PopulateEnv will generate a changeSet to be applied to an environment for
+// the given data structure.
 func (f *FigTree) PopulateEnv(data interface{}) (changeSet map[string]*string) {
 	changeSet = make(map[string]*string)
 

@@ -25,8 +25,8 @@ func TestOptionsOverwriteConfigD3(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../overwrite.yml", true, "d1map1val0"},
-			"key1": StringOption{"../../overwrite.yml", true, "d1map1val1"},
+			"key0": {"../../overwrite.yml", true, "d1map1val0"},
+			"key1": {"../../overwrite.yml", true, "d1map1val1"},
 		},
 		Int1:   IntOption{"../../overwrite.yml", true, 111},
 		Float1: Float32Option{"../../overwrite.yml", true, 1.11},
@@ -53,8 +53,8 @@ func TestOptionsOverwriteConfigD2(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../overwrite.yml", true, "d1map1val0"},
-			"key1": StringOption{"../overwrite.yml", true, "d1map1val1"},
+			"key0": {"../overwrite.yml", true, "d1map1val0"},
+			"key1": {"../overwrite.yml", true, "d1map1val1"},
 		},
 		Int1:   IntOption{"../overwrite.yml", true, 111},
 		Float1: Float32Option{"../overwrite.yml", true, 1.11},

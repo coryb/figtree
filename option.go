@@ -10,6 +10,10 @@ type option interface {
 	GetSource() string
 }
 
+// StringifyValue is a global value that can be use for debugging to control
+// how options are unmarshalled.  If true, then just the value will be
+// unmarshalled, otherwise the Source, Value and Defined fields will be
+// unmarshalled as a single struct.
 var StringifyValue = true
 
 // used in option parsing for map types Set routines

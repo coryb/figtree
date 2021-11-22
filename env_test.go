@@ -11,7 +11,8 @@ import (
 
 func TestOptionsEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
+	err := os.Chdir("d1")
+	assert.NoError(t, err)
 	defer os.Chdir("..")
 
 	StringifyValue = true
@@ -22,7 +23,7 @@ func TestOptionsEnv(t *testing.T) {
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	err = fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	got := []string{}
@@ -48,7 +49,8 @@ func TestOptionsEnv(t *testing.T) {
 
 func TestOptionsNamedEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
+	err := os.Chdir("d1")
+	assert.NoError(t, err)
 	defer os.Chdir("..")
 
 	StringifyValue = true
@@ -60,7 +62,7 @@ func TestOptionsNamedEnv(t *testing.T) {
 
 	fig := newFigTreeFromEnv(WithEnvPrefix("TEST"))
 
-	err := fig.LoadAllConfigs("figtree.yml", &opts)
+	err = fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
 
 	got := []string{}

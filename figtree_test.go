@@ -81,11 +81,11 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"../figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d3map1val2"},
-			"key3": StringOption{"figtree.yml", true, "d3map1val3"},
-			"dup":  StringOption{"figtree.yml", true, "d3dupval"},
+			"key0": {"../../figtree.yml", true, "d1map1val0"},
+			"key1": {"../figtree.yml", true, "d2map1val1"},
+			"key2": {"figtree.yml", true, "d3map1val2"},
+			"key3": {"figtree.yml", true, "d3map1val3"},
+			"dup":  {"figtree.yml", true, "d3dupval"},
 		},
 		Int1:   IntOption{"figtree.yml", true, 333},
 		Float1: Float32Option{"figtree.yml", true, 3.33},
@@ -115,10 +115,10 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {"../figtree.yml", true, "d1map1val0"},
+			"key1": {"figtree.yml", true, "d2map1val1"},
+			"key2": {"figtree.yml", true, "d2map1val2"},
+			"dup":  {"figtree.yml", true, "d2dupval"},
 		},
 		Int1:   IntOption{"figtree.yml", true, 222},
 		Float1: Float32Option{"figtree.yml", true, 2.22},
@@ -146,9 +146,9 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d1map1val1"},
-			"dup":  StringOption{"figtree.yml", true, "d1dupval"},
+			"key0": {"figtree.yml", true, "d1map1val0"},
+			"key1": {"figtree.yml", true, "d1map1val1"},
+			"dup":  {"figtree.yml", true, "d1dupval"},
 		},
 		Int1:   IntOption{"figtree.yml", true, 111},
 		Float1: Float32Option{"figtree.yml", true, 1.11},
@@ -305,10 +305,10 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {"../figtree.yml", true, "d1map1val0"},
+			"key1": {"figtree.yml", true, "d2map1val1"},
+			"key2": {"figtree.yml", true, "d2map1val2"},
+			"dup":  {"figtree.yml", true, "d2dupval"},
 		},
 		Int1:   IntOption{"figtree.yml", true, 222},
 		Float1: Float32Option{"figtree.yml", true, 2.22},
@@ -1332,6 +1332,7 @@ func TestMergeWithZeros(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		require.True(t,
 			t.Run(tt.info.name, func(t *testing.T) {
 				// assert.NotPanics(t, func() {
@@ -1586,6 +1587,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		require.True(t,
 			t.Run(tt.info.name, func(t *testing.T) {
 				// assert.NotPanics(t, func() {
@@ -1645,6 +1647,7 @@ func TestMergeStructsWithPreservedMaps(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		require.True(t,
 			t.Run(tt.info.name, func(t *testing.T) {
 				got := tt.merger.MakeMergeStruct(tt.src)

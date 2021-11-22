@@ -23,9 +23,9 @@ func TestOptionsStopConfigD3(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key1": StringOption{"../stop.yml", true, "d2map1val1"},
-			"key2": StringOption{"stop.yml", true, "d3map1val2"},
-			"key3": StringOption{"stop.yml", true, "d3map1val3"},
+			"key1": {"../stop.yml", true, "d2map1val1"},
+			"key2": {"stop.yml", true, "d3map1val2"},
+			"key3": {"stop.yml", true, "d3map1val3"},
 		},
 		Int1:   IntOption{"stop.yml", true, 333},
 		Float1: Float32Option{"stop.yml", true, 3.33},
@@ -52,8 +52,8 @@ func TestOptionsStopConfigD2(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key1": StringOption{"stop.yml", true, "d2map1val1"},
-			"key2": StringOption{"stop.yml", true, "d2map1val2"},
+			"key1": {"stop.yml", true, "d2map1val1"},
+			"key2": {"stop.yml", true, "d2map1val2"},
 		},
 		Int1:   IntOption{"stop.yml", true, 222},
 		Float1: Float32Option{"stop.yml", true, 2.22},
