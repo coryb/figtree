@@ -364,7 +364,7 @@ func FindParentPaths(homedir, cwd, fileName string) []string {
 	}
 
 	// special case if homedir is not in current path then check there anyway
-	if !strings.HasPrefix(cwd, homedir) {
+	if homedir != "" && !strings.HasPrefix(cwd, homedir) {
 		file := path.Join(homedir, fileName)
 		if _, err := os.Stat(file); err == nil {
 			paths = append(paths, filepath.FromSlash(file))
