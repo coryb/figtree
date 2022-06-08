@@ -1013,6 +1013,8 @@ func (m *Merger) mergeMaps(ov, nv reflect.Value) {
 }
 
 func (m *Merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
+	cp := reflect.MakeSlice(ov.Type(), ov.Len(), ov.Len())
+	reflect.Copy(cp, ov)
 	var zero interface{}
 Outer:
 	for ni := 0; ni < nv.Len(); ni++ {
@@ -1032,8 +1034,8 @@ Outer:
 			continue
 		}
 
-		for oi := 0; oi < ov.Len(); oi++ {
-			o := ov.Index(oi)
+		for oi := 0; oi < cp.Len(); oi++ {
+			o := cp.Index(oi)
 			if o.CanAddr() {
 				if oOption, ok := o.Addr().Interface().(option); ok {
 					o = reflect.ValueOf(oOption.GetValue())
@@ -1044,13 +1046,13 @@ Outer:
 			}
 		}
 
-		nvElem := reflect.New(ov.Type().Elem()).Elem()
+		nvElem := reflect.New(cp.Type().Elem()).Elem()
 		m.assignValue(nvElem, niv, false)
 
-		Log.Debugf("Appending %v to %v", nvElem.Interface(), ov)
-		ov = reflect.Append(ov, nvElem)
+		Log.Debugf("Appending %v to %v", nvElem.Interface(), cp)
+		cp = reflect.Append(cp, nvElem)
 	}
-	return ov
+	return cp
 }
 
 func (f *FigTree) formatEnvName(name string) string {
