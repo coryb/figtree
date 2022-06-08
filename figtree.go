@@ -1013,8 +1013,15 @@ func (m *Merger) mergeMaps(ov, nv reflect.Value) {
 }
 
 func (m *Merger) mergeArrays(ov, nv reflect.Value) reflect.Value {
-	cp := reflect.MakeSlice(ov.Type(), ov.Len(), ov.Len())
-	reflect.Copy(cp, ov)
+	var cp reflect.Value
+	switch ov.Type().Kind() {
+	case reflect.Slice:
+		cp = reflect.MakeSlice(ov.Type(), ov.Len(), ov.Len())
+		reflect.Copy(cp, ov)
+	case reflect.Array:
+		// arrays are copied, not passed by reference, so we dont need to copy
+		cp = ov
+	}
 	var zero interface{}
 Outer:
 	for ni := 0; ni < nv.Len(); ni++ {
