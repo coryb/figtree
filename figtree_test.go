@@ -1823,3 +1823,32 @@ func TestMergeDefaults(t *testing.T) {
 
 	assert.Equal(t, expected, dest)
 }
+
+// TestMergeCopySlices verifies when we merge a non-nil slice onto a nil-slice
+// that the result is a copy of the original rather than direct reference
+// assignment.  Otherwise we will get into conditions where we have multiple
+// merged objects using the exact same reference to a slice where if we change
+// one slice it modified all merged structs.
+func TestMergeCopySlice(t *testing.T) {
+	type stuffer = struct {
+		Stuff []string
+	}
+
+	stuffers := []*stuffer{}
+	common := &stuffer{Stuff: []string{"common"}}
+
+	stuff1 := &stuffer{Stuff: nil}
+	stuff2 := &stuffer{Stuff: nil}
+
+	for _, stuff := range []*stuffer{stuff1, stuff2} {
+		Merge(stuff, common)
+		stuffers = append(stuffers, stuff)
+	}
+
+	assert.Equal(t, []string{"common"}, stuffers[0].Stuff)
+	assert.Equal(t, []string{"common"}, stuffers[1].Stuff)
+
+	stuffers[0].Stuff[0] = "updated"
+	assert.Equal(t, []string{"updated"}, stuffers[0].Stuff)
+	assert.Equal(t, []string{"common"}, stuffers[1].Stuff)
+}
