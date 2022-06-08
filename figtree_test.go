@@ -1852,3 +1852,27 @@ func TestMergeCopySlice(t *testing.T) {
 	assert.Equal(t, []string{"updated"}, stuffers[0].Stuff)
 	assert.Equal(t, []string{"common"}, stuffers[1].Stuff)
 }
+
+func TestMergeCopyArray(t *testing.T) {
+	type stuffer = struct {
+		Stuff [2]string
+	}
+
+	stuffers := []*stuffer{}
+	common := &stuffer{Stuff: [2]string{"common"}}
+
+	stuff1 := &stuffer{Stuff: [2]string{}}
+	stuff2 := &stuffer{Stuff: [2]string{}}
+
+	for _, stuff := range []*stuffer{stuff1, stuff2} {
+		Merge(stuff, common)
+		stuffers = append(stuffers, stuff)
+	}
+
+	assert.Equal(t, [2]string{"common", ""}, stuffers[0].Stuff)
+	assert.Equal(t, [2]string{"common", ""}, stuffers[1].Stuff)
+
+	stuffers[0].Stuff[0] = "updated"
+	assert.Equal(t, [2]string{"updated", ""}, stuffers[0].Stuff)
+	assert.Equal(t, [2]string{"common", ""}, stuffers[1].Stuff)
+}
