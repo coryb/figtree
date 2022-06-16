@@ -42,27 +42,27 @@ func defaultApplyChangeSet(changeSet map[string]*string) error {
 	return nil
 }
 
-type Option func(*FigTree)
+type CreateOption func(*FigTree)
 
-func WithHome(home string) Option {
+func WithHome(home string) CreateOption {
 	return func(f *FigTree) {
 		f.home = home
 	}
 }
 
-func WithCwd(cwd string) Option {
+func WithCwd(cwd string) CreateOption {
 	return func(f *FigTree) {
 		f.workDir = cwd
 	}
 }
 
-func WithEnvPrefix(env string) Option {
+func WithEnvPrefix(env string) CreateOption {
 	return func(f *FigTree) {
 		f.envPrefix = env
 	}
 }
 
-func WithConfigDir(dir string) Option {
+func WithConfigDir(dir string) CreateOption {
 	return func(f *FigTree) {
 		f.configDir = dir
 	}
@@ -70,7 +70,7 @@ func WithConfigDir(dir string) Option {
 
 type ChangeSetFunc func(map[string]*string) error
 
-func WithApplyChangeSet(apply ChangeSetFunc) Option {
+func WithApplyChangeSet(apply ChangeSetFunc) CreateOption {
 	return func(f *FigTree) {
 		f.applyChangeSet = apply
 	}
@@ -78,7 +78,7 @@ func WithApplyChangeSet(apply ChangeSetFunc) Option {
 
 type PreProcessor func([]byte) ([]byte, error)
 
-func WithPreProcessor(pp PreProcessor) Option {
+func WithPreProcessor(pp PreProcessor) CreateOption {
 	return func(f *FigTree) {
 		f.preProcessor = pp
 	}
@@ -86,7 +86,7 @@ func WithPreProcessor(pp PreProcessor) Option {
 
 type FilterOut func([]byte) bool
 
-func WithFilterOut(filt FilterOut) Option {
+func WithFilterOut(filt FilterOut) CreateOption {
 	return func(f *FigTree) {
 		f.filterOut = filt
 	}
@@ -116,13 +116,13 @@ func defaultFilterOut(f *FigTree) FilterOut {
 	}
 }
 
-func WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) Option {
+func WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) CreateOption {
 	return func(f *FigTree) {
 		f.unmarshal = unmarshaller
 	}
 }
 
-func WithoutExec() Option {
+func WithoutExec() CreateOption {
 	return func(f *FigTree) {
 		f.exec = false
 	}
@@ -140,7 +140,7 @@ type FigTree struct {
 	unmarshal      func(in []byte, out interface{}) error
 }
 
-func NewFigTree(opts ...Option) *FigTree {
+func NewFigTree(opts ...CreateOption) *FigTree {
 	wd, _ := os.Getwd()
 	fig := &FigTree{
 		home:           os.Getenv("HOME"),

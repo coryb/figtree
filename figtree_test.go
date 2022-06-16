@@ -31,9 +31,9 @@ func init() {
 	logging.SetLevel(logging.NOTICE, "")
 }
 
-func newFigTreeFromEnv(opts ...Option) *FigTree {
+func newFigTreeFromEnv(opts ...CreateOption) *FigTree {
 	cwd, _ := os.Getwd()
-	opts = append([]Option{
+	opts = append([]CreateOption{
 		WithHome(os.Getenv("HOME")),
 		WithCwd(cwd),
 		WithEnvPrefix("FIGTREE"),
