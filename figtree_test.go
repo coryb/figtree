@@ -12,6 +12,7 @@ import (
 	logging "gopkg.in/op/go-logging.v1"
 	yaml "gopkg.in/yaml.v3"
 
+	"github.com/coryb/walky"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1655,38 +1656,34 @@ func TestMergeStructsWithPreservedMaps(t *testing.T) {
 }
 
 func TestFigtreePreProcessor(t *testing.T) {
-	input := []byte(`
+	var input yaml.Node
+	err := yaml.Unmarshal([]byte(`
 bad-name: good-value
 good-name: bad-value
 ok-name: want-array
-`)
+`), &input)
+	assert.NoError(t, err)
 
-	pp := func(in []byte) ([]byte, error) {
-		raw := map[string]interface{}{}
-		if err := yaml.Unmarshal(in, &raw); err != nil {
-			return in, err
-		}
-
+	pp := func(node *yaml.Node) error {
 		// rename "bad-name" key to "fixed-name"
-		if val, ok := raw["bad-name"]; ok {
-			delete(raw, "bad-name")
-			raw["fixed-name"] = val
+		if keyNode, _ := walky.GetKeyValue(node, walky.NewStringNode("bad-name")); keyNode != nil {
+			keyNode.Value = "fixed-name"
 		}
 
-		// reset "bad-value" key to "good-value"
-		if val, ok := raw["good-name"]; ok {
-			if t, ok := val.(string); ok && t != "fixed-value" {
-				raw["good-name"] = "fixed-value"
-			}
+		// reset "bad-value" key to "fixed-value", under "good-name" key
+		if valNode := walky.GetKey(node, "good-name"); valNode != nil {
+			valNode.Value = "fixed-value"
 		}
 
 		// migrate "ok-name" value from string to list of strings
-		if val, ok := raw["ok-name"]; ok {
-			if t, ok := val.(string); ok {
-				raw["ok-name"] = []string{t}
+		if keyNode, valNode := walky.GetKeyValue(node, walky.NewStringNode("ok-name")); keyNode != nil {
+			if valNode.Kind == yaml.ScalarNode {
+				seqNode := walky.NewSequenceNode()
+				walky.AppendNode(seqNode, walky.ShallowCopyNode(valNode))
+				walky.AssignMapNode(node, keyNode, seqNode)
 			}
 		}
-		return yaml.Marshal(raw)
+		return nil
 	}
 
 	fig := newFigTreeFromEnv(WithPreProcessor(pp))
@@ -1703,7 +1700,7 @@ ok-name: want-array
 		OkName    []string `yaml:"ok-name"`
 	}{"good-value", "fixed-value", []string{"want-array"}}
 
-	err := fig.LoadConfigBytes(input, "test", &dest)
+	err = fig.LoadConfigSource(&input, "test", &dest)
 	assert.NoError(t, err)
 	assert.Equal(t, want, dest)
 }

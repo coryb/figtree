@@ -36,13 +36,13 @@ func TestOptionsMarshalYAML(t *testing.T) {
 
 	expected := `str1: d3str1val1
 arr1:
-- d3arr1val1
-- d3arr1val2
-- dupval
-- d2arr1val1
-- d2arr1val2
-- d1arr1val1
-- d1arr1val2
+  - d3arr1val1
+  - d3arr1val2
+  - dupval
+  - d2arr1val1
+  - d2arr1val2
+  - d1arr1val1
+  - d1arr1val2
 map1:
   dup: d3dupval
   key0: d1map1val0

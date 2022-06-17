@@ -3,8 +3,9 @@ package figtree
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -16,8 +17,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/coryb/walky"
 	"github.com/fatih/camelcase"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -76,7 +77,7 @@ func WithApplyChangeSet(apply ChangeSetFunc) CreateOption {
 	}
 }
 
-type PreProcessor func([]byte) ([]byte, error)
+type PreProcessor func(*yaml.Node) error
 
 func WithPreProcessor(pp PreProcessor) CreateOption {
 	return func(f *FigTree) {
@@ -84,7 +85,7 @@ func WithPreProcessor(pp PreProcessor) CreateOption {
 	}
 }
 
-type FilterOut func([]byte) bool
+type FilterOut func(*yaml.Node) bool
 
 func WithFilterOut(filt FilterOut) CreateOption {
 	return func(f *FigTree) {
@@ -93,32 +94,25 @@ func WithFilterOut(filt FilterOut) CreateOption {
 }
 
 func defaultFilterOut(f *FigTree) FilterOut {
-	// looking for:
-	// ```
-	// config:
-	//   stop: true|false
-	// ```
-	configStop := struct {
-		Config struct {
-			Stop bool `json:"stop" yaml:"stop"`
-		} `json:"config" yaml:"config"`
-	}{}
-	return func(config []byte) bool {
+	configStop := false
+	return func(config *yaml.Node) bool {
 		// if previous parse found a stop we should abort here
-		if configStop.Config.Stop {
+		if configStop {
 			return true
 		}
-		// now check if current doc has a stop
-		f.unmarshal(config, &configStop)
+		// now check if current doc has a stop, looking for:
+		// ```
+		// config:
+		//   stop: true|false
+		// ```
+		if pragma := walky.GetKey(config, "config"); pragma != nil {
+			if stop := walky.GetKey(pragma, "stop"); stop != nil {
+				configStop, _ = strconv.ParseBool(stop.Value)
+			}
+		}
 		// even if current doc has a stop, we should continue to
 		// process it, we dont want to process the "next" document
 		return false
-	}
-}
-
-func WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) CreateOption {
-	return func(f *FigTree) {
-		f.unmarshal = unmarshaller
 	}
 }
 
@@ -137,7 +131,6 @@ type FigTree struct {
 	applyChangeSet ChangeSetFunc
 	exec           bool
 	filterOut      FilterOut
-	unmarshal      func(in []byte, out interface{}) error
 }
 
 func NewFigTree(opts ...CreateOption) *FigTree {
@@ -148,7 +141,6 @@ func NewFigTree(opts ...CreateOption) *FigTree {
 		envPrefix:      "FIGTREE",
 		applyChangeSet: defaultApplyChangeSet,
 		exec:           true,
-		unmarshal:      yaml.Unmarshal,
 	}
 	for _, opt := range opts {
 		opt(fig)
@@ -178,10 +170,6 @@ func (f *FigTree) WithPreProcessor(pp PreProcessor) {
 
 func (f *FigTree) WithFilterOut(filt FilterOut) {
 	WithFilterOut(filt)(f)
-}
-
-func (f *FigTree) WithUnmarshaller(unmarshaller func(in []byte, out interface{}) error) {
-	WithUnmarshaller(unmarshaller)(f)
 }
 
 func (f *FigTree) WithApplyChangeSet(apply ChangeSetFunc) {
@@ -229,7 +217,7 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 }
 
 type ConfigSource struct {
-	Config   []byte
+	Config   *yaml.Node
 	Filename string
 }
 
@@ -242,7 +230,7 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 
 	for _, source := range sources {
 		// automatically skip empty configs
-		if len(source.Config) == 0 {
+		if source.Config == nil || source.Config.IsZero() {
 			continue
 		}
 		skip := filterOut(source.Config)
@@ -251,7 +239,7 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 		}
 
 		m.sourceFile = source.Filename
-		err := f.loadConfigBytes(m, source.Config, options)
+		err := f.loadConfigSource(m, source.Config, options)
 		if err != nil {
 			return err
 		}
@@ -260,35 +248,36 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 	return nil
 }
 
-func (f *FigTree) LoadConfigBytes(config []byte, source string, options interface{}) error {
+func (f *FigTree) LoadConfigSource(config *yaml.Node, source string, options interface{}) error {
 	m := NewMerger(WithSourceFile(source))
-	return f.loadConfigBytes(m, config, options)
+	return f.loadConfigSource(m, config, options)
 }
 
-func (f *FigTree) loadConfigBytes(m *Merger, config []byte, options interface{}) error {
+func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interface{}) error {
 	if !reflect.ValueOf(options).IsValid() {
 		return fmt.Errorf("options argument [%#v] is not valid", options)
 	}
 
 	var err error
 	if f.preProcessor != nil {
-		config, err = f.preProcessor(config)
+		err = f.preProcessor(config)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to process config file: %s", m.sourceFile)
+			return fmt.Errorf("failed to process config file %s: %w", m.sourceFile, err)
 		}
 	}
 
 	tmp := reflect.New(reflect.ValueOf(options).Elem().Type()).Interface()
 	// look for config settings first
-	err = f.unmarshal(config, m)
+
+	err = config.Decode(m)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
+		return fmt.Errorf("unable to parse %s: %w", m.sourceFile, err)
 	}
 
 	// then parse document into requested struct
-	err = f.unmarshal(config, tmp)
+	err = config.Decode(tmp)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to parse %s", m.sourceFile)
+		return fmt.Errorf("Unable to parse %s: %w", m.sourceFile, err)
 	}
 
 	m.setSource(reflect.ValueOf(tmp))
@@ -309,7 +298,7 @@ func (f *FigTree) LoadConfig(file string, options interface{}) error {
 		// no file contents to parse, file likely does not exist
 		return nil
 	}
-	return f.LoadConfigBytes(cs.Config, cs.Filename, options)
+	return f.LoadConfigSource(cs.Config, cs.Filename, options)
 }
 
 // ReadFile will return a ConfigSource for given file path.  If the
@@ -321,18 +310,19 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 	if err != nil {
 		rel = file
 	}
-
+	var node yaml.Node
 	if stat, err := os.Stat(file); err == nil {
 		if stat.Mode()&0111 == 0 || !f.exec {
 			Log.Debugf("Reading config %s", file)
-			data, err := ioutil.ReadFile(file)
+			fh, err := os.Open(file)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Failed to read %s", rel)
+				return nil, fmt.Errorf("failed to open %s: %w", rel, err)
 			}
-			return &ConfigSource{
-				Config:   data,
-				Filename: rel,
-			}, nil
+			defer fh.Close()
+			decoder := yaml.NewDecoder(fh)
+			if err := decoder.Decode(&node); err != nil && !errors.Is(err, io.EOF) {
+				return nil, fmt.Errorf("unable to decode %s as yaml: %w", rel, err)
+			}
 		} else {
 			Log.Debugf("Found Executable Config file: %s", file)
 			// it is executable, so run it and try to parse the output
@@ -341,13 +331,14 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return nil, errors.Wrapf(err, "%s is exectuable, but it failed to execute:\n%s", file, cmd.Stderr)
+				return nil, fmt.Errorf("%s is executable, but it failed to execute:\n%s: %w", file, cmd.Stderr, err)
 			}
-			return &ConfigSource{
-				Config:   stdout.Bytes(),
-				Filename: rel,
-			}, nil
+			yaml.Unmarshal(stdout.Bytes(), &node)
 		}
+		return &ConfigSource{
+			Config:   &node,
+			Filename: rel,
+		}, nil
 	}
 	return nil, nil
 }

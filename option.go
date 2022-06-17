@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+
+	"gopkg.in/yaml.v3"
 )
 
 type option interface {
@@ -102,15 +104,11 @@ func (o *Option[T]) SetValue(v any) error {
 	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
-// UnmarshalYAML implement the obsoleteUnmarshaler interface used by the
+// UnmarshalYAML implement the Unmarshaler interface used by the
 // yaml library:
-// https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L40-L42
-//
-// Note this will be replaced in future versions by the recommended interface
-// from yaml.v3:
 // https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L36-L38
-func (o *Option[T]) UnmarshalYAML(unmarshal func(any) error) error {
-	if err := unmarshal(&o.Value); err != nil {
+func (o *Option[T]) UnmarshalYAML(node *yaml.Node) error {
+	if err := node.Decode(&o.Value); err != nil {
 		return err
 	}
 	o.Source = "yaml"

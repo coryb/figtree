@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
 func TestOptionsEnv(t *testing.T) {
@@ -127,15 +128,17 @@ func TestTag(t *testing.T) {
 		MultiEnv    string `yaml:"multi-env" figtree:"MULTIA;MULTIB"`
 	}{}
 
-	input := `
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(`
 default-env: abc
 override-env: def
 no-env: ghi
 multi-env: jkl
-`
+`), &node)
+	assert.NoError(t, err)
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadConfigBytes([]byte(input), "test", &dest)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	assert.NoError(t, err)
 
 	got := os.Environ()
