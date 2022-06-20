@@ -101,7 +101,7 @@ func (o *Option[T]) SetValue(v any) error {
 		o.Defined = true
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
+	panic(fmt.Sprintf("Got %T expected %T type: %v", v, o.Value, v))
 }
 
 // UnmarshalYAML implement the Unmarshaler interface used by the

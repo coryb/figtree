@@ -3,7 +3,7 @@ module github.com/coryb/figtree
 go 1.18
 
 require (
-	github.com/coryb/walky v0.0.0-20220617202229-e84bf7baebfa
+	github.com/coryb/walky v0.0.0-20220618044146-89b8a01040cb
 	github.com/fatih/camelcase v1.0.1-0.20181010234014-9db1b65eb38b
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6

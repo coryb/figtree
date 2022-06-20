@@ -138,22 +138,22 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 	defer os.Chdir("..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
+	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d1str1val1"},
+		String1:    StringOption{"figtree.yml:1:7", true, "d1str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d1map1val1"},
-			"dup":  StringOption{"figtree.yml", true, "d1dupval"},
+			"key0": StringOption{"figtree.yml:7:9", true, "d1map1val0"},
+			"key1": StringOption{"figtree.yml:8:9", true, "d1map1val1"},
+			"dup":  StringOption{"figtree.yml:9:9", true, "d1dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 111},
-		Float1: Float32Option{"figtree.yml", true, 1.11},
-		Bool1:  BoolOption{"figtree.yml", true, true},
+		Int1:   IntOption{"figtree.yml:10:7", true, 111},
+		Float1: Float32Option{"figtree.yml:11:9", true, 1.11},
+		Bool1:  BoolOption{"figtree.yml:12:8", true, true},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -503,7 +503,7 @@ func TestMergeMapWithStruct(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
 
 	expected := map[string]interface{}{
 		"mapkey":       "mapval1",
@@ -929,7 +929,7 @@ func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
 
 	expected := struct {
 		FieldName string
@@ -955,7 +955,7 @@ func TestMergeStructsWithDestEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
 
 	expected := struct {
 		embedded
