@@ -95,12 +95,20 @@ func (o Option[T]) String() string {
 // SetValue implements the Settings interface as defined by the kingpin
 // command line option library:
 // https://github.com/alecthomas/kingpin/blob/v1.3.4/parsers.go#L13-L15
-func (o *Option[T]) SetValue(v any) error {
+func (o *Option[T]) SetValue(v any) (err error) {
 	if val, ok := v.(T); ok {
 		o.Value = val
 		o.Defined = true
 		return nil
 	}
+	dst := reflect.ValueOf(o.Value)
+	src := reflect.ValueOf(v)
+	if src.Type().AssignableTo(dst.Type()) {
+		dst.Set(src)
+		o.Defined = true
+		return nil
+	}
+
 	panic(fmt.Sprintf("Got %T expected %T type: %v", v, o.Value, v))
 }
 
