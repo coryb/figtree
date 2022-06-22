@@ -19,7 +19,6 @@ import (
 
 	"github.com/coryb/walky"
 	"github.com/fatih/camelcase"
-	"github.com/kr/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -213,7 +212,6 @@ func (f *FigTree) LoadAllConfigs(configFile string, options interface{}) error {
 			continue
 		}
 		configSources = append(configSources, *cs)
-		// fmt.Fprintf(os.Stderr, "Sources: % #v\n", pretty.Formatter(*cs))
 	}
 	return f.LoadAllConfigSources(configSources, options)
 }
@@ -246,7 +244,6 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 			return err
 		}
 		m.advance()
-		fmt.Fprintf(os.Stderr, "Result: % #v\n", pretty.Formatter(options))
 	}
 	return nil
 }
@@ -276,9 +273,7 @@ func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interfa
 		}
 	}
 
-	// fmt.Fprintf(os.Stderr, "Config: % #v\n", pretty.Formatter(config))
 	err = config.Decode(m)
-	// fmt.Fprintf(os.Stderr, "Config: %#v\n", m.Config)
 	if err != nil {
 		return fmt.Errorf("unable to parse %s: %w", sourceLine(m.sourceFile, config), err)
 	}
@@ -788,14 +783,23 @@ type assignOptions struct {
 	FileCoordinate *fileCoordinate
 }
 
+type notAssignableError struct {
+	dstType reflect.Type
+	srcType reflect.Type
+}
+
+func (e notAssignableError) Error() string {
+	return fmt.Sprintf("%s is not assignable to %s", e.srcType, e.dstType)
+}
+
 func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error {
-	// fmt.Fprintf(os.Stderr, "dest: % #v src: % #v\n", pretty.Formatter(dest.Interface()), pretty.Formatter(src.Interface()))
 	if !src.IsValid() {
 		if opts.Overwrite {
 			dest.Set(src)
 		}
 		return nil
 	}
+
 	// if not directly assignable, must be convertable, so
 	// try to convert now. (ie convert float32 to float64)
 	if src.CanConvert(dest.Type()) {
@@ -856,7 +860,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 			if destOptionValue.Kind() == reflect.Bool && src.Kind() == reflect.String {
 				b, err := strconv.ParseBool(src.Interface().(string))
 				if err != nil {
-					return fmt.Errorf("1 %s is not assignable to %s, invalid bool value: %s", src.Type(), destOptionValue.Type(), err)
+					return fmt.Errorf("%s is not assignable to %s, invalid bool value: %w", src.Type(), destOptionValue.Type(), err)
 				}
 				if err := option.SetValue(b); err != nil {
 					return err
@@ -873,7 +877,10 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
 				return nil
 			}
-			return fmt.Errorf("2 %s is not assignable to %s", src.Type(), destOptionValue.Type())
+			return notAssignableError{
+				srcType: src.Type(),
+				dstType: destOptionValue.Type(),
+			}
 		}
 	}
 	// make copy so we can reliably Addr it to see if it fits the
@@ -885,10 +892,16 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
 			return m.assignValue(dest, srcOptionValue, opts)
 		} else {
-			return fmt.Errorf("3 %s is not assignable to %s", srcOptionValue.Type(), dest.Type())
+			return notAssignableError{
+				srcType: srcOptionValue.Type(),
+				dstType: dest.Type(),
+			}
 		}
 	}
-	return fmt.Errorf("4 %s is not assignable to %s", src.Type(), dest.Type())
+	return notAssignableError{
+		srcType: src.Type(),
+		dstType: dest.Type(),
+	}
 }
 
 func fromInterface(v reflect.Value) (reflect.Value, func()) {
@@ -1106,18 +1119,9 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 	dst, restore := fromInterface(dst)
 	defer restore()
 
-	// src = reflect.Indirect(src)
-	// if src.Kind() == reflect.Interface {
-	// 	src = reflect.ValueOf(src.Interface())
-	// }
-
 	if dst.Kind() == reflect.Map {
 		return m.mergeMaps(dst, src, overwrite)
 	}
-
-	// if dst.Kind() == reflect.Struct && src.isMap() {
-	// 	src, err = m.mapToStruct(src)
-	// }
 
 	if !dst.IsValid() || !src.isValid() {
 		Log.Debugf("Valid: dst:%v src:%t", dst.IsValid(), src.isValid())
@@ -1148,19 +1152,6 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 	populateYAMLMaps(dst)
 
 	return src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
-		//  fmt.Fprintf(os.Stderr, "fieldName %s, src: % #v, anon: %t\n", fieldName, srcField.reflected, anon)
-		// })
-		// for i := 0; i < src.NumField(); i++ {
-		// nvField := src.Field(i)
-		// if nvField.Kind() == reflect.Interface {
-		// 	nvField = reflect.ValueOf(nvField.Interface())
-		// }
-		// if !nvField.IsValid() {
-		// 	continue
-		// }
-
-		// nvStructField := src.Type().Field(i)
-		// fieldName := yamlFieldName(nvStructField)
 		dstStructField, ok := dstFieldTypesByYAML[fieldName]
 		if !ok {
 			if anon {
@@ -1184,39 +1175,36 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		dstField, restore := fromInterface(dstField)
 		defer restore()
 
-		// fmt.Fprintf(os.Stderr, "\n%s: Ignore [%#v] %s\n\n", m.sourceFile, m.ignore, fieldName)
 		if m.mustIgnore(fieldName) {
 			return nil
 		}
 
 		val, coord := srcField.reflect()
-		// fmt.Fprintf(os.Stderr, "fieldName %s, src: % #v, anon: %t\n", fieldName, val, anon)
-		// fmt.Fprintf(os.Stderr, "current..........: % #v\n", dstField)
 		var err error
-		// fmt.Fprintf(os.Stderr, "Val %s to %#v isZero:%t\n", fieldName, val, isZero(val))
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || m.mustOverwrite(fieldName)
 		if (shouldAssign) && !isSame(dstField, val) {
-			fmt.Fprintf(os.Stderr, "Setting %s: %#v to %#v\n", fieldName, dstField, val)
 			err = m.assignValue(dstField, val, assignOptions{
-				Overwrite:      m.mustOverwrite(fieldName),
+				Overwrite:      overwrite || m.mustOverwrite(fieldName),
 				FileCoordinate: coord,
 			})
+			// if this is a notAssignableError then we want
+			// to continue down to try to investigate more complex
+			// types.  For example we  will get here when we try to
+			// assign ListStringOption to []string or []interface
+			// where we want to iterate below for each StringOption.
+			var assignErr notAssignableError
+			if err != nil && !errors.As(err, &assignErr) {
+				return err
+			}
 		}
-		// if m.mustOverwrite(fieldName) {
-		// 	switch dstField.Kind() {
-		// 	case reflect.Map, reflect.Slice, reflect.Array, reflect.Struct:
-		// 		dstField = reflect.New(dstField.Type()).Elem()
-		// 		fmt.Fprintf(os.Stderr, "Setting %s: %#v to %#v\n", fieldName, dstField, val)
-		// 	}
-		// }
 		switch dstField.Kind() {
 		case reflect.Map:
 			Log.Debugf("Merging Map: %#v with %#v", dstField, srcField)
-			return m.mergeStructs(dstField, srcField, m.mustOverwrite(fieldName))
+			return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 		case reflect.Slice:
 			if srcField.len() > 0 {
-				fmt.Fprintf(os.Stderr, "Merging Slice: %#v with %#v", dstField, srcField)
-				merged, err := m.mergeArrays(dstField, srcField, m.mustOverwrite(fieldName))
+				Log.Debugf("Merging Slice: %#v with %#v", dstField, srcField)
+				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
 				}
@@ -1226,7 +1214,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		case reflect.Array:
 			if srcField.len() > 0 {
 				Log.Debugf("Merging Array: %v with %v", dstField, srcField)
-				merged, err := m.mergeArrays(dstField, srcField, m.mustOverwrite(fieldName))
+				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
 				}
@@ -1237,7 +1225,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			// only merge structs if they are not an Option type:
 			if _, ok := dstField.Addr().Interface().(option); !ok {
 				Log.Debugf("Merging Struct: %v with %v", dstField, srcField)
-				return m.mergeStructs(dstField, srcField, m.mustOverwrite(fieldName))
+				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			}
 		}
 		return err
@@ -1254,6 +1242,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 	if overwrite {
 		// truncate all the keys
 		for _, key := range dst.MapKeys() {
+			// setting to zero value is a "delete" operation
 			dst.SetMapIndex(key, reflect.Value{})
 		}
 	}
@@ -1262,7 +1251,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 			dstElem := reflect.New(dst.Type().Elem()).Elem()
 			val, coord := value.reflect()
 			err := m.assignValue(dstElem, val, assignOptions{
-				Overwrite:      false,
+				Overwrite:      overwrite,
 				FileCoordinate: coord,
 			})
 			if err != nil {
@@ -1281,16 +1270,13 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 		}
 
 		dstVal := reflect.ValueOf(dst.MapIndex(key).Interface())
-		// nvi := reflect.ValueOf(src.MapIndex(key).Interface())
-		// if !nvi.IsValid() {
-		// 	return
-		// }
 		switch dstVal.Kind() {
 		case reflect.Map:
-			// Log.Debugf("Merging: %v with %v", dstVal.Interface(), nvi.Interface())
-			return m.mergeStructs(dstVal, value, m.mustOverwrite(key.String()))
+			Log.Debugf("Merging: %v with %v", dstVal, value)
+			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 		case reflect.Slice, reflect.Array:
-			merged, err := m.mergeArrays(dstVal, value, m.mustOverwrite(key.String()))
+			Log.Debugf("Merging: %v with %v", dstVal, value)
+			merged, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 			if err != nil {
 				return err
 			}
@@ -1326,6 +1312,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	switch dst.Type().Kind() {
 	case reflect.Slice:
 		if overwrite {
+			// overwriting so just make a new slice
 			cp = reflect.MakeSlice(dst.Type(), 0, 0)
 		} else {
 			cp = reflect.MakeSlice(dst.Type(), dst.Len(), dst.Len())
@@ -1333,21 +1320,17 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		}
 	case reflect.Array:
 		// arrays are copied, not passed by reference, so we dont need to copy
+		// TODO: how do we "overwrite" an array?
 		cp = dst
 	}
 	var zero interface{}
 	err := src.foreach(func(item mergeSource) error {
-		// Outer:
-		// 	for ni := 0; ni < src.Len(); ni++ {
-		// 		niv := src.Index(ni)
-
 		reflected, coord := item.reflect()
 
 		// if src or dst's are options we need to compare the
 		// values to determine if we need to skip inserting this
 		// element
 		compareValue := reflected
-		// fmt.Fprintf(os.Stderr, "compareValue: % #v\n", compareValue)
 		if reflected.CanAddr() {
 			if nOption, ok := reflected.Addr().Interface().(option); ok {
 				if !nOption.IsDefined() {
@@ -1356,7 +1339,6 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				compareValue = reflect.ValueOf(nOption.GetValue())
 			}
 		}
-		// fmt.Fprintf(os.Stderr, "compareValue: % #v\n", pretty.Formatter(compareValue.Interface()))
 
 		if !compareValue.IsValid() || reflect.DeepEqual(compareValue.Interface(), zero) {
 			return nil
@@ -1369,24 +1351,20 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 					o = reflect.ValueOf(oOption.GetValue())
 				}
 			}
-			// fmt.Fprintf(os.Stderr, "compare: % #v to % #v\n", pretty.Formatter(compareValue.Interface()), pretty.Formatter(o.Interface()))
 			if reflect.DeepEqual(compareValue.Interface(), o.Interface()) {
-				// fmt.Fprintf(os.Stderr, "same same\n")
 				return nil
 			}
 		}
 
-		// fmt.Fprintf(os.Stderr, "assigning: % #v\n", reflected)
 		nvElem := reflect.New(cp.Type().Elem()).Elem()
 		err := m.assignValue(nvElem, reflected, assignOptions{
-			Overwrite:      false,
+			Overwrite:      overwrite,
 			FileCoordinate: coord,
 		})
 		if err != nil {
 			return err
 		}
 
-		// fmt.Fprintf(os.Stderr, "Appending %#v to %#v\n", nvElem.Interface(), cp)
 		cp = reflect.Append(cp, nvElem)
 		return nil
 	})
