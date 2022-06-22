@@ -69,28 +69,28 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 	defer os.Chdir("../../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d3arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d3arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{"../../figtree.yml:3:5", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"../../figtree.yml:4:5", true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d3str1val1"},
+		String1:    StringOption{"figtree.yml:1:7", true, "d3str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"../figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d3map1val2"},
-			"key3": StringOption{"figtree.yml", true, "d3map1val3"},
-			"dup":  StringOption{"figtree.yml", true, "d3dupval"},
+			"key0": {"../../figtree.yml:7:9", true, "d1map1val0"},
+			"key1": {"../figtree.yml:7:9", true, "d2map1val1"},
+			"key2": {"figtree.yml:7:9", true, "d3map1val2"},
+			"key3": {"figtree.yml:8:9", true, "d3map1val3"},
+			"dup":  {"figtree.yml:9:9", true, "d3dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 333},
-		Float1: Float32Option{"figtree.yml", true, 3.33},
-		Bool1:  BoolOption{"figtree.yml", true, true},
+		Int1:   IntOption{"figtree.yml:10:7", true, 333},
+		Float1: Float32Option{"figtree.yml:11:9", true, 3.33},
+		Bool1:  BoolOption{"figtree.yml:12:8", true, true},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -105,25 +105,25 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 	defer os.Chdir("../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d2str1val1"},
+		String1:    StringOption{"figtree.yml:1:7", true, "d2str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {"../figtree.yml:7:9", true, "d1map1val0"},
+			"key1": {"figtree.yml:7:9", true, "d2map1val1"},
+			"key2": {"figtree.yml:8:9", true, "d2map1val2"},
+			"dup":  {"figtree.yml:9:9", true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 222},
-		Float1: Float32Option{"figtree.yml", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml", true, false},
+		Int1:   IntOption{"figtree.yml:10:7", true, 222},
+		Float1: Float32Option{"figtree.yml:11:9", true, 2.22},
+		Bool1:  BoolOption{"figtree.yml:12:8", true, false},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -147,9 +147,9 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"figtree.yml:7:9", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml:8:9", true, "d1map1val1"},
-			"dup":  StringOption{"figtree.yml:9:9", true, "d1dupval"},
+			"key0": {"figtree.yml:7:9", true, "d1map1val0"},
+			"key1": {"figtree.yml:8:9", true, "d1map1val1"},
+			"dup":  {"figtree.yml:9:9", true, "d1dupval"},
 		},
 		Int1:   IntOption{"figtree.yml:10:7", true, 111},
 		Float1: Float32Option{"figtree.yml:11:9", true, 1.11},
@@ -295,25 +295,25 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	defer os.Chdir("../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d2str1val1"},
+		String1:    StringOption{"figtree.yml:1:7", true, "d2str1val1"},
 		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {"../figtree.yml:7:9", true, "d1map1val0"},
+			"key1": {"figtree.yml:7:9", true, "d2map1val1"},
+			"key2": {"figtree.yml:8:9", true, "d2map1val2"},
+			"dup":  {"figtree.yml:9:9", true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 222},
-		Float1: Float32Option{"figtree.yml", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml", true, false},
+		Int1:   IntOption{"figtree.yml:10:7", true, 222},
+		Float1: Float32Option{"figtree.yml:11:9", true, 2.22},
+		Bool1:  BoolOption{"figtree.yml:12:8", true, false},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -337,7 +337,8 @@ func TestMergeMapsWithNull(t *testing.T) {
 		},
 	}
 
-	Merge(dest, src)
+	err := Merge(dest, src)
+	require.NoError(t, err)
 
 	expected := map[string]interface{}{
 		"requires": map[string]interface{}{
@@ -366,8 +367,10 @@ func TestMergeMapsIntoStructWithNull(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Requires struct {
@@ -403,8 +406,10 @@ func TestMergeStringIntoStringOption(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
@@ -423,8 +428,10 @@ func TestMergeStringOptions(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
@@ -444,8 +451,10 @@ func TestMergeMapStringIntoStringOption(t *testing.T) {
 	}
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Map struct {
@@ -470,8 +479,10 @@ func TestMergeMapStringOptions(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
@@ -503,7 +514,8 @@ func TestMergeMapWithStruct(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
+	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
 
 	expected := map[string]interface{}{
 		"mapkey":       "mapval1",
@@ -515,7 +527,6 @@ func TestMergeMapWithStruct(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expected, dest)
-
 }
 
 func TestMergeStructWithMap(t *testing.T) {
@@ -545,8 +556,10 @@ func TestMergeStructWithMap(t *testing.T) {
 	}
 
 	merged := MakeMergeStruct(&dest, &src)
-	Merge(merged, &dest)
-	Merge(merged, &src)
+	err := Merge(merged, &dest)
+	require.NoError(t, err)
+	err = Merge(merged, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Map struct {
@@ -599,8 +612,10 @@ func TestMergeStructWithMapArbitraryNaming(t *testing.T) {
 	}
 
 	merged := MakeMergeStruct(&dest, &src)
-	Merge(merged, &dest)
-	Merge(merged, &src)
+	err := Merge(merged, &dest)
+	require.NoError(t, err)
+	err = Merge(merged, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Map struct {
@@ -664,7 +679,8 @@ func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 		"uint":     uint(456),
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Bool    BoolOption
@@ -760,7 +776,9 @@ func TestMergeMapWithStructUsingOptions(t *testing.T) {
 		Uint:    NewUintOption(456),
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"bool":    true,
 		"byte":    byte(10),
@@ -798,7 +816,8 @@ func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Strings ListStringOption
@@ -825,7 +844,9 @@ func TestMergeMapWithStructUsingListOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"strings": []string{"abc", "def"},
 	}
@@ -850,7 +871,9 @@ func TestMergeStructWithListUsingListOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := struct {
 		Property []interface{}
 	}{
@@ -874,7 +897,8 @@ func TestMergeStructUsingMapOptionsWithMap(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Strings MapStringOption
@@ -901,7 +925,9 @@ func TestMergeMapWithStructUsingMapOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"strings": map[string]string{
 			"key1": "val1",
@@ -929,7 +955,8 @@ func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
+	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
 
 	expected := struct {
 		FieldName string
@@ -955,7 +982,8 @@ func TestMergeStructsWithDestEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)))
+	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
 
 	expected := struct {
 		embedded
@@ -978,7 +1006,8 @@ func TestMakeMergeStruct(t *testing.T) {
 
 	got := MakeMergeStruct(input)
 
-	Merge(got, &input)
+	err := Merge(got, &input)
+	require.NoError(t, err)
 
 	assert.Equal(t, input["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Mapkey").Interface())
 	assert.Equal(t, struct {
@@ -999,13 +1028,17 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 	}
 
 	got := MakeMergeStruct(input, s)
-	Merge(got, &input)
+	err := Merge(got, &input)
+	require.NoError(t, err)
+
 	assert.Equal(t, &struct {
 		Mapkey string `json:"mapkey" yaml:"mapkey"`
 	}{"mapval1"}, got)
 
 	got = MakeMergeStruct(s, input)
-	Merge(got, &s)
+	err = Merge(got, &s)
+	require.NoError(t, err)
+
 	assert.Equal(t, &struct{ Mapkey string }{"mapval2"}, got)
 }
 
@@ -1053,7 +1086,8 @@ func TestMakeMergeStructWithYaml(t *testing.T) {
 	// turn map data into a struct
 	got := MakeMergeStruct(data)
 	// then assign the data back into that struct
-	Merge(got, data)
+	err = Merge(got, data)
+	require.NoError(t, err)
 
 	expected := &struct {
 		FooBar string `json:"foo-bar" yaml:"foo-bar"`
@@ -1077,7 +1111,8 @@ func TestMakeMergeStructWithJson(t *testing.T) {
 	// turn map data into a struct
 	got := MakeMergeStruct(data)
 	// then assign the data back into that struct
-	Merge(got, data)
+	err = Merge(got, data)
+	require.NoError(t, err)
 
 	expected := &struct {
 		FooBar string `json:"foo-bar" yaml:"foo-bar"`
@@ -1339,16 +1374,20 @@ func TestMergeWithZeros(t *testing.T) {
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 				Log.Debugf("%s", tt.info.name)
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-				Merge(&tt.dest, &tt.src)
+				err := Merge(&tt.dest, &tt.src)
+				require.NoError(t, err)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
 
 				got := MakeMergeStruct(tt.dest)
-				Merge(got, tt.dest)
-				Merge(got, tt.src)
+				err = Merge(got, tt.dest)
+				require.NoError(t, err)
+				err = Merge(got, tt.src)
+				require.NoError(t, err)
 
 				expected := MakeMergeStruct(tt.want)
-				Merge(expected, tt.want)
+				err = Merge(expected, tt.want)
+				require.NoError(t, err)
 
 				assert.Equal(t, expected, got, tt.info.line)
 			}),
@@ -1475,7 +1514,6 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{}},
 		},
 		{
-
 			info: info{"list zero list to ListStringOption", line()},
 			dest: struct {
 				Value ListStringOption
@@ -1593,19 +1631,22 @@ func TestMergeStructsWithZeros(t *testing.T) {
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 				Log.Debugf("%s", tt.info.name)
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-				Merge(&tt.dest, &tt.src)
+				err := Merge(&tt.dest, &tt.src)
+				require.NoError(t, err)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
 
 				got := MakeMergeStruct(tt.dest)
-				Merge(got, tt.dest)
-				Merge(got, tt.src)
+				err = Merge(got, tt.dest)
+				require.NoError(t, err)
+				err = Merge(got, tt.src)
+				require.NoError(t, err)
 
 				expected := MakeMergeStruct(tt.want)
-				Merge(expected, tt.want)
+				err = Merge(expected, tt.want)
+				require.NoError(t, err)
 
 				assert.Equal(t, expected, got, tt.info.line)
-
 			}),
 		)
 	}
@@ -1728,10 +1769,12 @@ func TestMergeMapWithCopy(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src1)
+	err := Merge(&dest, &src1)
+	require.NoError(t, err)
 	assert.Equal(t, mss{"key": "value"}, dest.Map)
 
-	Merge(&dest, &src2)
+	err = Merge(&dest, &src2)
+	require.NoError(t, err)
 	assert.Equal(t, mss{"key": "value", "otherkey": "othervalue"}, dest.Map)
 
 	// verify that src1 was unmodified
@@ -1748,8 +1791,10 @@ func TestMergeBoolString(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		EnableThing BoolOption
@@ -1768,8 +1813,10 @@ func TestMergeStringBool(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		EnableThing StringOption
@@ -1788,8 +1835,10 @@ func TestMergeStringFloat64(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		SomeThing StringOption
@@ -1808,7 +1857,8 @@ func TestMergeDefaults(t *testing.T) {
 	}{NewStringOption("bar")}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
 
 	expected := &struct {
 		SomeThing StringOption
@@ -1816,7 +1866,8 @@ func TestMergeDefaults(t *testing.T) {
 
 	assert.Equal(t, expected, dest)
 
-	Merge(dest, src2)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, dest)
 }
@@ -1838,7 +1889,8 @@ func TestMergeCopySlice(t *testing.T) {
 	stuff2 := &stuffer{Stuff: nil}
 
 	for _, stuff := range []*stuffer{stuff1, stuff2} {
-		Merge(stuff, common)
+		err := Merge(stuff, common)
+		require.NoError(t, err)
 		stuffers = append(stuffers, stuff)
 	}
 
@@ -1862,7 +1914,8 @@ func TestMergeCopyArray(t *testing.T) {
 	stuff2 := &stuffer{Stuff: [2]string{}}
 
 	for _, stuff := range []*stuffer{stuff1, stuff2} {
-		Merge(stuff, common)
+		err := Merge(stuff, common)
+		require.NoError(t, err)
 		stuffers = append(stuffers, stuff)
 	}
 

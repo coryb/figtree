@@ -33,27 +33,27 @@ func TestCommandLine(t *testing.T) {
 	assert.Nil(t, err)
 
 	arr1 := ListStringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d3arr1val1"})
+	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d3arr1val2"})
+	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{"../../figtree.yml:3:5", true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{"../../figtree.yml:4:5", true, "d1arr1val2"})
 	arr1 = append(arr1, StringOption{"override", true, "v1"})
 	arr1 = append(arr1, StringOption{"override", true, "v2"})
 
 	expected := CommandLineOptions{
-		Str1: StringOption{"figtree.yml", true, "d3str1val1"},
+		Str1: StringOption{"figtree.yml:1:7", true, "d3str1val1"},
 		Int1: IntOption{"override", true, 999},
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"../figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d3map1val2"},
-			"key3": StringOption{"figtree.yml", true, "d3map1val3"},
-			"dup":  StringOption{"figtree.yml", true, "d3dupval"},
-			"k1":   StringOption{"override", true, "v1"},
-			"k2":   StringOption{"override", true, "v2"},
+			"key0": {"../../figtree.yml:7:9", true, "d1map1val0"},
+			"key1": {"../figtree.yml:7:9", true, "d2map1val1"},
+			"key2": {"figtree.yml:7:9", true, "d3map1val2"},
+			"key3": {"figtree.yml:8:9", true, "d3map1val3"},
+			"dup":  {"figtree.yml:9:9", true, "d3dupval"},
+			"k1":   {"override", true, "v1"},
+			"k2":   {"override", true, "v2"},
 		},
 		Arr1: arr1,
 	}

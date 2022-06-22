@@ -101,15 +101,21 @@ func (o *Option[T]) SetValue(v any) (err error) {
 		o.Defined = true
 		return nil
 	}
-	dst := reflect.ValueOf(o.Value)
+	// look for type conversions as well, like:
+	// (*Option[float64]).SetValue(float32)
+	// There might be a better way to do this, but with
+	// Generics I could not find a better way to convert
+	// the input type to match the Option type.
+	dst := reflect.ValueOf(&o.Value)
+	dstType := dst.Elem().Type()
 	src := reflect.ValueOf(v)
-	if src.Type().AssignableTo(dst.Type()) {
-		dst.Set(src)
+	if src.CanConvert(dstType) {
+		dst.Elem().Set(src.Convert(dstType))
 		o.Defined = true
 		return nil
 	}
 
-	panic(fmt.Sprintf("Got %T expected %T type: %v", v, o.Value, v))
+	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
 // UnmarshalYAML implement the Unmarshaler interface used by the
@@ -196,7 +202,9 @@ func (o *MapOption[T]) Set(value string) error {
 		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
 	}
 	val := Option[T]{}
-	val.Set(parts[1])
+	if err := val.Set(parts[1]); err != nil {
+		return err
+	}
 	(*o)[parts[0]] = val
 	return nil
 }
@@ -250,7 +258,9 @@ type ListOption[T any] []Option[T]
 // https://github.com/alecthomas/kingpin/blob/v1.3.4/values.go#L26-L29
 func (o *ListOption[T]) Set(value string) error {
 	val := Option[T]{}
-	val.Set(value)
+	if err := val.Set(value); err != nil {
+		return err
+	}
 	*o = append(*o, val)
 	return nil
 }
