@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 
+	"emperror.dev/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -66,7 +67,7 @@ func (o *Option[T]) WriteAnswer(name string, value any) error {
 		o.Source = "prompt"
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 // Set implements part of the Value interface as defined by the kingpin command
@@ -115,7 +116,7 @@ func (o *Option[T]) SetValue(v any) (err error) {
 		return nil
 	}
 
-	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
+	return errors.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
 // UnmarshalYAML implement the Unmarshaler interface used by the
@@ -199,7 +200,7 @@ type MapOption[T any] map[string]Option[T]
 func (o *MapOption[T]) Set(value string) error {
 	parts := stringMapRegex.Split(value, 2)
 	if len(parts) != 2 {
-		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+		return errors.Errorf("expected KEY=VALUE got '%s'", value)
 	}
 	val := Option[T]{}
 	if err := val.Set(parts[1]); err != nil {
@@ -243,7 +244,7 @@ func (o *MapOption[T]) WriteAnswer(name string, value any) error {
 		(*o)[name] = tmp
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 func (o MapOption[T]) IsDefined() bool {
@@ -277,7 +278,7 @@ func (o *ListOption[T]) WriteAnswer(name string, value any) error {
 		*o = append(*o, tmp)
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative implements part of the remainderArg interface as defined by the

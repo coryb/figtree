@@ -3,7 +3,6 @@ package figtree
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"strings"
 	"unicode"
 
+	"emperror.dev/errors"
 	"github.com/coryb/walky"
 	"github.com/fatih/camelcase"
 	"gopkg.in/yaml.v3"
@@ -269,13 +269,13 @@ func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interfa
 	if f.preProcessor != nil {
 		err = f.preProcessor(config)
 		if err != nil {
-			return fmt.Errorf("failed to process config file %s: %w", sourceLine(m.sourceFile, config), err)
+			return errors.Wrapf(err, "failed to process config file %s", sourceLine(m.sourceFile, config))
 		}
 	}
 
 	err = config.Decode(m)
 	if err != nil {
-		return fmt.Errorf("unable to parse %s: %w", sourceLine(m.sourceFile, config), err)
+		return errors.Wrapf(err, "unable to parse %s", sourceLine(m.sourceFile, config))
 	}
 
 	err = m.mergeStructs(
@@ -317,12 +317,12 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			Log.Debugf("Reading config %s", file)
 			fh, err := os.Open(file)
 			if err != nil {
-				return nil, fmt.Errorf("failed to open %s: %w", rel, err)
+				return nil, errors.Wrapf(err, "failed to open %s", rel)
 			}
 			defer fh.Close()
 			decoder := yaml.NewDecoder(fh)
 			if err := decoder.Decode(&node); err != nil && !errors.Is(err, io.EOF) {
-				return nil, fmt.Errorf("unable to decode %s as yaml: %w", rel, err)
+				return nil, errors.Wrapf(err, "unable to decode %s as yaml", rel)
 			}
 		} else {
 			Log.Debugf("Found Executable Config file: %s", file)
@@ -332,7 +332,7 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
 			if err := cmd.Run(); err != nil {
-				return nil, fmt.Errorf("%s is executable, but it failed to execute:\n%s: %w", file, cmd.Stderr, err)
+				return nil, errors.Wrapf(err, "%s is executable, but it failed to execute:\n%s", file, cmd.Stderr)
 			}
 			rel = rel + "[stdout]"
 			if err := yaml.Unmarshal(stdout.Bytes(), &node); err != nil {
@@ -860,7 +860,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 			if destOptionValue.Kind() == reflect.Bool && src.Kind() == reflect.String {
 				b, err := strconv.ParseBool(src.Interface().(string))
 				if err != nil {
-					return fmt.Errorf("%s is not assignable to %s, invalid bool value: %w", src.Type(), destOptionValue.Type(), err)
+					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", src.Type(), destOptionValue.Type())
 				}
 				if err := option.SetValue(b); err != nil {
 					return err
@@ -877,10 +877,12 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
 				return nil
 			}
-			return notAssignableError{
-				srcType: src.Type(),
-				dstType: destOptionValue.Type(),
-			}
+			return errors.WithStack(
+				notAssignableError{
+					srcType: src.Type(),
+					dstType: destOptionValue.Type(),
+				},
+			)
 		}
 	}
 	// make copy so we can reliably Addr it to see if it fits the
@@ -892,16 +894,20 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
 			return m.assignValue(dest, srcOptionValue, opts)
 		} else {
-			return notAssignableError{
-				srcType: srcOptionValue.Type(),
-				dstType: dest.Type(),
-			}
+			return errors.WithStack(
+				notAssignableError{
+					srcType: srcOptionValue.Type(),
+					dstType: dest.Type(),
+				},
+			)
 		}
 	}
-	return notAssignableError{
-		srcType: src.Type(),
-		dstType: dest.Type(),
-	}
+	return errors.WithStack(
+		notAssignableError{
+			srcType: src.Type(),
+			dstType: dest.Type(),
+		},
+	)
 }
 
 func fromInterface(v reflect.Value) (reflect.Value, func()) {
@@ -1372,12 +1378,32 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			}
 		}
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
-		err := m.assignValue(dstElem, reflected, assignOptions{
-			Overwrite:      overwrite,
-			FileCoordinate: coord,
-		})
-		if err != nil {
-			return err
+		optionSlice := false
+		if _, ok := dstElem.Addr().Interface().(option); ok {
+			optionSlice = true
+		}
+		dstKind := dstElem.Kind()
+		switch {
+		case dstKind == reflect.Map, (dstKind == reflect.Struct && !optionSlice):
+			Log.Debugf("Merging: %#v with %#v", dstElem, reflected)
+			if err := m.mergeStructs(dstElem, item, overwrite); err != nil {
+				return err
+			}
+		case dstKind == reflect.Slice, dstKind == reflect.Array:
+			Log.Debugf("Merging: %v with %v", dstElem, reflected)
+			var err error
+			dstElem, err = m.mergeArrays(dstElem, item, overwrite)
+			if err != nil {
+				return err
+			}
+		default:
+			err := m.assignValue(dstElem, reflected, assignOptions{
+				Overwrite:      overwrite,
+				FileCoordinate: coord,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		cp = reflect.Append(cp, dstElem)

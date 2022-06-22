@@ -1926,3 +1926,35 @@ func TestMergeCopyArray(t *testing.T) {
 	assert.Equal(t, [2]string{"updated", ""}, stuffers[0].Stuff)
 	assert.Equal(t, [2]string{"common", ""}, stuffers[1].Stuff)
 }
+
+func TestListOfStructs(t *testing.T) {
+	type myStruct struct {
+		ID   string `yaml:"id"`
+		Name string `yaml:"name"`
+	}
+	type myStructs []myStruct
+	type data struct {
+		Structs myStructs `yaml:"list"`
+	}
+
+	config := `
+list:
+  - id: abc
+    name: def
+  - id: foo
+    name: bar
+`
+	expected := data{
+		Structs: myStructs{
+			{ID: "abc", Name: "def"},
+			{ID: "foo", Name: "bar"},
+		},
+	}
+	var node yaml.Node
+	yaml.Unmarshal([]byte(config), &node)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err := fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
