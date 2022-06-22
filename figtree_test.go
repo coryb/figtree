@@ -1951,10 +1951,72 @@ list:
 		},
 	}
 	var node yaml.Node
-	yaml.Unmarshal([]byte(config), &node)
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
 	dest := data{}
 	fig := newFigTreeFromEnv()
-	err := fig.LoadConfigSource(&node, "test", &dest)
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestLoadConfigToNode(t *testing.T) {
+	type SubData struct {
+		Field yaml.Node `yaml:"field"`
+	}
+	type data struct {
+		SubData `yaml:",inline"`
+		List    []yaml.Node          `yaml:"list"`
+		Map     map[string]yaml.Node `yaml:"map"`
+		Stuff   yaml.Node            `yaml:"stuff"`
+		Sub     SubData              `yaml:"sub"`
+	}
+
+	config := `
+field: 123
+list: [a, 99]
+map:
+  key1: abc
+  key2: 123
+stuff: {a: 1, b: 2}
+sub:
+  field: ghi
+`
+	expected := data{
+		SubData: SubData{
+			Field: yaml.Node{Kind: yaml.ScalarNode, Tag: "!!int", Value: "123", Line: 2, Column: 8},
+		},
+		List: []yaml.Node{
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "a", Line: 3, Column: 8},
+			{Kind: yaml.ScalarNode, Tag: "!!int", Value: "99", Line: 3, Column: 11},
+		},
+		Map: map[string]yaml.Node{
+			"key1": {Kind: yaml.ScalarNode, Tag: "!!str", Value: "abc", Line: 5, Column: 9},
+			"key2": {Kind: yaml.ScalarNode, Tag: "!!int", Value: "123", Line: 6, Column: 9},
+		},
+		Stuff: yaml.Node{
+			Kind:  yaml.MappingNode,
+			Tag:   "!!map",
+			Style: yaml.FlowStyle,
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Tag: "!!str", Value: "a", Line: 7, Column: 9},
+				{Kind: yaml.ScalarNode, Tag: "!!int", Value: "1", Line: 7, Column: 12},
+				{Kind: yaml.ScalarNode, Tag: "!!str", Value: "b", Line: 7, Column: 15},
+				{Kind: yaml.ScalarNode, Tag: "!!int", Value: "2", Line: 7, Column: 18},
+			},
+			Line:   7,
+			Column: 8,
+		},
+		Sub: SubData{
+			Field: yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: "ghi", Line: 9, Column: 10},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
 	require.Equal(t, expected, dest)
 }

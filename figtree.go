@@ -779,8 +779,7 @@ type fileCoordinate struct {
 }
 
 type assignOptions struct {
-	Overwrite      bool
-	FileCoordinate *fileCoordinate
+	Overwrite bool
 }
 
 type notAssignableError struct {
@@ -792,32 +791,33 @@ func (e notAssignableError) Error() string {
 	return fmt.Sprintf("%s is not assignable to %s", e.srcType, e.dstType)
 }
 
-func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error {
-	if !src.IsValid() {
+func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
+	reflectedSrc, coord := src.reflect()
+	if !src.isValid() {
 		if opts.Overwrite {
-			dest.Set(src)
+			dest.Set(reflectedSrc)
 		}
 		return nil
 	}
 
 	// if not directly assignable, must be convertable, so
 	// try to convert now. (ie convert float32 to float64)
-	if src.CanConvert(dest.Type()) {
-		src = src.Convert(dest.Type())
+	if reflectedSrc.CanConvert(dest.Type()) {
+		reflectedSrc = reflectedSrc.Convert(dest.Type())
 	}
-	if src.Type().AssignableTo(dest.Type()) {
-		shouldAssignDest := opts.Overwrite || isZero(dest) || (isDefault(dest) && !isDefault(src))
-		isValidSrc := !isZero(src)
+	if reflectedSrc.Type().AssignableTo(dest.Type()) {
+		shouldAssignDest := opts.Overwrite || isZero(dest) || (isDefault(dest) && !isDefault(reflectedSrc))
+		isValidSrc := !isZero(reflectedSrc)
 		if shouldAssignDest && isValidSrc {
-			if src.Kind() == reflect.Map {
+			if reflectedSrc.Kind() == reflect.Map {
 				// maps are mutable, so create a brand new shiny one
-				dup := reflect.New(src.Type()).Elem()
-				if err := m.mergeMaps(dup, mergeSource{reflected: src, coord: opts.FileCoordinate}, opts.Overwrite); err != nil {
+				dup := reflect.New(reflectedSrc.Type()).Elem()
+				if err := m.mergeMaps(dup, src, opts.Overwrite); err != nil {
 					return err
 				}
 				dest.Set(dup)
 			} else {
-				dest.Set(src)
+				dest.Set(reflectedSrc)
 			}
 			return nil
 		}
@@ -828,39 +828,39 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 		if option, ok := dest.Addr().Interface().(option); ok {
 			destOptionValue := reflect.ValueOf(option.GetValue())
 			// map interface type to real-ish type:
-			src = reflect.ValueOf(src.Interface())
-			if !src.IsValid() {
-				Log.Debugf("assignValue: src isValid: %t", src.IsValid())
+			reflectedSrc = reflect.ValueOf(reflectedSrc.Interface())
+			if !src.isValid() {
+				Log.Debugf("assignValue: src isValid: %t", src.isValid())
 				return nil
 			}
 			source := m.sourceFile
-			if opts.FileCoordinate != nil {
-				source += ":" + strconv.Itoa(opts.FileCoordinate.Line) + ":" + strconv.Itoa(opts.FileCoordinate.Column)
+			if coord != nil {
+				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
 			}
 
 			if isZero(destOptionValue) {
-				if err := option.SetValue(src.Interface()); err != nil {
+				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
 					return err
 				}
 				option.SetSource(source)
 			}
 
-			if src.CanConvert(destOptionValue.Type()) {
-				src = src.Convert(destOptionValue.Type())
+			if reflectedSrc.CanConvert(destOptionValue.Type()) {
+				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
 			}
 
-			if src.Type().AssignableTo(destOptionValue.Type()) {
-				if err := option.SetValue(src.Interface()); err != nil {
+			if reflectedSrc.Type().AssignableTo(destOptionValue.Type()) {
+				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
 					return err
 				}
 				option.SetSource(source)
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
 				return nil
 			}
-			if destOptionValue.Kind() == reflect.Bool && src.Kind() == reflect.String {
-				b, err := strconv.ParseBool(src.Interface().(string))
+			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
+				b, err := strconv.ParseBool(reflectedSrc.Interface().(string))
 				if err != nil {
-					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", src.Type(), destOptionValue.Type())
+					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", reflectedSrc.Type(), destOptionValue.Type())
 				}
 				if err := option.SetValue(b); err != nil {
 					return err
@@ -869,8 +869,8 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, b)
 				return nil
 			}
-			if destOptionValue.Kind() == reflect.String && src.Kind() != reflect.String {
-				if err := option.SetValue(fmt.Sprintf("%v", src.Interface())); err != nil {
+			if destOptionValue.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
+				if err := option.SetValue(fmt.Sprintf("%v", reflectedSrc.Interface())); err != nil {
 					return err
 				}
 				option.SetSource(source)
@@ -879,7 +879,7 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 			}
 			return errors.WithStack(
 				notAssignableError{
-					srcType: src.Type(),
+					srcType: reflectedSrc.Type(),
 					dstType: destOptionValue.Type(),
 				},
 			)
@@ -887,12 +887,12 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 	}
 	// make copy so we can reliably Addr it to see if it fits the
 	// Option interface.
-	srcCopy := reflect.New(src.Type()).Elem()
-	srcCopy.Set(src)
+	srcCopy := reflect.New(reflectedSrc.Type()).Elem()
+	srcCopy.Set(reflectedSrc)
 	if option, ok := srcCopy.Addr().Interface().(option); ok {
 		srcOptionValue := reflect.ValueOf(option.GetValue())
 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
-			return m.assignValue(dest, srcOptionValue, opts)
+			return m.assignValue(dest, mergeSource{reflected: srcOptionValue, coord: coord}, opts)
 		} else {
 			return errors.WithStack(
 				notAssignableError{
@@ -902,9 +902,22 @@ func (m *Merger) assignValue(dest, src reflect.Value, opts assignOptions) error 
 			)
 		}
 	}
+
+	if node, ok := dest.Interface().(yaml.Node); ok {
+		if src.node != nil {
+			node = *src.node
+		} else {
+			if err := node.Encode(src.reflected.Interface()); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+		dest.Set(reflect.ValueOf(node))
+		return nil
+	}
+
 	return errors.WithStack(
 		notAssignableError{
-			srcType: src.Type(),
+			srcType: reflectedSrc.Type(),
 			dstType: dest.Type(),
 		},
 	)
@@ -1185,13 +1198,12 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			return nil
 		}
 
-		val, coord := srcField.reflect()
+		val, _ := srcField.reflect()
 		var err error
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || m.mustOverwrite(fieldName)
 		if (shouldAssign) && !isSame(dstField, val) {
-			err = m.assignValue(dstField, val, assignOptions{
-				Overwrite:      overwrite || m.mustOverwrite(fieldName),
-				FileCoordinate: coord,
+			err = m.assignValue(dstField, srcField, assignOptions{
+				Overwrite: overwrite || m.mustOverwrite(fieldName),
 			})
 			// if this is a notAssignableError then we want
 			// to continue down to try to investigate more complex
@@ -1228,9 +1240,9 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 				return nil
 			}
 		case reflect.Struct:
-			// only merge structs if they are not an Option type:
-			if _, ok := dstField.Addr().Interface().(option); !ok {
-				Log.Debugf("Merging Struct: %v with %v", dstField, srcField)
+			// only merge structs if they are not special structs (options or yaml.Node):
+			if !isSpecialStruct(dstField) {
+				Log.Debugf("Merging Struct: %#v with %#v", dstField, srcField)
 				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			}
 		}
@@ -1255,10 +1267,8 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 	return src.foreachKey(func(key reflect.Value, value mergeSource) error {
 		if !dst.MapIndex(key).IsValid() {
 			dstElem := reflect.New(dst.Type().Elem()).Elem()
-			val, coord := value.reflect()
-			err := m.assignValue(dstElem, val, assignOptions{
-				Overwrite:      overwrite,
-				FileCoordinate: coord,
+			err := m.assignValue(dstElem, value, assignOptions{
+				Overwrite: overwrite,
 			})
 			if err != nil {
 				return err
@@ -1313,6 +1323,21 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 	})
 }
 
+func isSpecialStruct(dst reflect.Value) bool {
+	if !dst.IsValid() {
+		return false
+	}
+	if dst.CanAddr() {
+		if _, ok := dst.Addr().Interface().(option); ok {
+			return true
+		}
+	}
+	if _, ok := dst.Interface().(yaml.Node); ok {
+		return true
+	}
+	return false
+}
+
 func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool) (reflect.Value, error) {
 	var cp reflect.Value
 	switch dst.Type().Kind() {
@@ -1330,7 +1355,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	}
 	var zero interface{}
 	err := src.foreach(func(ix int, item mergeSource) error {
-		reflected, coord := item.reflect()
+		reflected, _ := item.reflect()
 		if dst.Kind() == reflect.Array {
 			if dst.Len() <= ix {
 				// truncate arrays, we cannot append
@@ -1338,9 +1363,8 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			}
 			dstElem := dst.Index(ix)
 			if isDefault(dstElem) || dstElem.IsZero() || overwrite {
-				err := m.assignValue(dstElem, reflected, assignOptions{
-					Overwrite:      overwrite,
-					FileCoordinate: coord,
+				err := m.assignValue(dstElem, item, assignOptions{
+					Overwrite: overwrite,
 				})
 				if err != nil {
 					return err
@@ -1378,13 +1402,9 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			}
 		}
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
-		optionSlice := false
-		if _, ok := dstElem.Addr().Interface().(option); ok {
-			optionSlice = true
-		}
 		dstKind := dstElem.Kind()
 		switch {
-		case dstKind == reflect.Map, (dstKind == reflect.Struct && !optionSlice):
+		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecialStruct(dstElem)):
 			Log.Debugf("Merging: %#v with %#v", dstElem, reflected)
 			if err := m.mergeStructs(dstElem, item, overwrite); err != nil {
 				return err
@@ -1397,9 +1417,8 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				return err
 			}
 		default:
-			err := m.assignValue(dstElem, reflected, assignOptions{
-				Overwrite:      overwrite,
-				FileCoordinate: coord,
+			err := m.assignValue(dstElem, item, assignOptions{
+				Overwrite: overwrite,
 			})
 			if err != nil {
 				return err
