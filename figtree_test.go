@@ -7,8 +7,10 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 
+	"emperror.dev/errors"
 	logging "gopkg.in/op/go-logging.v1"
 	yaml "gopkg.in/yaml.v3"
 
@@ -2011,6 +2013,58 @@ sub:
 			Field: yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: "ghi", Line: 9, Column: 10},
 		},
 	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+type UnmarshalTest int
+
+func (t *UnmarshalTest) UnmarshalYAML(unmarshal func(any) error) error {
+	var rawType string
+	if err := unmarshal(&rawType); err != nil {
+		return errors.WithStack(err)
+	}
+	switch strings.ToLower(rawType) {
+	case "foo":
+		*t = 1
+	case "bar":
+		*t = 2
+	default:
+		return errors.Errorf("Unknown unmarshal test value: %s", rawType)
+	}
+	return nil
+}
+
+func TestLoadConfigWithUnmarshal(t *testing.T) {
+	type data struct {
+		Test1 UnmarshalTest  `yaml:"test-1"`
+		Test2 UnmarshalTest  `yaml:"test-2"`
+		Test3 *UnmarshalTest `yaml:"test-3"`
+		Test4 *UnmarshalTest `yaml:"test-4"`
+	}
+
+	config := `
+test-1: foo
+test-2: bar
+test-3: bar
+test-4: foo
+`
+	foo := UnmarshalTest(1)
+	bar := UnmarshalTest(2)
+
+	expected := data{
+		Test1: foo,
+		Test2: bar,
+		Test3: &bar,
+		Test4: &foo,
+	}
+
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)

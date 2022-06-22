@@ -915,6 +915,44 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		return nil
 	}
 
+	// if we have a collection don't proceed to attempt to unmarshal direct
+	// from the yaml.Node ... collections are process per item, rather than
+	// as a whole.
+	if isCollection(dest) {
+		return errors.WithStack(
+			notAssignableError{
+				srcType: reflectedSrc.Type(),
+				dstType: dest.Type(),
+			},
+		)
+	}
+
+	if !isSpecial(dest) {
+		if src.node != nil {
+			meth := dest.MethodByName("UnmarshalYAML")
+			if meth.IsValid() {
+				if dest.IsZero() {
+					// if we are hear then dest is a nil pointer, so we
+					// need to create a new object to decode into
+					into := reflect.New(dest.Type().Elem())
+					if err := src.node.Decode(into.Interface()); err != nil {
+						return errors.WithStack(err)
+					}
+					dest.Set(into)
+					return nil
+				}
+			}
+			if !meth.IsValid() && dest.CanAddr() {
+				dest = dest.Addr()
+				meth = dest.MethodByName("UnmarshalYAML")
+			}
+			if err := src.node.Decode(dest.Interface()); err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		}
+	}
+
 	return errors.WithStack(
 		notAssignableError{
 			srcType: reflectedSrc.Type(),
@@ -1241,7 +1279,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			}
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
-			if !isSpecialStruct(dstField) {
+			if !isSpecial(dstField) {
 				Log.Debugf("Merging Struct: %#v with %#v", dstField, srcField)
 				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			}
@@ -1323,7 +1361,22 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 	})
 }
 
-func isSpecialStruct(dst reflect.Value) bool {
+func isCollection(dst reflect.Value) bool {
+	if !dst.IsValid() {
+		return false
+	}
+	switch dst.Kind() {
+	case reflect.Map, reflect.Slice, reflect.Array:
+		return true
+	case reflect.Struct:
+		return !isSpecial(dst)
+	}
+	return false
+}
+
+// isSpecial returns true if the value is an Option, slice of Options
+// map of Options or a yaml.Node.
+func isSpecial(dst reflect.Value) bool {
 	if !dst.IsValid() {
 		return false
 	}
@@ -1404,7 +1457,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
 		dstKind := dstElem.Kind()
 		switch {
-		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecialStruct(dstElem)):
+		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecial(dstElem)):
 			Log.Debugf("Merging: %#v with %#v", dstElem, reflected)
 			if err := m.mergeStructs(dstElem, item, overwrite); err != nil {
 				return err
