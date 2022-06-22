@@ -123,3 +123,72 @@ func TestBuiltinOverwriteConfigD2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
 }
+
+type TestArray struct {
+	IntArr      [2]int    `yaml:"intArr"`
+	PartialInt  [2]int    `yaml:"partialInt"`
+	TooManyInt  [2]int    `yaml:"tooManyInt"`
+	StrArr      [2]string `yaml:"strArr"`
+	ToOverwrite [2]string `yaml:"toOverwrite"`
+}
+
+func TestBuiltinOverwriteArrayD2(t *testing.T) {
+	opts := TestArray{}
+	os.Chdir("d1/d2")
+	defer os.Chdir("../..")
+
+	expected := TestArray{
+		IntArr:      [2]int{1, 2},
+		PartialInt:  [2]int{1, 0},
+		TooManyInt:  [2]int{1, 2},
+		StrArr:      [2]string{"abc", "def"},
+		ToOverwrite: [2]string{"c", "d"},
+	}
+
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("array.yml", &opts)
+	assert.Nil(t, err)
+	assert.Exactly(t, expected, opts)
+}
+
+type TestOptionsArray struct {
+	IntArr      [2]IntOption    `yaml:"intArr"`
+	PartialInt  [2]IntOption    `yaml:"partialInt"`
+	TooManyInt  [2]IntOption    `yaml:"tooManyInt"`
+	StrArr      [2]StringOption `yaml:"strArr"`
+	ToOverwrite [2]StringOption `yaml:"toOverwrite"`
+}
+
+func TestOptionsOverwriteArrayD2(t *testing.T) {
+	opts := TestOptionsArray{}
+	os.Chdir("d1/d2")
+	defer os.Chdir("../..")
+
+	expected := TestOptionsArray{
+		IntArr: [2]IntOption{
+			{"array.yml:1:10", true, 1},
+			{"array.yml:1:12", true, 2},
+		},
+		PartialInt: [2]IntOption{
+			{"array.yml:2:14", true, 1},
+			{"", false, 0},
+		},
+		TooManyInt: [2]IntOption{
+			{"array.yml:3:14", true, 1},
+			{"array.yml:3:16", true, 2},
+		},
+		StrArr: [2]StringOption{
+			{"array.yml:4:10", true, "abc"},
+			{"array.yml:4:15", true, "def"},
+		},
+		ToOverwrite: [2]StringOption{
+			{"../array.yml:5:15", true, "c"},
+			{"../array.yml:5:17", true, "d"},
+		},
+	}
+
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigs("array.yml", &opts)
+	assert.Nil(t, err)
+	assert.Exactly(t, expected, opts)
+}

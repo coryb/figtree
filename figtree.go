@@ -1088,10 +1088,10 @@ func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) e
 	return fmt.Errorf("not map")
 }
 
-func (ms *mergeSource) foreach(f func(item mergeSource) error) error {
+func (ms *mergeSource) foreach(f func(ix int, item mergeSource) error) error {
 	if ms.node != nil {
 		for i := 0; i < len(ms.node.Content); i += 1 {
-			if err := f(newMergeSource(ms.node.Content[i])); err != nil {
+			if err := f(i, newMergeSource(ms.node.Content[i])); err != nil {
 				return err
 			}
 		}
@@ -1105,7 +1105,7 @@ func (ms *mergeSource) foreach(f func(item mergeSource) error) error {
 			if item.Kind() == reflect.Interface {
 				item = reflect.ValueOf(item.Interface())
 			}
-			if err := f(newMergeSource(item)); err != nil {
+			if err := f(i, newMergeSource(item)); err != nil {
 				return err
 			}
 		}
@@ -1320,12 +1320,28 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		}
 	case reflect.Array:
 		// arrays are copied, not passed by reference, so we dont need to copy
-		// TODO: how do we "overwrite" an array?
 		cp = dst
 	}
 	var zero interface{}
-	err := src.foreach(func(item mergeSource) error {
+	err := src.foreach(func(ix int, item mergeSource) error {
 		reflected, coord := item.reflect()
+		if dst.Kind() == reflect.Array {
+			if dst.Len() <= ix {
+				// truncate arrays, we cannot append
+				return nil
+			}
+			dstElem := dst.Index(ix)
+			if isDefault(dstElem) || dstElem.IsZero() || overwrite {
+				err := m.assignValue(dstElem, reflected, assignOptions{
+					Overwrite:      overwrite,
+					FileCoordinate: coord,
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
 
 		// if src or dst's are options we need to compare the
 		// values to determine if we need to skip inserting this
@@ -1355,9 +1371,8 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				return nil
 			}
 		}
-
-		nvElem := reflect.New(cp.Type().Elem()).Elem()
-		err := m.assignValue(nvElem, reflected, assignOptions{
+		dstElem := reflect.New(cp.Type().Elem()).Elem()
+		err := m.assignValue(dstElem, reflected, assignOptions{
 			Overwrite:      overwrite,
 			FileCoordinate: coord,
 		})
@@ -1365,7 +1380,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			return err
 		}
 
-		cp = reflect.Append(cp, nvElem)
+		cp = reflect.Append(cp, dstElem)
 		return nil
 	})
 	if err != nil {
