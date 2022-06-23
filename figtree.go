@@ -794,7 +794,7 @@ func (e notAssignableError) Error() string {
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
 	Log.Debugf("AssignValue: %#v to %#v\n", reflectedSrc, dest)
-	if !src.isValid() {
+	if !reflectedSrc.IsValid() {
 		if opts.Overwrite {
 			dest.Set(reflectedSrc)
 		}
