@@ -2074,3 +2074,39 @@ test-4: foo
 	require.NoError(t, err)
 	require.Equal(t, expected, dest)
 }
+
+func TestMapOfOptionLists(t *testing.T) {
+	type data struct {
+		Stuff map[string]ListStringOption `yaml:"stuff"`
+	}
+
+	config := `
+stuff:
+  foo:
+    - abc
+    - def
+  bar:
+    - ghi
+    - jkl
+`
+	expected := data{
+		Stuff: map[string]ListStringOption{
+			"bar": {
+				StringOption{"test:7:7", true, "ghi"},
+				StringOption{"test:8:7", true, "jkl"},
+			},
+			"foo": {
+				StringOption{"test:4:7", true, "abc"},
+				StringOption{"test:5:7", true, "def"},
+			},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}

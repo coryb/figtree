@@ -1308,21 +1308,32 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 			err := m.assignValue(dstElem, value, assignOptions{
 				Overwrite: overwrite,
 			})
-			if err != nil {
+			var assignErr notAssignableError
+			if err != nil && !errors.As(err, &assignErr) {
 				return err
-			}
-			if dst.IsNil() {
-				if !dst.CanSet() {
-					// TODO: Should this be an error?
-					return nil
+			} else if err == nil {
+				if dst.IsNil() {
+					if !dst.CanSet() {
+						// TODO: Should this be an error?
+						return nil
+					}
+					dst.Set(reflect.MakeMap(dst.Type()))
 				}
-				dst.Set(reflect.MakeMap(dst.Type()))
+				Log.Debugf("Setting %v to %#v", key.Interface(), dstElem.Interface())
+				dst.SetMapIndex(key, dstElem)
+				return nil
 			}
-			Log.Debugf("Setting %v to %#v", key.Interface(), dstElem.Interface())
-			dst.SetMapIndex(key, dstElem)
-			return nil
 		}
 
+		if dst.IsNil() {
+			// nil map here, we need to create one
+			newMap := reflect.MakeMap(dst.Type())
+			dst.Set(newMap)
+		}
+		if !dst.MapIndex(key).IsValid() {
+			newVal := reflect.New(dst.Type().Elem()).Elem()
+			dst.SetMapIndex(key, newVal)
+		}
 		dstVal := reflect.ValueOf(dst.MapIndex(key).Interface())
 		switch dstVal.Kind() {
 		case reflect.Map:
