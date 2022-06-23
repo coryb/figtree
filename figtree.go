@@ -1193,20 +1193,23 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 	dstFieldValuesByYAML := make(map[string]reflect.Value)
 
 	var populateYAMLMaps func(reflect.Value)
-	populateYAMLMaps = func(ov reflect.Value) {
-		for i := 0; i < ov.NumField(); i++ {
-			fieldType := ov.Type().Field(i)
+	populateYAMLMaps = func(dest reflect.Value) {
+		if dest.Kind() != reflect.Struct {
+			return
+		}
+		for i := 0; i < dest.NumField(); i++ {
+			fieldType := dest.Type().Field(i)
 			yamlName := yamlFieldName(fieldType)
 			if _, ok := dstFieldTypesByYAML[yamlName]; !ok {
 				dstFieldTypesByYAML[yamlName] = fieldType
-				dstFieldValuesByYAML[yamlName] = ov.Field(i)
+				dstFieldValuesByYAML[yamlName] = dest.Field(i)
 			}
 		}
 
-		for i := 0; i < ov.NumField(); i++ {
-			fieldType := ov.Type().Field(i)
-			if fieldType.Anonymous && reflect.Indirect(ov.Field(i)).Type().Kind() == reflect.Struct {
-				populateYAMLMaps(reflect.Indirect(ov.Field(i)))
+		for i := 0; i < dest.NumField(); i++ {
+			fieldType := dest.Type().Field(i)
+			if fieldType.Anonymous && reflect.Indirect(dest.Field(i)).Type().Kind() == reflect.Struct {
+				populateYAMLMaps(reflect.Indirect(dest.Field(i)))
 			}
 		}
 	}
@@ -1269,8 +1272,8 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 					return err
 				}
 				dstField.Set(merged)
-				return nil
 			}
+			return nil
 		case reflect.Array:
 			if srcField.len() > 0 {
 				Log.Debugf("Merging Array: %#v to %#v", val, dstField)
@@ -1279,8 +1282,8 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 					return err
 				}
 				dstField.Set(merged)
-				return nil
 			}
+			return nil
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {

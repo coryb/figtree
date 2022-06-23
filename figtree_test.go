@@ -2301,3 +2301,23 @@ d: 12.2.2
 	require.NoError(t, err)
 	require.Equal(t, expected, data)
 }
+
+func TestAssignInterfaceListToListStringOption(t *testing.T) {
+	type data struct {
+		MyList ListStringOption `yaml:"mylist"`
+	}
+	config := `
+mylist: []
+`
+	expected := data{
+		MyList: nil,
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
