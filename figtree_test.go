@@ -2110,3 +2110,28 @@ stuff:
 	require.NoError(t, err)
 	require.Equal(t, expected, dest)
 }
+
+func TestMapOfStructs(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var data map[string]myStruct
+
+	config := `
+foo:
+  name: abc
+bar:
+  name: def
+`
+	expected := map[string]myStruct{
+		"bar": {Name: "def"},
+		"foo": {Name: "abc"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}

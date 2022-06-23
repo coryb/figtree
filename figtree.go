@@ -262,7 +262,7 @@ func sourceLine(file string, node *yaml.Node) string {
 
 func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interface{}) error {
 	if !reflect.ValueOf(options).IsValid() {
-		return fmt.Errorf("options argument [%#v] is not valid", options)
+		return errors.Errorf("options argument [%#v] is not valid", options)
 	}
 
 	var err error
@@ -1113,7 +1113,7 @@ func (ms *mergeSource) foreachField(f func(key string, value mergeSource, anonym
 		return nil
 	}
 
-	return fmt.Errorf("not struct")
+	return errors.Errorf("not struct")
 }
 
 func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) error) error {
@@ -1142,7 +1142,7 @@ func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) e
 		}
 		return nil
 	}
-	return fmt.Errorf("not map")
+	return errors.Errorf("not map")
 }
 
 func (ms *mergeSource) foreach(f func(ix int, item mergeSource) error) error {
@@ -1168,7 +1168,7 @@ func (ms *mergeSource) foreach(f func(ix int, item mergeSource) error) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("not slice or array")
+	return errors.Errorf("not slice or array")
 }
 
 func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool) error {
@@ -1335,11 +1335,27 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 			dst.SetMapIndex(key, newVal)
 		}
 		dstVal := reflect.ValueOf(dst.MapIndex(key).Interface())
-		switch dstVal.Kind() {
-		case reflect.Map:
-			Log.Debugf("Merging: %v with %v", dstVal, value)
+		dstValKind := dstVal.Kind()
+		switch {
+		case dstValKind == reflect.Map:
+			Log.Debugf("Merging: %#v with %#v", dstVal, value)
 			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
-		case reflect.Slice, reflect.Array:
+		case dstValKind == reflect.Struct && !isSpecial(dstVal):
+			Log.Debugf("Merging: %#v with %#v", dstVal, value)
+			if !dstVal.CanAddr() {
+				// we can't address dstVal so we need to make a new value
+				// outside the map, merge into the new value, then
+				// set the map key to the new value
+				newVal := reflect.New(dstVal.Type()).Elem()
+				newVal.Set(dstVal)
+				if err := m.mergeStructs(newVal, value, overwrite || m.mustOverwrite(key.String())); err != nil {
+					return err
+				}
+				dst.SetMapIndex(key, newVal)
+				return nil
+			}
+			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+		case dstValKind == reflect.Slice, dstValKind == reflect.Array:
 			Log.Debugf("Merging: %v with %v", dstVal, value)
 			merged, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 			if err != nil {
@@ -1364,7 +1380,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 						dst.SetMapIndex(key, reflect.ValueOf(nOption.GetValue()))
 						return nil
 					}
-					return fmt.Errorf("map value %T is not assignable to %T", reflected.Interface(), dstVal.Interface())
+					return errors.Errorf("map value %T is not assignable to %T", reflected.Interface(), dstVal.Interface())
 				}
 			}
 		}
