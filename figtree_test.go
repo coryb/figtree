@@ -2255,3 +2255,49 @@ c: 11.1.1
 	require.NoError(t, err)
 	require.Equal(t, expected, data)
 }
+
+func TestAssignToAnyOption(t *testing.T) {
+	var data map[string]Option[any]
+	config := `
+a: foo
+b: 12
+c: 12.2
+d: 12.2.2
+`
+	expected := map[string]Option[any]{
+		"a": {"test:2:4", true, "foo"},
+		"b": {"test:3:4", true, 12},
+		"c": {"test:4:4", true, 12.2},
+		"d": {"test:5:4", true, "12.2.2"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestAssignToAny(t *testing.T) {
+	var data map[string]any
+	config := `
+a: foo
+b: 12
+c: 12.2
+d: 12.2.2
+`
+	expected := map[string]any{
+		"a": "foo",
+		"b": 12,
+		"c": 12.2,
+		"d": "12.2.2",
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}

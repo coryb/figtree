@@ -838,13 +838,13 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
 			}
 
-			// if isZero(destOptionValue) {
-			// 	panic("HERE")
-			// 	if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-			// 		return err
-			// 	}
-			// 	option.SetSource(source)
-			// }
+			if !destOptionValue.IsValid() {
+				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
+					return err
+				}
+				option.SetSource(source)
+				return nil
+			}
 
 			// lots of things can convert implicitly to String, but that is
 			// generally not what we want.  (ie `11` => `\v` instead of "11")
