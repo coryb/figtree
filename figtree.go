@@ -803,7 +803,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 
 	// if not directly assignable, must be convertable, so
 	// try to convert now. (ie convert float32 to float64)
-	if reflectedSrc.CanConvert(dest.Type()) {
+	if dest.Kind() != reflect.String && reflectedSrc.CanConvert(dest.Type()) {
 		reflectedSrc = reflectedSrc.Convert(dest.Type())
 	}
 	if reflectedSrc.Type().AssignableTo(dest.Type()) {
@@ -839,13 +839,17 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			}
 
 			// if isZero(destOptionValue) {
+			// 	panic("HERE")
 			// 	if err := option.SetValue(reflectedSrc.Interface()); err != nil {
 			// 		return err
 			// 	}
 			// 	option.SetSource(source)
 			// }
 
-			if reflectedSrc.CanConvert(destOptionValue.Type()) {
+			// lots of things can convert implicitly to String, but that is
+			// generally not what we want.  (ie `11` => `\v` instead of "11")
+			// We handle string conversion below...
+			if destOptionValue.Kind() != reflect.String && reflectedSrc.CanConvert(destOptionValue.Type()) {
 				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
 			}
 

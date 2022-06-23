@@ -2135,3 +2135,123 @@ bar:
 	require.NoError(t, err)
 	require.Equal(t, expected, data)
 }
+
+func TestZeroYAML(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var data map[string]myStruct
+
+	config := `
+foo:
+bar:
+`
+	expected := map[string]myStruct{
+		"bar": {},
+		"foo": {},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestBoolToStringOption(t *testing.T) {
+	type myStruct struct {
+		Name StringOption
+	}
+	var data map[string]myStruct
+
+	// true/false will be parsed as `!!bool`
+	// but we want to assign it to a StringOption
+	config := `
+foo:
+  name: true
+bar:
+  name: false
+`
+	expected := map[string]myStruct{
+		"bar": {Name: StringOption{"test:5:9", true, "false"}},
+		"foo": {Name: StringOption{"test:3:9", true, "true"}},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestBoolToString(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var data map[string]myStruct
+
+	// true/false will be parsed as `!!bool`
+	// but we want to assign it to a string
+	config := `
+foo:
+  name: true
+bar:
+  name: false
+`
+	expected := map[string]myStruct{
+		"bar": {Name: "false"},
+		"foo": {Name: "true"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestIntToStringOption(t *testing.T) {
+	var data map[string]StringOption
+
+	config := `
+a: 11
+b: 11.1
+c: 11.1.1
+`
+	expected := map[string]StringOption{
+		"a": {"test:2:4", true, "11"},
+		"b": {"test:3:4", true, "11.1"},
+		"c": {"test:4:4", true, "11.1.1"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestIntToString(t *testing.T) {
+	var data map[string]string
+	config := `
+a: 11
+b: 11.1
+c: 11.1.1
+`
+	expected := map[string]string{
+		"a": "11",
+		"b": "11.1",
+		"c": "11.1.1",
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
