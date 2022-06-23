@@ -793,6 +793,7 @@ func (e notAssignableError) Error() string {
 
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
+	Log.Debugf("AssignValue: %#v to %#v\n", reflectedSrc, dest)
 	if !src.isValid() {
 		if opts.Overwrite {
 			dest.Set(reflectedSrc)
@@ -830,7 +831,6 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			// map interface type to real-ish type:
 			reflectedSrc = reflect.ValueOf(reflectedSrc.Interface())
 			if !src.isValid() {
-				Log.Debugf("assignValue: src isValid: %t", src.isValid())
 				return nil
 			}
 			source := m.sourceFile
@@ -854,7 +854,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					return err
 				}
 				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
+				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
 				return nil
 			}
 			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
@@ -866,7 +866,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					return err
 				}
 				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, b)
+				Log.Debugf("assignValue: assigned %#v to %#v", b, destOptionValue)
 				return nil
 			}
 			if destOptionValue.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
@@ -874,7 +874,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					return err
 				}
 				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", destOptionValue, src)
+				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
 				return nil
 			}
 			return errors.WithStack(
@@ -1255,11 +1255,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		}
 		switch dstField.Kind() {
 		case reflect.Map:
-			Log.Debugf("Merging Map: %#v with %#v", dstField, srcField)
+			Log.Debugf("Merging Map: %#v to %#v", val, dstField)
 			return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 		case reflect.Slice:
 			if srcField.len() > 0 {
-				Log.Debugf("Merging Slice: %#v with %#v", dstField, srcField)
+				Log.Debugf("Merging Slice: %#v to %#v", val, dstField)
 				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
@@ -1269,7 +1269,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			}
 		case reflect.Array:
 			if srcField.len() > 0 {
-				Log.Debugf("Merging Array: %v with %v", dstField, srcField)
+				Log.Debugf("Merging Array: %#v to %#v", val, dstField)
 				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
@@ -1280,7 +1280,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {
-				Log.Debugf("Merging Struct: %#v with %#v", dstField, srcField)
+				Log.Debugf("Merging Struct: %#v to %#v", val, dstField)
 				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			}
 		}
@@ -1338,10 +1338,10 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 		dstValKind := dstVal.Kind()
 		switch {
 		case dstValKind == reflect.Map:
-			Log.Debugf("Merging: %#v with %#v", dstVal, value)
+			Log.Debugf("Merging: %#v to %#v", value, dstVal)
 			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 		case dstValKind == reflect.Struct && !isSpecial(dstVal):
-			Log.Debugf("Merging: %#v with %#v", dstVal, value)
+			Log.Debugf("Merging: %#v to %#v", value, dstVal)
 			if !dstVal.CanAddr() {
 				// we can't address dstVal so we need to make a new value
 				// outside the map, merge into the new value, then
@@ -1356,7 +1356,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 			}
 			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 		case dstValKind == reflect.Slice, dstValKind == reflect.Array:
-			Log.Debugf("Merging: %v with %v", dstVal, value)
+			Log.Debugf("Merging: %#v to %#v", value, dstVal)
 			merged, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 			if err != nil {
 				return err
@@ -1485,12 +1485,12 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		dstKind := dstElem.Kind()
 		switch {
 		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecial(dstElem)):
-			Log.Debugf("Merging: %#v with %#v", dstElem, reflected)
+			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
 			if err := m.mergeStructs(dstElem, item, overwrite); err != nil {
 				return err
 			}
 		case dstKind == reflect.Slice, dstKind == reflect.Array:
-			Log.Debugf("Merging: %v with %v", dstElem, reflected)
+			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
 			var err error
 			dstElem, err = m.mergeArrays(dstElem, item, overwrite)
 			if err != nil {
