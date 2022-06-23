@@ -838,12 +838,12 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
 			}
 
-			if isZero(destOptionValue) {
-				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-					return err
-				}
-				option.SetSource(source)
-			}
+			// if isZero(destOptionValue) {
+			// 	if err := option.SetValue(reflectedSrc.Interface()); err != nil {
+			// 		return err
+			// 	}
+			// 	option.SetSource(source)
+			// }
 
 			if reflectedSrc.CanConvert(destOptionValue.Type()) {
 				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
