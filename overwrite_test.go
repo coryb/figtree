@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func init() {
@@ -191,4 +192,56 @@ func TestOptionsOverwriteArrayD2(t *testing.T) {
 	err := fig.LoadAllConfigs("array.yml", &opts)
 	assert.Nil(t, err)
 	assert.Exactly(t, expected, opts)
+}
+
+// auto-upgrade:
+//   enabled: true
+
+func TestOverwritePartialStruct(t *testing.T) {
+	type AutoUpgrade struct {
+		Channel StringOption `yaml:"channel"`
+		Enabled BoolOption   `yaml:"enabled"`
+	}
+	type data struct {
+		AutoUpgrade AutoUpgrade `yaml:"auto-upgrade"`
+	}
+	configs := []struct {
+		Name string
+		Body string
+	}{{
+		Name: "test",
+		Body: `
+auto-upgrade:
+  enabled: true
+`,
+	}, {
+		Name: "../test",
+		Body: `
+config: {overwrite: [auto-upgrade]}
+auto-upgrade:
+  enabled: false
+  channel: stable
+`,
+	}}
+	expected := data{
+		AutoUpgrade: AutoUpgrade{
+			Channel: StringOption{"../test:5:12", true, "stable"},
+			Enabled: BoolOption{"../test:4:12", true, false},
+		},
+	}
+	sources := []ConfigSource{}
+	for _, c := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(c.Body), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: c.Name,
+		})
+	}
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
 }

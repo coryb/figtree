@@ -793,7 +793,7 @@ func (e notAssignableError) Error() string {
 
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
-	Log.Debugf("AssignValue: %#v to %#v\n", reflectedSrc, dest)
+	Log.Debugf("AssignValue: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
 	if !reflectedSrc.IsValid() {
 		if opts.Overwrite {
 			dest.Set(reflectedSrc)
@@ -858,7 +858,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					return err
 				}
 				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
+				Log.Debugf("assignValue: assigned %#v to %#v [overwrite: %t]", reflectedSrc, destOptionValue, opts.Overwrite)
 				return nil
 			}
 			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
@@ -1245,7 +1245,8 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 		val, _ := srcField.reflect()
 		var err error
-		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || m.mustOverwrite(fieldName)
+		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || (overwrite || m.mustOverwrite(fieldName))
+
 		if (shouldAssign) && !isSame(dstField, val) {
 			err = m.assignValue(dstField, srcField, assignOptions{
 				Overwrite: overwrite || m.mustOverwrite(fieldName),
@@ -1262,11 +1263,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		}
 		switch dstField.Kind() {
 		case reflect.Map:
-			Log.Debugf("Merging Map: %#v to %#v", val, dstField)
+			Log.Debugf("Merging Map: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 			return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 		case reflect.Slice:
 			if srcField.len() > 0 {
-				Log.Debugf("Merging Slice: %#v to %#v", val, dstField)
+				Log.Debugf("Merging Slice: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
@@ -1276,7 +1277,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			return nil
 		case reflect.Array:
 			if srcField.len() > 0 {
-				Log.Debugf("Merging Array: %#v to %#v", val, dstField)
+				Log.Debugf("Merging Array: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 				if err != nil {
 					return err
@@ -1287,7 +1288,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {
-				Log.Debugf("Merging Struct: %#v to %#v", val, dstField)
+				Log.Debugf("Merging Struct: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			}
 		}
