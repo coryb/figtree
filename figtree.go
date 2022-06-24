@@ -1489,6 +1489,12 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 
 	if !src.isList() {
 		reflectedSrc, coord := src.reflect()
+		if !reflectedSrc.IsValid() {
+			// if this is a nil interface data then
+			// we don't care that we cant assign it to a
+			// list, it is a no-op anyway.
+			return cp, nil
+		}
 		return reflect.Value{}, errors.WithStack(
 			notAssignableError{
 				srcType:  reflectedSrc.Type(),
