@@ -198,12 +198,12 @@ func TestOptionsOverwriteArrayD2(t *testing.T) {
 //   enabled: true
 
 func TestOverwritePartialStruct(t *testing.T) {
-	type AutoUpgrade struct {
-		Channel StringOption `yaml:"channel"`
-		Enabled BoolOption   `yaml:"enabled"`
+	type MyStruct struct {
+		A StringOption `yaml:"a"`
+		B BoolOption   `yaml:"b"`
 	}
 	type data struct {
-		AutoUpgrade AutoUpgrade `yaml:"auto-upgrade"`
+		MyStruct MyStruct `yaml:"my-struct"`
 	}
 	configs := []struct {
 		Name string
@@ -211,22 +211,22 @@ func TestOverwritePartialStruct(t *testing.T) {
 	}{{
 		Name: "test",
 		Body: `
-auto-upgrade:
-  enabled: true
+my-struct:
+  b: true
 `,
 	}, {
 		Name: "../test",
 		Body: `
-config: {overwrite: [auto-upgrade]}
-auto-upgrade:
-  enabled: false
-  channel: stable
+config: {overwrite: [my-struct]}
+my-struct:
+  b: false
+  a: foo
 `,
 	}}
 	expected := data{
-		AutoUpgrade: AutoUpgrade{
-			Channel: StringOption{"../test:5:12", true, "stable"},
-			Enabled: BoolOption{"../test:4:12", true, false},
+		MyStruct: MyStruct{
+			A: StringOption{"../test:5:6", true, "foo"},
+			B: BoolOption{"../test:4:6", true, false},
 		},
 	}
 	sources := []ConfigSource{}
@@ -242,6 +242,34 @@ auto-upgrade:
 	fig := newFigTreeFromEnv()
 	got := data{}
 	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestOverwriteNil(t *testing.T) {
+	type MyStruct struct {
+		A StringOption `yaml:"a"`
+		B BoolOption   `yaml:"b"`
+	}
+	type data struct {
+		MyStruct MyStruct `yaml:"my-struct"`
+	}
+	config := `
+config: {overwrite: [my-struct]}
+my-struct:
+`
+	expected := data{
+		MyStruct: MyStruct{
+			A: StringOption{},
+			B: BoolOption{},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }

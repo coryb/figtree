@@ -794,12 +794,15 @@ func (e notAssignableError) Error() string {
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
 	Log.Debugf("AssignValue: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
-	if !reflectedSrc.IsValid() {
-		if opts.Overwrite {
-			dest.Set(reflectedSrc)
-		}
+	if !dest.IsValid() || !reflectedSrc.IsValid() {
 		return nil
 	}
+	// if !reflectedSrc.IsValid() {
+	// 	if opts.Overwrite {
+	// 		dest.Set(reflectedSrc)
+	// 	}
+	// 	return nil
+	// }
 
 	// if not directly assignable, must be convertable, so
 	// try to convert now. (ie convert float32 to float64)
