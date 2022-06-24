@@ -783,11 +783,16 @@ type assignOptions struct {
 }
 
 type notAssignableError struct {
-	dstType reflect.Type
-	srcType reflect.Type
+	dstType  reflect.Type
+	srcType  reflect.Type
+	filename string
+	coord    *fileCoordinate
 }
 
 func (e notAssignableError) Error() string {
+	if e.coord != nil {
+		return fmt.Sprintf("%s:%d:%d: %s is not assignable to %s", e.filename, e.coord.Line, e.coord.Column, e.srcType, e.dstType)
+	}
 	return fmt.Sprintf("%s is not assignable to %s", e.srcType, e.dstType)
 }
 
@@ -797,6 +802,19 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	if !dest.IsValid() || !reflectedSrc.IsValid() {
 		return nil
 	}
+
+	// // if we have a collection don't proceed to attempt to unmarshal direct
+	// // from the yaml.Node ... collections are process per item, rather than
+	// // as a whole.
+	// if !opts.Overwrite && isCollection(dest) && !isCollection(reflectedSrc) {
+	// 	return errors.WithStack(
+	// 		notAssignableError{
+	// 			srcType: reflectedSrc.Type(),
+	// 			dstType: dest.Type(),
+	// 		},
+	// 	)
+	// }
+
 	// if !reflectedSrc.IsValid() {
 	// 	if opts.Overwrite {
 	// 		dest.Set(reflectedSrc)
@@ -886,8 +904,10 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			}
 			return errors.WithStack(
 				notAssignableError{
-					srcType: reflectedSrc.Type(),
-					dstType: destOptionValue.Type(),
+					srcType:  reflectedSrc.Type(),
+					dstType:  destOptionValue.Type(),
+					filename: m.sourceFile,
+					coord:    coord,
 				},
 			)
 		}
@@ -903,8 +923,10 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		} else {
 			return errors.WithStack(
 				notAssignableError{
-					srcType: srcOptionValue.Type(),
-					dstType: dest.Type(),
+					srcType:  srcOptionValue.Type(),
+					dstType:  dest.Type(),
+					filename: m.sourceFile,
+					coord:    coord,
 				},
 			)
 		}
@@ -928,8 +950,10 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	if isCollection(dest) {
 		return errors.WithStack(
 			notAssignableError{
-				srcType: reflectedSrc.Type(),
-				dstType: dest.Type(),
+				srcType:  reflectedSrc.Type(),
+				dstType:  dest.Type(),
+				filename: m.sourceFile,
+				coord:    coord,
 			},
 		)
 	}
@@ -962,8 +986,10 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 
 	return errors.WithStack(
 		notAssignableError{
-			srcType: reflectedSrc.Type(),
-			dstType: dest.Type(),
+			srcType:  reflectedSrc.Type(),
+			dstType:  dest.Type(),
+			filename: m.sourceFile,
+			coord:    coord,
 		},
 	)
 }
@@ -1047,6 +1073,17 @@ func (ms *mergeSource) isStruct() bool {
 	return ms.reflected.Kind() == reflect.Struct
 }
 
+func (ms *mergeSource) isList() bool {
+	if ms.node != nil {
+		return ms.node.Kind == yaml.SequenceNode
+	}
+	switch ms.reflected.Kind() {
+	case reflect.Array, reflect.Slice:
+		return true
+	}
+	return false
+}
+
 func (ms *mergeSource) isZero() bool {
 	if ms.node != nil {
 		// values directly from config files cannot be 'zero'
@@ -1066,7 +1103,10 @@ func (ms *mergeSource) isValid() bool {
 
 func (ms *mergeSource) len() int {
 	if ms.node != nil {
-		return len(ms.node.Content)
+		if ms.node.Kind == yaml.MappingNode || ms.node.Kind == yaml.SequenceNode {
+			return len(ms.node.Content)
+		}
+		return 0
 	}
 	return ms.reflected.Len()
 }
@@ -1269,25 +1309,27 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			Log.Debugf("Merging Map: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 			return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 		case reflect.Slice:
-			if srcField.len() > 0 {
-				Log.Debugf("Merging Slice: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
-				if err != nil {
-					return err
-				}
-				dstField.Set(merged)
+			// if srcField.len() > 0 {
+			Log.Debugf("Merging Slice: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
+			merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			if err != nil {
+				return err
 			}
+			dstField.Set(merged)
 			return nil
+			// }
+			// return err
 		case reflect.Array:
-			if srcField.len() > 0 {
-				Log.Debugf("Merging Array: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-				merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
-				if err != nil {
-					return err
-				}
-				dstField.Set(merged)
+			// if srcField.len() > 0 {
+			Log.Debugf("Merging Array: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
+			merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			if err != nil {
+				return err
 			}
+			dstField.Set(merged)
 			return nil
+			// }
+			// return err
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {
@@ -1443,6 +1485,18 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	case reflect.Array:
 		// arrays are copied, not passed by reference, so we dont need to copy
 		cp = dst
+	}
+
+	if !src.isList() {
+		reflectedSrc, coord := src.reflect()
+		return reflect.Value{}, errors.WithStack(
+			notAssignableError{
+				srcType:  reflectedSrc.Type(),
+				dstType:  dst.Type(),
+				filename: m.sourceFile,
+				coord:    coord,
+			},
+		)
 	}
 	var zero interface{}
 	err := src.foreach(func(ix int, item mergeSource) error {

@@ -2310,7 +2310,7 @@ func TestAssignInterfaceListToListStringOption(t *testing.T) {
 mylist: []
 `
 	expected := data{
-		MyList: nil,
+		MyList: ListStringOption{},
 	}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
@@ -2320,4 +2320,20 @@ mylist: []
 	err = fig.LoadConfigSource(&node, "test", &got)
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
+}
+
+func TestAssignStringIntoList(t *testing.T) {
+	type data struct {
+		MyList ListStringOption `yaml:"mylist"`
+	}
+	config := `
+mylist: foobar
+`
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.Error(t, err)
 }
