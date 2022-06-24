@@ -1031,7 +1031,7 @@ func newMergeSource(src any) mergeSource {
 		}
 	case *yaml.Node:
 		return mergeSource{
-			node: cast,
+			node: walky.Indirect(cast),
 		}
 	}
 	panic(fmt.Sprintf("Unknown type: %T", src))

@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	emperror.dev/errors v0.8.1
-	github.com/coryb/walky v0.0.0-20220618044146-89b8a01040cb
+	github.com/coryb/walky v0.0.0-20220624205730-c7ca61846f03
 	github.com/fatih/camelcase v1.0.1-0.20181010234014-9db1b65eb38b
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
