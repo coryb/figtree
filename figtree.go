@@ -1160,7 +1160,7 @@ func (ms *mergeSource) foreachField(f func(key string, value mergeSource, anonym
 		return nil
 	}
 
-	return errors.Errorf("not struct")
+	return errors.Errorf("expected struct, got %s", ms.reflected.Kind())
 }
 
 func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) error) error {
@@ -1460,10 +1460,12 @@ func isSpecial(dst reflect.Value) bool {
 	if !dst.IsValid() {
 		return false
 	}
-	if dst.CanAddr() {
-		if _, ok := dst.Addr().Interface().(option); ok {
-			return true
-		}
+	dstOption := dst
+	if !dstOption.CanAddr() {
+		dstOption = reflect.New(dst.Type()).Elem()
+	}
+	if _, ok := dstOption.Addr().Interface().(option); ok {
+		return true
 	}
 	if _, ok := dst.Interface().(yaml.Node); ok {
 		return true
