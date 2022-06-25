@@ -781,7 +781,10 @@ type fileCoordinate struct {
 }
 
 type assignOptions struct {
-	Overwrite bool
+	Overwrite     bool
+	SrcIsDefault  bool
+	DestIsDefault bool
+	SourceFile    string
 }
 
 type notAssignableError struct {
@@ -798,54 +801,340 @@ func (e notAssignableError) Error() string {
 	return fmt.Sprintf("%s is not assignable to %s", e.srcType, e.dstType)
 }
 
+// func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
+// 	reflectedSrc, coord := src.reflect()
+// 	Log.Debugf("AssignValue: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
+// 	if !dest.IsValid() || !reflectedSrc.IsValid() {
+// 		return nil
+// 	}
+// 	Log.Debugf("DestKind: %s DestType: %s\n", dest.Kind(), dest.Type())
+// 	if dest.Kind() == reflect.Pointer {
+// 		Log.Debugf("Pointer: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
+// 		if dest.IsNil() {
+// 			dest.Set(reflect.New(dest.Type().Elem()))
+// 		}
+// 		dest = dest.Elem()
+// 		Log.Debugf("Deref'd: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
+// 	}
+// 	// // if we have a collection don't proceed to attempt to unmarshal direct
+// 	// // from the yaml.Node ... collections are process per item, rather than
+// 	// // as a whole.
+// 	// if !opts.Overwrite && isCollection(dest) && !isCollection(reflectedSrc) {
+// 	// 	return errors.WithStack(
+// 	// 		notAssignableError{
+// 	// 			srcType: reflectedSrc.Type(),
+// 	// 			dstType: dest.Type(),
+// 	// 		},
+// 	// 	)
+// 	// }
+
+// 	// if !reflectedSrc.IsValid() {
+// 	// 	if opts.Overwrite {
+// 	// 		dest.Set(reflectedSrc)
+// 	// 	}
+// 	// 	return nil
+// 	// }
+
+// 	// if not directly assignable, must be convertable, so
+// 	// try to convert now. (ie convert float32 to float64)
+// 	if dest.Kind() != reflect.String && reflectedSrc.CanConvert(dest.Type()) {
+// 		reflectedSrc = reflectedSrc.Convert(dest.Type())
+// 	}
+// 	if reflectedSrc.Type().AssignableTo(dest.Type()) {
+// 		shouldAssignDest := opts.Overwrite || isZero(dest) || (isDefault(dest) && !isDefault(reflectedSrc))
+// 		isValidSrc := !isZero(reflectedSrc)
+// 		if shouldAssignDest && isValidSrc {
+// 			if reflectedSrc.Kind() == reflect.Map {
+// 				// maps are mutable, so create a brand new shiny one
+// 				dup := reflect.New(reflectedSrc.Type()).Elem()
+// 				if err := m.mergeMaps(dup, src, opts.Overwrite); err != nil {
+// 					return err
+// 				}
+// 				dest.Set(dup)
+// 			} else {
+// 				dest.Set(reflectedSrc)
+// 			}
+// 			return nil
+// 		}
+// 		return nil
+// 	}
+
+// 	if dest.CanAddr() {
+// 		if option, ok := dest.Addr().Interface().(option); ok {
+// 			destOptionValue := reflect.ValueOf(option.GetValue())
+// 			// map interface type to real-ish type:
+// 			reflectedSrc = reflect.ValueOf(reflectedSrc.Interface())
+// 			if !src.isValid() {
+// 				return nil
+// 			}
+// 			source := m.sourceFile
+// 			if coord != nil {
+// 				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
+// 			}
+
+// 			if !destOptionValue.IsValid() {
+// 				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
+// 					return err
+// 				}
+// 				option.SetSource(source)
+// 				return nil
+// 			}
+
+// 			// lots of things can convert implicitly to String, but that is
+// 			// generally not what we want.  (ie `11` => `\v` instead of "11")
+// 			// We handle string conversion below...
+// 			if destOptionValue.Kind() != reflect.String && reflectedSrc.CanConvert(destOptionValue.Type()) {
+// 				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
+// 			}
+
+// 			if reflectedSrc.Type().AssignableTo(destOptionValue.Type()) {
+// 				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
+// 					return err
+// 				}
+// 				option.SetSource(source)
+// 				Log.Debugf("assignValue: assigned %#v to %#v [overwrite: %t]", reflectedSrc, destOptionValue, opts.Overwrite)
+// 				return nil
+// 			}
+// 			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
+// 				b, err := strconv.ParseBool(reflectedSrc.Interface().(string))
+// 				if err != nil {
+// 					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", reflectedSrc.Type(), destOptionValue.Type())
+// 				}
+// 				if err := option.SetValue(b); err != nil {
+// 					return err
+// 				}
+// 				option.SetSource(source)
+// 				Log.Debugf("assignValue: assigned %#v to %#v", b, destOptionValue)
+// 				return nil
+// 			}
+// 			if destOptionValue.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
+// 				if err := option.SetValue(fmt.Sprintf("%v", reflectedSrc.Interface())); err != nil {
+// 					return err
+// 				}
+// 				option.SetSource(source)
+// 				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
+// 				return nil
+// 			}
+// 			return errors.WithStack(
+// 				notAssignableError{
+// 					srcType:  reflectedSrc.Type(),
+// 					dstType:  destOptionValue.Type(),
+// 					filename: m.sourceFile,
+// 					coord:    coord,
+// 				},
+// 			)
+// 		}
+// 	}
+// 	// make copy so we can reliably Addr it to see if it fits the
+// 	// Option interface.
+// 	srcCopy := reflect.New(reflectedSrc.Type()).Elem()
+// 	srcCopy.Set(reflectedSrc)
+// 	if option, ok := srcCopy.Addr().Interface().(option); ok {
+// 		srcOptionValue := reflect.ValueOf(option.GetValue())
+// 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
+// 			return m.assignValue(dest, mergeSource{reflected: srcOptionValue, coord: coord}, opts)
+// 		} else {
+// 			return errors.WithStack(
+// 				notAssignableError{
+// 					srcType:  srcOptionValue.Type(),
+// 					dstType:  dest.Type(),
+// 					filename: m.sourceFile,
+// 					coord:    coord,
+// 				},
+// 			)
+// 		}
+// 	}
+
+// 	if node, ok := dest.Interface().(yaml.Node); ok {
+// 		if src.node != nil {
+// 			node = *src.node
+// 		} else {
+// 			if err := node.Encode(src.reflected.Interface()); err != nil {
+// 				return errors.WithStack(err)
+// 			}
+// 		}
+// 		dest.Set(reflect.ValueOf(node))
+// 		return nil
+// 	}
+
+// 	// if we have a collection don't proceed to attempt to unmarshal direct
+// 	// from the yaml.Node ... collections are process per item, rather than
+// 	// as a whole.
+// 	if isCollection(dest) {
+// 		return errors.WithStack(
+// 			notAssignableError{
+// 				srcType:  reflectedSrc.Type(),
+// 				dstType:  dest.Type(),
+// 				filename: m.sourceFile,
+// 				coord:    coord,
+// 			},
+// 		)
+// 	}
+
+// 	if !isSpecial(dest) {
+// 		if dest.CanAddr() {
+// 			dest = dest.Addr()
+// 			meth := dest.MethodByName("UnmarshalYAML")
+// 			if meth.IsValid() {
+// 				if src.node != nil {
+// 					if err := src.node.Decode(dest.Interface()); err != nil {
+// 						return errors.WithStack(err)
+// 					}
+// 				} else {
+// 					// we know we have an UnmarshalYAML function, so use yaml
+// 					// to convert to/from between random types since we can't
+// 					// do it with reflection alone here.
+// 					content, err := yaml.Marshal(reflectedSrc.Interface())
+// 					if err != nil {
+// 						return errors.WithStack(err)
+// 					}
+// 					if err := yaml.Unmarshal(content, dest.Interface()); err != nil {
+// 						return errors.WithStack(err)
+// 					}
+// 				}
+// 				return nil
+// 			}
+// 		}
+// 	}
+
+// 	return errors.WithStack(
+// 		notAssignableError{
+// 			srcType:  reflectedSrc.Type(),
+// 			dstType:  dest.Type(),
+// 			filename: m.sourceFile,
+// 			coord:    coord,
+// 		},
+// 	)
+// }
+
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
-	Log.Debugf("AssignValue: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
+	Log.Debugf("AssignValue: %#v to %#v [opts: %#v]\n", reflectedSrc, dest, opts)
 	if !dest.IsValid() || !reflectedSrc.IsValid() {
 		return nil
 	}
+
+	// Not much we can do here if dest is unsettable, this will happen if
+	// dest comes from a map without copying first.  This is a programmer error.
+	if !dest.CanSet() {
+		return errors.Errorf("Cannot assign %#v to unsettable value %#v", reflectedSrc, dest)
+	}
+
+	// if we have a pointer value, deref (and create if nil)
 	if dest.Kind() == reflect.Pointer {
 		if dest.IsNil() {
 			dest.Set(reflect.New(dest.Type().Elem()))
 		}
 		dest = dest.Elem()
 	}
-	// // if we have a collection don't proceed to attempt to unmarshal direct
-	// // from the yaml.Node ... collections are process per item, rather than
-	// // as a whole.
-	// if !opts.Overwrite && isCollection(dest) && !isCollection(reflectedSrc) {
-	// 	return errors.WithStack(
-	// 		notAssignableError{
-	// 			srcType: reflectedSrc.Type(),
-	// 			dstType: dest.Type(),
-	// 		},
-	// 	)
-	// }
 
-	// if !reflectedSrc.IsValid() {
-	// 	if opts.Overwrite {
-	// 		dest.Set(reflectedSrc)
-	// 	}
-	// 	return nil
-	// }
+	// if src is a pointer, deref, return if nil and not overwriting
+	if reflectedSrc.Kind() == reflect.Pointer {
+		reflectedSrc = reflectedSrc.Elem()
+		// reflectedSrc might be invalid if it was Nil so lets handle that now
+		if !reflectedSrc.IsValid() {
+			if opts.Overwrite {
+				dest.Set(reflectedSrc)
+			}
+			return nil
+		}
+	}
 
-	// if not directly assignable, must be convertable, so
-	// try to convert now. (ie convert float32 to float64)
+	// check to see if we can convert src to dest type before we check to see
+	// if is assignable. We cannot assign float32 to float64, but we can
+	// convert float32 to float64 and then assign.  Note we skip conversion
+	// to strings since almost anything can be converted to a string
 	if dest.Kind() != reflect.String && reflectedSrc.CanConvert(dest.Type()) {
 		reflectedSrc = reflectedSrc.Convert(dest.Type())
 	}
+
+	// if the source is an option, get the raw value of the option
+	// and try to assign that to the dest. assignValue does not require
+	// the source to be addressable, but in order to check for the option
+	// interface we might have to make the source addressable via a copy.
+	addressableSrc := reflectedSrc
+	if !addressableSrc.CanAddr() {
+		addressableSrc = reflect.New(reflectedSrc.Type()).Elem()
+		addressableSrc.Set(reflectedSrc)
+	}
+	if option, ok := addressableSrc.Addr().Interface().(option); ok {
+		srcOptionValue := reflect.ValueOf(option.GetValue())
+		opts.SourceFile = option.GetSource()
+		opts.SrcIsDefault = opts.SourceFile == "default"
+		return m.assignValue(dest, newMergeSource(srcOptionValue), opts)
+	}
+
+	// if dest is an option type, then try to assign directly to the
+	// raw option value and then populate the option object
+	if dest.CanAddr() {
+		if option, ok := dest.Addr().Interface().(option); ok {
+			destOptionValue := reflect.ValueOf(option.GetValue())
+			if !destOptionValue.IsValid() {
+				// this will happen when we have an Option[any], and
+				// GetValue returns nil as the default value
+				if _, ok := dest.Interface().(Option[any]); ok {
+					// since we want an `any` we should be good with
+					// just creating the src type
+					destOptionValue = reflect.New(reflectedSrc.Type()).Elem()
+				}
+			}
+			if !destOptionValue.CanSet() {
+				destOptionValue = reflect.New(destOptionValue.Type()).Elem()
+			}
+			opts.DestIsDefault = option.GetSource() == "default"
+			if err := m.assignValue(destOptionValue, src, opts); err != nil {
+				return err
+			}
+			if err := option.SetValue(destOptionValue.Interface()); err != nil {
+				return err
+			}
+			source := opts.SourceFile
+			if source == "" {
+				source = m.sourceFile
+			}
+			if coord != nil {
+				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
+			}
+			option.SetSource(source)
+			return nil
+		}
+	}
+
+	// if we are assigning to a yaml.Node then try to preserve the raw
+	// yaml.Node input, otherwise encode the src into the Node.
+	if node, ok := dest.Interface().(yaml.Node); ok {
+		if src.node != nil {
+			dest.Set(reflect.ValueOf(*src.node))
+		} else {
+			if err := node.Encode(reflectedSrc.Interface()); err != nil {
+				return errors.WithStack(err)
+			}
+			dest.Set(reflect.ValueOf(node))
+		}
+		return nil
+	}
+
 	if reflectedSrc.Type().AssignableTo(dest.Type()) {
-		shouldAssignDest := opts.Overwrite || isZero(dest) || (isDefault(dest) && !isDefault(reflectedSrc))
-		isValidSrc := !isZero(reflectedSrc)
-		if shouldAssignDest && isValidSrc {
-			if reflectedSrc.Kind() == reflect.Map {
+		shouldAssignDest := opts.Overwrite || isZero(dest) || (opts.DestIsDefault && !opts.SrcIsDefault)
+		if shouldAssignDest {
+			switch reflectedSrc.Kind() {
+			case reflect.Map:
 				// maps are mutable, so create a brand new shiny one
 				dup := reflect.New(reflectedSrc.Type()).Elem()
 				if err := m.mergeMaps(dup, src, opts.Overwrite); err != nil {
 					return err
 				}
 				dest.Set(dup)
-			} else {
+			case reflect.Slice:
+				if reflectedSrc.IsNil() {
+					dest.Set(reflectedSrc)
+				} else {
+					// slices are mutable, so create a brand new shiny one
+					cp := reflect.MakeSlice(reflectedSrc.Type(), reflectedSrc.Len(), reflectedSrc.Len())
+					reflect.Copy(cp, reflectedSrc)
+					dest.Set(cp)
+				}
+			default:
 				dest.Set(reflectedSrc)
 			}
 			return nil
@@ -853,101 +1142,17 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		return nil
 	}
 
-	if dest.CanAddr() {
-		if option, ok := dest.Addr().Interface().(option); ok {
-			destOptionValue := reflect.ValueOf(option.GetValue())
-			// map interface type to real-ish type:
-			reflectedSrc = reflect.ValueOf(reflectedSrc.Interface())
-			if !src.isValid() {
-				return nil
-			}
-			source := m.sourceFile
-			if coord != nil {
-				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
-			}
-
-			if !destOptionValue.IsValid() {
-				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-					return err
-				}
-				option.SetSource(source)
-				return nil
-			}
-
-			// lots of things can convert implicitly to String, but that is
-			// generally not what we want.  (ie `11` => `\v` instead of "11")
-			// We handle string conversion below...
-			if destOptionValue.Kind() != reflect.String && reflectedSrc.CanConvert(destOptionValue.Type()) {
-				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
-			}
-
-			if reflectedSrc.Type().AssignableTo(destOptionValue.Type()) {
-				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-					return err
-				}
-				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v [overwrite: %t]", reflectedSrc, destOptionValue, opts.Overwrite)
-				return nil
-			}
-			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
-				b, err := strconv.ParseBool(reflectedSrc.Interface().(string))
-				if err != nil {
-					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", reflectedSrc.Type(), destOptionValue.Type())
-				}
-				if err := option.SetValue(b); err != nil {
-					return err
-				}
-				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", b, destOptionValue)
-				return nil
-			}
-			if destOptionValue.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
-				if err := option.SetValue(fmt.Sprintf("%v", reflectedSrc.Interface())); err != nil {
-					return err
-				}
-				option.SetSource(source)
-				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
-				return nil
-			}
-			return errors.WithStack(
-				notAssignableError{
-					srcType:  reflectedSrc.Type(),
-					dstType:  destOptionValue.Type(),
-					filename: m.sourceFile,
-					coord:    coord,
-				},
-			)
+	if dest.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
+		b, err := strconv.ParseBool(reflectedSrc.Interface().(string))
+		if err != nil {
+			return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value %#v", reflectedSrc.Type(), dest.Type(), reflectedSrc)
 		}
-	}
-	// make copy so we can reliably Addr it to see if it fits the
-	// Option interface.
-	srcCopy := reflect.New(reflectedSrc.Type()).Elem()
-	srcCopy.Set(reflectedSrc)
-	if option, ok := srcCopy.Addr().Interface().(option); ok {
-		srcOptionValue := reflect.ValueOf(option.GetValue())
-		if srcOptionValue.Type().AssignableTo(dest.Type()) {
-			return m.assignValue(dest, mergeSource{reflected: srcOptionValue, coord: coord}, opts)
-		} else {
-			return errors.WithStack(
-				notAssignableError{
-					srcType:  srcOptionValue.Type(),
-					dstType:  dest.Type(),
-					filename: m.sourceFile,
-					coord:    coord,
-				},
-			)
-		}
+		dest.Set(reflect.ValueOf(b))
+		return nil
 	}
 
-	if node, ok := dest.Interface().(yaml.Node); ok {
-		if src.node != nil {
-			node = *src.node
-		} else {
-			if err := node.Encode(src.reflected.Interface()); err != nil {
-				return errors.WithStack(err)
-			}
-		}
-		dest.Set(reflect.ValueOf(node))
+	if dest.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
+		dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
 		return nil
 	}
 
@@ -966,28 +1171,27 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	}
 
 	if !isSpecial(dest) {
-		if src.node != nil {
-			meth := dest.MethodByName("UnmarshalYAML")
+		if dest.CanAddr() {
+			meth := dest.Addr().MethodByName("UnmarshalYAML")
 			if meth.IsValid() {
-				if dest.IsZero() {
-					// if we are hear then dest is a nil pointer, so we
-					// need to create a new object to decode into
-					into := reflect.New(dest.Type().Elem())
-					if err := src.node.Decode(into.Interface()); err != nil {
+				if src.node != nil {
+					if err := src.node.Decode(dest.Addr().Interface()); err != nil {
 						return errors.WithStack(err)
 					}
-					dest.Set(into)
-					return nil
+				} else {
+					// we know we have an UnmarshalYAML function, so use yaml
+					// to convert to/from between random types since we can't
+					// do it with reflection alone here.
+					content, err := yaml.Marshal(reflectedSrc.Interface())
+					if err != nil {
+						return errors.WithStack(err)
+					}
+					if err := yaml.Unmarshal(content, dest.Interface()); err != nil {
+						return errors.WithStack(err)
+					}
 				}
+				return nil
 			}
-			if !meth.IsValid() && dest.CanAddr() {
-				dest = dest.Addr()
-				meth = dest.MethodByName("UnmarshalYAML")
-			}
-			if err := src.node.Decode(dest.Interface()); err != nil {
-				return errors.WithStack(err)
-			}
-			return nil
 		}
 	}
 

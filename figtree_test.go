@@ -2042,27 +2042,29 @@ func (t *UnmarshalTest) UnmarshalYAML(unmarshal func(any) error) error {
 }
 
 func TestLoadConfigWithUnmarshal(t *testing.T) {
+	type Property struct {
+		Type UnmarshalTest  `yaml:"type"`
+		Ptr  *UnmarshalTest `yaml:"ptr"`
+	}
 	type data struct {
-		Test1 UnmarshalTest  `yaml:"test-1"`
-		Test2 UnmarshalTest  `yaml:"test-2"`
-		Test3 *UnmarshalTest `yaml:"test-3"`
-		Test4 *UnmarshalTest `yaml:"test-4"`
+		Properties []Property `yaml:"properties"`
 	}
 
 	config := `
-test-1: foo
-test-2: bar
-test-3: bar
-test-4: foo
+properties:
+  - type: foo
+    ptr: foo
+  - type: bar
+    ptr: bar
 `
 	foo := UnmarshalTest(1)
 	bar := UnmarshalTest(2)
 
 	expected := data{
-		Test1: foo,
-		Test2: bar,
-		Test3: &bar,
-		Test4: &foo,
+		Properties: []Property{
+			{Type: foo, Ptr: &foo},
+			{Type: bar, Ptr: &bar},
+		},
 	}
 
 	var node yaml.Node

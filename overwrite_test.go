@@ -88,7 +88,7 @@ func TestBuiltinOverwriteConfigD3(t *testing.T) {
 		},
 		Int1:   111,
 		Float1: 1.11,
-		Bool1:  true,
+		Bool1:  false,
 	}
 
 	fig := newFigTreeFromEnv()
