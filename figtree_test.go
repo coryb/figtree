@@ -45,6 +45,10 @@ func newFigTreeFromEnv(opts ...CreateOption) *FigTree {
 	return NewFigTree(opts...)
 }
 
+func tSrc(s string, l, c int) SourceLocation {
+	return NewSource(s, WithLocation(&FileCoordinate{Line: l, Column: c}))
+}
+
 type TestOptions struct {
 	String1    StringOption     `json:"str1,omitempty" yaml:"str1,omitempty"`
 	LeaveEmpty StringOption     `json:"leave-empty,omitempty" yaml:"leave-empty,omitempty"`
@@ -71,28 +75,28 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 	defer os.Chdir("../../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d3arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d3arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml:3:5", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml:4:5", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d3arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d3arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml:1:7", true, "d3str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d3str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": {"../../figtree.yml:7:9", true, "d1map1val0"},
-			"key1": {"../figtree.yml:7:9", true, "d2map1val1"},
-			"key2": {"figtree.yml:7:9", true, "d3map1val2"},
-			"key3": {"figtree.yml:8:9", true, "d3map1val3"},
-			"dup":  {"figtree.yml:9:9", true, "d3dupval"},
+			"key0": {tSrc("../../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("../figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 7, 9), true, "d3map1val2"},
+			"key3": {tSrc("figtree.yml", 8, 9), true, "d3map1val3"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d3dupval"},
 		},
-		Int1:   IntOption{"figtree.yml:10:7", true, 333},
-		Float1: Float32Option{"figtree.yml:11:9", true, 3.33},
-		Bool1:  BoolOption{"figtree.yml:12:8", true, true},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 333},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 3.33},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, true},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -107,25 +111,25 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 	defer os.Chdir("../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml:1:7", true, "d2str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d2str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": {"../figtree.yml:7:9", true, "d1map1val0"},
-			"key1": {"figtree.yml:7:9", true, "d2map1val1"},
-			"key2": {"figtree.yml:8:9", true, "d2map1val2"},
-			"dup":  {"figtree.yml:9:9", true, "d2dupval"},
+			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml:10:7", true, 222},
-		Float1: Float32Option{"figtree.yml:11:9", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml:12:8", true, false},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 222},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 2.22},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, false},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -140,22 +144,22 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 	defer os.Chdir("..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d1arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml:1:7", true, "d1str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d1str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": {"figtree.yml:7:9", true, "d1map1val0"},
-			"key1": {"figtree.yml:8:9", true, "d1map1val1"},
-			"dup":  {"figtree.yml:9:9", true, "d1dupval"},
+			"key0": {tSrc("figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 8, 9), true, "d1map1val1"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d1dupval"},
 		},
-		Int1:   IntOption{"figtree.yml:10:7", true, 111},
-		Float1: Float32Option{"figtree.yml:11:9", true, 1.11},
-		Bool1:  BoolOption{"figtree.yml:12:8", true, true},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 111},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 1.11},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, true},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -297,25 +301,25 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	defer os.Chdir("../..")
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml:3:5", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml:4:5", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml:5:5", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:3:5", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml:4:5", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml:1:7", true, "d2str1val1"},
-		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d2str1val1"},
+		LeaveEmpty: StringOption{NewSource("default"), true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": {"../figtree.yml:7:9", true, "d1map1val0"},
-			"key1": {"figtree.yml:7:9", true, "d2map1val1"},
-			"key2": {"figtree.yml:8:9", true, "d2map1val2"},
-			"dup":  {"figtree.yml:9:9", true, "d2dupval"},
+			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml:10:7", true, 222},
-		Float1: Float32Option{"figtree.yml:11:9", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml:12:8", true, false},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 222},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 2.22},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, false},
 	}
 
 	fig := newFigTreeFromEnv()
@@ -415,7 +419,7 @@ func TestMergeStringIntoStringOption(t *testing.T) {
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"merge", true, "val1"}}
+	}{StringOption{NewSource("merge"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -437,7 +441,7 @@ func TestMergeStringOptions(t *testing.T) {
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"default", true, "val1"}}
+	}{StringOption{NewSource("default"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -465,7 +469,7 @@ func TestMergeMapStringIntoStringOption(t *testing.T) {
 	}{
 		Map: struct {
 			Key StringOption `json:"key" yaml:"key"`
-		}{StringOption{"default", true, "val1"}},
+		}{StringOption{NewSource("default"), true, "val1"}},
 	}
 	assert.Equal(t, expected, dest)
 }
@@ -488,7 +492,7 @@ func TestMergeMapStringOptions(t *testing.T) {
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"default", true, "val1"}}
+	}{StringOption{NewSource("default"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -702,22 +706,22 @@ func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 		Uint8   Uint8Option
 		Uint    UintOption
 	}{
-		Bool:    BoolOption{"merge", true, true},
-		Byte:    ByteOption{"merge", true, byte(10)},
-		Float32: Float32Option{"merge", true, float32(1.23)},
-		Float64: Float64Option{"merge", true, float64(2.34)},
-		Int16:   Int16Option{"merge", true, int16(123)},
-		Int32:   Int32Option{"merge", true, int32(234)},
-		Int64:   Int64Option{"merge", true, int64(345)},
-		Int8:    Int8Option{"merge", true, int8(127)},
-		Int:     IntOption{"merge", true, int(456)},
-		Rune:    RuneOption{"merge", true, rune('a')},
-		String:  StringOption{"merge", true, "stringval"},
-		Uint16:  Uint16Option{"merge", true, uint16(123)},
-		Uint32:  Uint32Option{"merge", true, uint32(234)},
-		Uint64:  Uint64Option{"merge", true, uint64(345)},
-		Uint8:   Uint8Option{"merge", true, uint8(255)},
-		Uint:    UintOption{"merge", true, uint(456)},
+		Bool:    BoolOption{NewSource("merge"), true, true},
+		Byte:    ByteOption{NewSource("merge"), true, byte(10)},
+		Float32: Float32Option{NewSource("merge"), true, float32(1.23)},
+		Float64: Float64Option{NewSource("merge"), true, float64(2.34)},
+		Int16:   Int16Option{NewSource("merge"), true, int16(123)},
+		Int32:   Int32Option{NewSource("merge"), true, int32(234)},
+		Int64:   Int64Option{NewSource("merge"), true, int64(345)},
+		Int8:    Int8Option{NewSource("merge"), true, int8(127)},
+		Int:     IntOption{NewSource("merge"), true, int(456)},
+		Rune:    RuneOption{NewSource("merge"), true, rune('a')},
+		String:  StringOption{NewSource("merge"), true, "stringval"},
+		Uint16:  Uint16Option{NewSource("merge"), true, uint16(123)},
+		Uint32:  Uint32Option{NewSource("merge"), true, uint32(234)},
+		Uint64:  Uint64Option{NewSource("merge"), true, uint64(345)},
+		Uint8:   Uint8Option{NewSource("merge"), true, uint8(255)},
+		Uint:    UintOption{NewSource("merge"), true, uint(456)},
 	}
 	assert.Equal(t, expected, dest)
 }
@@ -825,8 +829,8 @@ func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 		Strings ListStringOption
 	}{
 		ListStringOption{
-			StringOption{"default", true, "abc"},
-			StringOption{"merge", true, "def"},
+			StringOption{NewSource("default"), true, "abc"},
+			StringOption{NewSource("merge"), true, "def"},
 		},
 	}
 	assert.Equal(t, expected, dest)
@@ -906,8 +910,8 @@ func TestMergeStructUsingMapOptionsWithMap(t *testing.T) {
 		Strings MapStringOption
 	}{
 		Strings: MapStringOption{
-			"key1": StringOption{"merge", true, "val1"},
-			"key2": StringOption{"merge", true, "val2"},
+			"key1": StringOption{NewSource("merge"), true, "val1"},
+			"key2": StringOption{NewSource("merge"), true, "val2"},
 		},
 	}
 	assert.Equal(t, expected, dest)
@@ -1800,7 +1804,7 @@ func TestMergeBoolString(t *testing.T) {
 
 	expected := &struct {
 		EnableThing BoolOption
-	}{BoolOption{Source: "merge", Defined: true, Value: true}}
+	}{BoolOption{Source: NewSource("merge"), Defined: true, Value: true}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1822,7 +1826,7 @@ func TestMergeStringBool(t *testing.T) {
 
 	expected := &struct {
 		EnableThing StringOption
-	}{StringOption{Source: "merge", Defined: true, Value: "true"}}
+	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "true"}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1844,7 +1848,7 @@ func TestMergeStringFloat64(t *testing.T) {
 
 	expected := &struct {
 		SomeThing StringOption
-	}{StringOption{Source: "merge", Defined: true, Value: "42"}}
+	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "42"}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1864,7 +1868,7 @@ func TestMergeDefaults(t *testing.T) {
 
 	expected := &struct {
 		SomeThing StringOption
-	}{StringOption{Source: "default", Defined: true, Value: "foo"}}
+	}{StringOption{Source: NewSource("default"), Defined: true, Value: "foo"}}
 
 	assert.Equal(t, expected, dest)
 
@@ -2094,12 +2098,12 @@ stuff:
 	expected := data{
 		Stuff: map[string]ListStringOption{
 			"bar": {
-				StringOption{"test:7:7", true, "ghi"},
-				StringOption{"test:8:7", true, "jkl"},
+				StringOption{tSrc("test", 7, 7), true, "ghi"},
+				StringOption{tSrc("test", 8, 7), true, "jkl"},
 			},
 			"foo": {
-				StringOption{"test:4:7", true, "abc"},
-				StringOption{"test:5:7", true, "def"},
+				StringOption{tSrc("test", 4, 7), true, "abc"},
+				StringOption{tSrc("test", 5, 7), true, "def"},
 			},
 		},
 	}
@@ -2176,8 +2180,8 @@ bar:
   name: false
 `
 	expected := map[string]myStruct{
-		"bar": {Name: StringOption{"test:5:9", true, "false"}},
-		"foo": {Name: StringOption{"test:3:9", true, "true"}},
+		"bar": {Name: StringOption{tSrc("test", 5, 9), true, "false"}},
+		"foo": {Name: StringOption{tSrc("test", 3, 9), true, "true"}},
 	}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
@@ -2224,9 +2228,9 @@ b: 11.1
 c: 11.1.1
 `
 	expected := map[string]StringOption{
-		"a": {"test:2:4", true, "11"},
-		"b": {"test:3:4", true, "11.1"},
-		"c": {"test:4:4", true, "11.1.1"},
+		"a": {tSrc("test", 2, 4), true, "11"},
+		"b": {tSrc("test", 3, 4), true, "11.1"},
+		"c": {tSrc("test", 4, 4), true, "11.1.1"},
 	}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
@@ -2267,10 +2271,10 @@ c: 12.2
 d: 12.2.2
 `
 	expected := map[string]Option[any]{
-		"a": {"test:2:4", true, "foo"},
-		"b": {"test:3:4", true, 12},
-		"c": {"test:4:4", true, 12.2},
-		"d": {"test:5:4", true, "12.2.2"},
+		"a": {tSrc("test", 2, 4), true, "foo"},
+		"b": {tSrc("test", 3, 4), true, 12},
+		"c": {tSrc("test", 4, 4), true, 12.2},
+		"d": {tSrc("test", 5, 4), true, "12.2.2"},
 	}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
@@ -2348,7 +2352,7 @@ func TestAssignStringToOptionPointer(t *testing.T) {
 my-str: abc
 `
 	expected := data{
-		MyStr: &StringOption{"test:2:9", true, "abc"},
+		MyStr: &StringOption{tSrc("test", 2, 9), true, "abc"},
 	}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)

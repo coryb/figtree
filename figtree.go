@@ -702,9 +702,7 @@ func isDefault(v reflect.Value) bool {
 	v = reflect.Indirect(v)
 	if v.CanAddr() {
 		if option, ok := v.Addr().Interface().(option); ok {
-			if option.GetSource() == "default" {
-				return true
-			}
+			return option.IsDefault()
 		}
 	}
 	return false
@@ -752,7 +750,7 @@ func (m *Merger) setSource(v reflect.Value) {
 		if v.CanAddr() {
 			if option, ok := v.Addr().Interface().(option); ok {
 				if option.IsDefined() {
-					option.SetSource(m.sourceFile)
+					option.SetSource(NewSource(m.sourceFile))
 				}
 				return
 			}
@@ -775,30 +773,21 @@ func (m *Merger) setSource(v reflect.Value) {
 	}
 }
 
-type fileCoordinate struct {
-	Line   int
-	Column int
-}
-
 type assignOptions struct {
-	Overwrite     bool
-	SrcIsDefault  bool
-	DestIsDefault bool
-	SourceFile    string
+	Overwrite      bool
+	SrcIsDefault   bool
+	DestIsDefault  bool
+	SourceLocation SourceLocation
 }
 
 type notAssignableError struct {
-	dstType  reflect.Type
-	srcType  reflect.Type
-	filename string
-	coord    *fileCoordinate
+	dstType        reflect.Type
+	srcType        reflect.Type
+	sourceLocation SourceLocation
 }
 
 func (e notAssignableError) Error() string {
-	if e.coord != nil {
-		return fmt.Sprintf("%s:%d:%d: %s is not assignable to %s", e.filename, e.coord.Line, e.coord.Column, e.srcType, e.dstType)
-	}
-	return fmt.Sprintf("%s is not assignable to %s", e.srcType, e.dstType)
+	return fmt.Sprintf("%s: %s is not assignable to %s", e.sourceLocation, e.srcType, e.dstType)
 }
 
 // func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
@@ -1059,8 +1048,8 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	}
 	if option, ok := addressableSrc.Addr().Interface().(option); ok {
 		srcOptionValue := reflect.ValueOf(option.GetValue())
-		opts.SourceFile = option.GetSource()
-		opts.SrcIsDefault = opts.SourceFile == "default"
+		opts.SourceLocation = option.GetSource()
+		opts.SrcIsDefault = option.IsDefault()
 		return m.assignValue(dest, newMergeSource(srcOptionValue), opts)
 	}
 
@@ -1081,19 +1070,19 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			if !destOptionValue.CanSet() {
 				destOptionValue = reflect.New(destOptionValue.Type()).Elem()
 			}
-			opts.DestIsDefault = option.GetSource() == "default"
+			opts.DestIsDefault = option.IsDefault()
 			if err := m.assignValue(destOptionValue, src, opts); err != nil {
 				return err
 			}
 			if err := option.SetValue(destOptionValue.Interface()); err != nil {
 				return err
 			}
-			source := opts.SourceFile
-			if source == "" {
-				source = m.sourceFile
+			source := opts.SourceLocation
+			if source.Name == "" {
+				source.Name = m.sourceFile
 			}
 			if coord != nil {
-				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
+				source.Location = coord
 			}
 			option.SetSource(source)
 			return nil
@@ -1162,10 +1151,9 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	if isCollection(dest) {
 		return errors.WithStack(
 			notAssignableError{
-				srcType:  reflectedSrc.Type(),
-				dstType:  dest.Type(),
-				filename: m.sourceFile,
-				coord:    coord,
+				srcType:        reflectedSrc.Type(),
+				dstType:        dest.Type(),
+				sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
 			},
 		)
 	}
@@ -1197,10 +1185,9 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 
 	return errors.WithStack(
 		notAssignableError{
-			srcType:  reflectedSrc.Type(),
-			dstType:  dest.Type(),
-			filename: m.sourceFile,
-			coord:    coord,
+			srcType:        reflectedSrc.Type(),
+			dstType:        dest.Type(),
+			sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
 		},
 	)
 }
@@ -1225,7 +1212,7 @@ func fromInterface(v reflect.Value) (reflect.Value, func()) {
 type mergeSource struct {
 	reflected reflect.Value
 	node      *yaml.Node
-	coord     *fileCoordinate
+	coord     *FileCoordinate
 }
 
 func newMergeSource(src any) mergeSource {
@@ -1248,13 +1235,13 @@ func newMergeSource(src any) mergeSource {
 	panic(fmt.Sprintf("Unknown type: %T", src))
 }
 
-func (ms *mergeSource) reflect() (reflect.Value, *fileCoordinate) {
+func (ms *mergeSource) reflect() (reflect.Value, *FileCoordinate) {
 	if ms.reflected.IsValid() && !ms.reflected.IsZero() {
 		return ms.reflected, ms.coord
 	}
 	if ms.node != nil {
 		if ms.node.Line != 0 || ms.node.Column != 0 {
-			ms.coord = &fileCoordinate{
+			ms.coord = &FileCoordinate{
 				Line:   ms.node.Line,
 				Column: ms.node.Column,
 			}
@@ -1711,10 +1698,9 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		}
 		return reflect.Value{}, errors.WithStack(
 			notAssignableError{
-				srcType:  reflectedSrc.Type(),
-				dstType:  dst.Type(),
-				filename: m.sourceFile,
-				coord:    coord,
+				srcType:        reflectedSrc.Type(),
+				dstType:        dst.Type(),
+				sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
 			},
 		)
 	}

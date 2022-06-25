@@ -10,12 +10,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultSource  = "default"
+	overrideSource = "override"
+	promptSource   = "prompt"
+	yamlSource     = "yaml"
+	jsonSource     = "json"
+)
+
 type option interface {
 	IsDefined() bool
 	GetValue() any
 	SetValue(any) error
-	SetSource(string)
-	GetSource() string
+	SetSource(SourceLocation)
+	GetSource() SourceLocation
+	IsDefault() bool
+	IsOverride() bool
 }
 
 // StringifyValue is global variable to indicate if the Option should be
@@ -27,15 +37,58 @@ var StringifyValue = true
 // stringMapRegex is used in option parsing for map types Set routines
 var stringMapRegex = regexp.MustCompile("[:=]")
 
+// FileCoordinate represents the line/column of an option
+type FileCoordinate struct {
+	Line   int
+	Column int
+}
+
+// ideally these would be const
+var (
+	DefaultSource  = NewSource(defaultSource)
+	OverrideSource = NewSource(overrideSource)
+)
+
+type SourceLocation struct {
+	Name     string
+	Location *FileCoordinate
+}
+
+func (s SourceLocation) String() string {
+	if s.Location != nil {
+		return fmt.Sprintf("%s:%d:%d", s.Name, s.Location.Line, s.Location.Column)
+	}
+	return s.Name
+}
+
+type SourceOption func(*SourceLocation) *SourceLocation
+
+func WithLocation(location *FileCoordinate) SourceOption {
+	return func(s *SourceLocation) *SourceLocation {
+		s.Location = location
+		return s
+	}
+}
+
+func NewSource(name string, opts ...SourceOption) SourceLocation {
+	l := SourceLocation{
+		Name: name,
+	}
+	for _, o := range opts {
+		o(&l)
+	}
+	return l
+}
+
 type Option[T any] struct {
-	Source  string
+	Source  SourceLocation
 	Defined bool
 	Value   T
 }
 
 func NewOption[T any](dflt T) Option[T] {
 	return Option[T]{
-		Source:  "default",
+		Source:  NewSource(defaultSource),
 		Defined: true,
 		Value:   dflt,
 	}
@@ -45,12 +98,20 @@ func (o Option[T]) IsDefined() bool {
 	return o.Defined
 }
 
-func (o *Option[T]) SetSource(source string) {
+func (o *Option[T]) SetSource(source SourceLocation) {
 	o.Source = source
 }
 
-func (o *Option[T]) GetSource() string {
+func (o *Option[T]) GetSource() SourceLocation {
 	return o.Source
+}
+
+func (o *Option[T]) IsDefault() bool {
+	return o.Source.Name == defaultSource
+}
+
+func (o *Option[T]) IsOverride() bool {
+	return o.Source.Name == overrideSource
 }
 
 func (o Option[T]) GetValue() any {
@@ -64,7 +125,7 @@ func (o *Option[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		o.Value = v
 		o.Defined = true
-		o.Source = "prompt"
+		o.Source = NewSource(promptSource)
 		return nil
 	}
 	return errors.Errorf("Got %T expected %T type: %v", value, o.Value, value)
@@ -78,7 +139,7 @@ func (o *Option[T]) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	o.Source = "override"
+	o.Source = OverrideSource
 	o.Defined = true
 	return nil
 }
@@ -126,7 +187,11 @@ func (o *Option[T]) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&o.Value); err != nil {
 		return err
 	}
-	o.Source = "yaml"
+	var loc *FileCoordinate
+	if node.Line > 0 || node.Column > 0 {
+		loc = &FileCoordinate{Line: node.Line, Column: node.Column}
+	}
+	o.Source = NewSource(yamlSource, WithLocation(loc))
 	o.Defined = true
 	return nil
 }
@@ -140,7 +205,7 @@ func (o Option[T]) MarshalYAML() (any, error) {
 	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   T
-		Source  string
+		Source  SourceLocation
 		Defined bool
 	}{
 		Value:   o.Value,
@@ -155,7 +220,7 @@ func (o *Option[T]) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
-	o.Source = "json"
+	o.Source = NewSource(jsonSource)
 	o.Defined = true
 	return nil
 }
@@ -169,7 +234,7 @@ func (o Option[T]) MarshalJSON() ([]byte, error) {
 	// need a copy of this struct without the MarshalJSON interface attached
 	return json.Marshal(struct {
 		Value   T
-		Source  string
+		Source  SourceLocation
 		Defined bool
 	}{
 		Value:   o.Value,
@@ -240,7 +305,7 @@ func (o *MapOption[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		tmp.Value = v
 		tmp.Defined = true
-		tmp.Source = "prompt"
+		tmp.Source = NewSource(promptSource)
 		(*o)[name] = tmp
 		return nil
 	}
@@ -274,7 +339,7 @@ func (o *ListOption[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		tmp.Value = v
 		tmp.Defined = true
-		tmp.Source = "prompt"
+		tmp.Source = NewSource(promptSource)
 		*o = append(*o, tmp)
 		return nil
 	}
@@ -298,7 +363,7 @@ func (o ListOption[T]) String() string {
 func (o ListOption[T]) Append(values ...T) ListOption[T] {
 	results := o
 	for _, val := range values {
-		results = append(results, NewOption[T](val))
+		results = append(results, NewOption(val))
 	}
 	return results
 }
