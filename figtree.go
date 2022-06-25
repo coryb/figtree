@@ -699,6 +699,7 @@ func (m *Merger) mustIgnore(name string) bool {
 }
 
 func isDefault(v reflect.Value) bool {
+	v = reflect.Indirect(v)
 	if v.CanAddr() {
 		if option, ok := v.Addr().Interface().(option); ok {
 			if option.GetSource() == "default" {
@@ -710,6 +711,7 @@ func isDefault(v reflect.Value) bool {
 }
 
 func isZero(v reflect.Value) bool {
+	v = reflect.Indirect(v)
 	if !v.IsValid() {
 		return true
 	}
@@ -802,7 +804,12 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	if !dest.IsValid() || !reflectedSrc.IsValid() {
 		return nil
 	}
-
+	if dest.Kind() == reflect.Pointer {
+		if dest.IsNil() {
+			dest.Set(reflect.New(dest.Type().Elem()))
+		}
+		dest = dest.Elem()
+	}
 	// // if we have a collection don't proceed to attempt to unmarshal direct
 	// // from the yaml.Node ... collections are process per item, rather than
 	// // as a whole.
@@ -1288,6 +1295,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 		val, _ := srcField.reflect()
 		var err error
+
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || (overwrite || m.mustOverwrite(fieldName))
 
 		if (shouldAssign) && !isSame(dstField, val) {

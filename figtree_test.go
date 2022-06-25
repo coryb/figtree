@@ -2337,3 +2337,29 @@ mylist: foobar
 	err = fig.LoadConfigSource(&node, "test", &got)
 	require.Error(t, err)
 }
+
+func TestAssignStringToOptionPointer(t *testing.T) {
+	type data struct {
+		MyStr *StringOption `yaml:"my-str"`
+	}
+	config := `
+my-str: abc
+`
+	expected := data{
+		MyStr: &StringOption{"test:2:9", true, "abc"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{MyStr: &StringOption{}}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	got = data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
