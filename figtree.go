@@ -1186,7 +1186,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					if err != nil {
 						return errors.WithStack(err)
 					}
-					if err := yaml.Unmarshal(content, dest.Interface()); err != nil {
+					if err := yaml.Unmarshal(content, dest.Addr().Interface()); err != nil {
 						return errors.WithStack(err)
 					}
 				}
