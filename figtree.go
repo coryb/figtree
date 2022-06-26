@@ -1687,15 +1687,18 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 				if !dstVal.IsValid() || reflected.Type().AssignableTo(dstVal.Type()) {
 					dst.SetMapIndex(key, reflected)
 				} else {
-					// to check for the Option interface we need the Addr of the value, but
-					// we cannot take the Addr of a map value, so we have to first copy
-					// it, meh not optimal
-					newVal := reflect.New(reflected.Type())
-					newVal.Elem().Set(reflected)
-					if nOption := toOption(newVal); nOption != nil {
-						dst.SetMapIndex(key, reflect.ValueOf(nOption.GetValue()))
+					if srcOption := toOption(reflected); srcOption != nil {
+						dst.SetMapIndex(key, reflect.ValueOf(srcOption.GetValue()))
 						return nil
 					}
+					_, err := m.assignValue(dstVal, value, assignOptions{
+						Overwrite: overwrite || m.mustOverwrite(key.String()),
+					})
+					if err != nil {
+						return errors.WithStack(err)
+					}
+					// if destOption := toOption(dstVal); destOption != nil {
+					// }
 					return errors.Errorf("map value %T is not assignable to %T", reflected.Interface(), dstVal.Interface())
 				}
 			}
