@@ -1964,6 +1964,16 @@ list:
 	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
 	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestLoadConfigToNode(t *testing.T) {
@@ -2027,9 +2037,9 @@ sub:
 	require.Equal(t, expected, dest)
 }
 
-type UnmarshalTest int
+type UnmarshalInt int
 
-func (t *UnmarshalTest) UnmarshalYAML(unmarshal func(any) error) error {
+func (t *UnmarshalInt) UnmarshalYAML(unmarshal func(any) error) error {
 	var rawType string
 	if err := unmarshal(&rawType); err != nil {
 		return errors.WithStack(err)
@@ -2045,10 +2055,10 @@ func (t *UnmarshalTest) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
-func TestLoadConfigWithUnmarshal(t *testing.T) {
+func TestLoadConfigWithUnmarshalInt(t *testing.T) {
 	type Property struct {
-		Type UnmarshalTest  `yaml:"type"`
-		Ptr  *UnmarshalTest `yaml:"ptr"`
+		Type UnmarshalInt  `yaml:"type"`
+		Ptr  *UnmarshalInt `yaml:"ptr"`
 	}
 	type data struct {
 		Properties []Property `yaml:"properties"`
@@ -2061,8 +2071,8 @@ properties:
   - type: bar
     ptr: bar
 `
-	foo := UnmarshalTest(1)
-	bar := UnmarshalTest(2)
+	foo := UnmarshalInt(1)
+	bar := UnmarshalInt(2)
 
 	expected := data{
 		Properties: []Property{
@@ -2077,6 +2087,117 @@ properties:
 	dest := data{}
 	fig := newFigTreeFromEnv()
 	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+type UnmarshalString string
+
+func (t *UnmarshalString) UnmarshalYAML(unmarshal func(any) error) error {
+	var rawType any
+	if err := unmarshal(&rawType); err != nil {
+		return errors.WithStack(err)
+	}
+	switch c := rawType.(type) {
+	case string:
+		*t = UnmarshalString(strings.ToUpper(c))
+	case int:
+		*t = UnmarshalString(fmt.Sprint(c))
+	default:
+		panic(fmt.Sprintf("can't handle %T", c))
+	}
+	return nil
+}
+
+type UnmarshalStringList []UnmarshalString
+
+// UnmarshalYAML will unmarshal a list of PortSpecs and return an error if any items
+// could not be unmarshalled.
+func (pl *UnmarshalStringList) UnmarshalYAML(unmarshal func(any) error) error {
+	var ps []UnmarshalString
+	if err := unmarshal(&ps); err != nil {
+		return err
+	}
+
+	*pl = ps
+	return nil
+}
+
+func TestLoadConfigWithUnmarshalString(t *testing.T) {
+	type Property struct {
+		Type UnmarshalString  `yaml:"type"`
+		Ptr  *UnmarshalString `yaml:"ptr"`
+	}
+	type data struct {
+		Properties []Property          `yaml:"properties"`
+		Prop       Property            `yaml:"prop"`
+		Str        UnmarshalString     `yaml:"str"`
+		Ptr        *UnmarshalString    `yaml:"ptr"`
+		Strs       []UnmarshalString   `yaml:"strs"`
+		Ptrs       []*UnmarshalString  `yaml:"ptrs"`
+		StrList    UnmarshalStringList `yaml:"str-list"`
+	}
+
+	config := `
+properties:
+  - type: foo
+    ptr: foo
+  - type: bar
+    ptr: bar
+prop:
+  type: 123
+  ptr: 123
+ptr: a
+str: a
+strs: [a, b]
+ptrs: [a, b]
+str-list: [a, b]
+`
+	foo := UnmarshalString("FOO")
+	bar := UnmarshalString("BAR")
+	baz := UnmarshalString("123")
+	a := UnmarshalString("A")
+	b := UnmarshalString("B")
+
+	expected := data{
+		Properties: []Property{
+			{Type: foo, Ptr: &foo},
+			{Type: bar, Ptr: &bar},
+		},
+		Prop:    Property{Type: baz, Ptr: &baz},
+		Str:     a,
+		Ptr:     &a,
+		Strs:    []UnmarshalString{a, b},
+		Ptrs:    []*UnmarshalString{&a, &b},
+		StrList: UnmarshalStringList{a, b},
+	}
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
 	require.NoError(t, err)
 	require.Equal(t, expected, dest)
 }
@@ -2121,7 +2242,7 @@ func TestMapOfStructs(t *testing.T) {
 	type myStruct struct {
 		Name string
 	}
-	var data map[string]myStruct
+	var dest map[string]myStruct
 
 	config := `
 foo:
@@ -2137,16 +2258,26 @@ bar:
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	err = fig.LoadConfigSource(&node, "test", &data)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, data)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestZeroYAML(t *testing.T) {
 	type myStruct struct {
 		Name string
 	}
-	var data map[string]myStruct
+	var dest map[string]myStruct
 
 	config := `
 foo:
@@ -2160,9 +2291,19 @@ bar:
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	err = fig.LoadConfigSource(&node, "test", &data)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, data)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestBoolToStringOption(t *testing.T) {
@@ -2196,7 +2337,7 @@ func TestBoolToString(t *testing.T) {
 	type myStruct struct {
 		Name string
 	}
-	var data map[string]myStruct
+	var dest map[string]myStruct
 
 	// true/false will be parsed as `!!bool`
 	// but we want to assign it to a string
@@ -2214,9 +2355,19 @@ bar:
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	err = fig.LoadConfigSource(&node, "test", &data)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, data)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestIntToStringOption(t *testing.T) {
@@ -2242,7 +2393,7 @@ c: 11.1.1
 }
 
 func TestIntToString(t *testing.T) {
-	var data map[string]string
+	var dest map[string]string
 	config := `
 a: 11
 b: 11.1
@@ -2257,9 +2408,19 @@ c: 11.1.1
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	err = fig.LoadConfigSource(&node, "test", &data)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, data)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = map[string]string{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestAssignToAnyOption(t *testing.T) {
@@ -2286,7 +2447,7 @@ d: 12.2.2
 }
 
 func TestAssignToAny(t *testing.T) {
-	var data map[string]any
+	var dest map[string]any
 	config := `
 a: foo
 b: 12
@@ -2303,9 +2464,19 @@ d: 12.2.2
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	err = fig.LoadConfigSource(&node, "test", &data)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, data)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = map[string]any{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestAssignInterfaceListToListStringOption(t *testing.T) {
@@ -2322,10 +2493,20 @@ mylist: []
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	got := data{}
-	err = fig.LoadConfigSource(&node, "test", &got)
+	dest := data{}
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.NoError(t, err)
-	require.Equal(t, expected, got)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
 }
 
 func TestAssignStringIntoList(t *testing.T) {
@@ -2339,8 +2520,8 @@ mylist: foobar
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
-	got := data{}
-	err = fig.LoadConfigSource(&node, "test", &got)
+	dest := data{}
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	require.Error(t, err)
 }
 

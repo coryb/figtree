@@ -996,6 +996,8 @@ func (e notAssignableError) Error() string {
 // 	)
 // }
 
+var stringType = reflect.ValueOf("").Type()
+
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
 	reflectedSrc, coord := src.reflect()
 	Log.Debugf("AssignValue: %#v to %#v [opts: %#v]\n", reflectedSrc, dest, opts)
@@ -1140,7 +1142,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		return nil
 	}
 
-	if dest.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
+	if dest.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String && stringType.AssignableTo(dest.Type()) {
 		dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
 		return nil
 	}
