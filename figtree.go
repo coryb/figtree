@@ -278,7 +278,7 @@ func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interfa
 		return errors.Wrapf(err, "unable to parse %s", sourceLine(m.sourceFile, config))
 	}
 
-	err = m.mergeStructs(
+	_, err = m.mergeStructs(
 		reflect.ValueOf(options),
 		newMergeSource(walky.UnwrapDocument(config)),
 		false,
@@ -455,7 +455,8 @@ func (m *Merger) advance() {
 // structs will must be the same type.
 func Merge(dst, src interface{}) error {
 	m := NewMerger()
-	return m.mergeStructs(reflect.ValueOf(dst), newMergeSource(reflect.ValueOf(src)), false)
+	_, err := m.mergeStructs(reflect.ValueOf(dst), newMergeSource(reflect.ValueOf(src)), false)
+	return err
 }
 
 // MakeMergeStruct will take multiple structs and return a pointer to a zero value for the
@@ -600,7 +601,7 @@ func (m *Merger) mapToStruct(src reflect.Value) (reflect.Value, error) {
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			err = m.mergeStructs(dest.FieldByName(structFieldName), newMergeSource(reflect.ValueOf(keyval.Addr().Interface())), false)
+			_, err = m.mergeStructs(dest.FieldByName(structFieldName), newMergeSource(reflect.ValueOf(keyval.Addr().Interface())), false)
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -609,7 +610,7 @@ func (m *Merger) mapToStruct(src reflect.Value) (reflect.Value, error) {
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			err = m.mergeStructs(dest.FieldByName(structFieldName), newMergeSource(reflect.ValueOf(keyval.Interface())), false)
+			_, err = m.mergeStructs(dest.FieldByName(structFieldName), newMergeSource(reflect.ValueOf(keyval.Interface())), false)
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -1146,10 +1147,14 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			case reflect.Map:
 				// maps are mutable, so create a brand new shiny one
 				dup := reflect.New(reflectedSrc.Type()).Elem()
-				if err := m.mergeMaps(dup, src, opts.Overwrite); err != nil {
+				ok, err := m.mergeMaps(dup, src, opts.Overwrite)
+				if err != nil {
 					return false, err
 				}
-				dest.Set(dup)
+				if ok {
+					dest.Set(dup)
+				}
+				return ok, nil
 			case reflect.Slice:
 				if reflectedSrc.IsNil() {
 					dest.Set(reflectedSrc)
@@ -1452,7 +1457,7 @@ func (ms *mergeSource) foreach(f func(ix int, item mergeSource) error) error {
 	return errors.Errorf("not slice or array")
 }
 
-func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool) error {
+func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool) (bool, error) {
 	dst = reflect.Indirect(dst)
 	dst, restore := fromInterface(dst)
 	defer restore()
@@ -1463,7 +1468,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 	if !dst.IsValid() || !src.isValid() {
 		Log.Debugf("Valid: dst:%v src:%t", dst.IsValid(), src.isValid())
-		return nil
+		return false, nil
 	}
 
 	dstFieldTypesByYAML := make(map[string]reflect.StructField)
@@ -1492,14 +1497,19 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 	}
 	populateYAMLMaps(dst)
 
-	return src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
+	changed := false
+	err := src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
 		dstStructField, ok := dstFieldTypesByYAML[fieldName]
 		if !ok {
 			if anon {
 				// this is an embedded struct, and the destination does not contain
 				// the same embeded struct, so try to merge the embedded struct
 				// directly with the destination
-				return m.mergeStructs(dst, srcField, m.mustOverwrite(fieldName))
+				ok, err := m.mergeStructs(dst, srcField, m.mustOverwrite(fieldName))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				changed = changed || ok
 			}
 			// if original value does not have the same struct field
 			// then just skip this field.
@@ -1516,13 +1526,20 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		dstField, restore := fromInterface(dstField)
 		defer restore()
 
-		// // if we have a pointer value, deref (and create if nil)
-		// if dstField.Kind() == reflect.Pointer {
-		// 	if dstField.IsNil() {
-		// 		dstField.Set(reflect.New(dstField.Type().Elem()))
-		// 	}
-		// 	dstField = dstField.Elem()
-		// }
+		saveFieldCopy := false
+		// if we have a pointer value, deref (and create if nil)
+		if dstField.Kind() == reflect.Pointer {
+			if dstField.IsNil() {
+				newField := reflect.New(dstField.Type().Elem())
+				defer func(orig, new reflect.Value) {
+					if saveFieldCopy {
+						orig.Set(new)
+					}
+				}(dstField, newField)
+				dstField = newField
+			}
+			dstField = dstField.Elem()
+		}
 
 		if m.mustIgnore(fieldName) {
 			return nil
@@ -1534,7 +1551,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || (overwrite || m.mustOverwrite(fieldName))
 
 		if (shouldAssign) && !isSame(dstField, val) {
-			_, err = m.assignValue(dstField, srcField, assignOptions{
+			saveFieldCopy, err = m.assignValue(dstField, srcField, assignOptions{
 				Overwrite: overwrite || m.mustOverwrite(fieldName),
 			})
 			// if this is a notAssignableError then we want
@@ -1546,30 +1563,44 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			if err != nil && !errors.As(err, &assignErr) {
 				return err
 			}
+			changed = changed || saveFieldCopy
 		}
 		switch dstField.Kind() {
 		case reflect.Map:
 			Log.Debugf("Merging Map: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-			return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			ok, err := m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			changed = changed || ok
+			return nil
 		case reflect.Slice:
 			// if srcField.len() > 0 {
 			Log.Debugf("Merging Slice: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-			merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			merged, ok, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			if err != nil {
 				return err
 			}
-			dstField.Set(merged)
+			if ok {
+				dstField.Set(merged)
+			}
+			saveFieldCopy = saveFieldCopy || ok
+			changed = changed || ok
 			return nil
 			// }
 			// return err
 		case reflect.Array:
 			// if srcField.len() > 0 {
 			Log.Debugf("Merging Array: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-			merged, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			merged, ok, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			if err != nil {
 				return err
 			}
-			dstField.Set(merged)
+			if ok {
+				dstField.Set(merged)
+			}
+			saveFieldCopy = saveFieldCopy || ok
+			changed = changed || ok
 			return nil
 			// }
 			// return err
@@ -1577,19 +1608,25 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {
 				Log.Debugf("Merging Struct: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-				return m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+				ok, err := m.mergeStructs(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				changed = changed || ok
+				return nil
 			}
 		}
 		return err
 	})
+	return changed, err
 }
 
-func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) error {
+func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (bool, error) {
 	if src.isStruct() {
 		src = structToMap(src)
 	}
 	if !src.isMap() {
-		return nil
+		return false, nil
 	}
 	if overwrite {
 		// truncate all the keys
@@ -1598,10 +1635,12 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 			dst.SetMapIndex(key, reflect.Value{})
 		}
 	}
-	return src.foreachKey(func(key reflect.Value, value mergeSource) error {
+
+	changed := false
+	err := src.foreachKey(func(key reflect.Value, value mergeSource) error {
 		if !dst.MapIndex(key).IsValid() {
 			dstElem := reflect.New(dst.Type().Elem()).Elem()
-			_, err := m.assignValue(dstElem, value, assignOptions{
+			ok, err := m.assignValue(dstElem, value, assignOptions{
 				Overwrite: overwrite,
 			})
 			var assignErr notAssignableError
@@ -1617,6 +1656,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 				}
 				Log.Debugf("Setting %v to %#v", key.Interface(), dstElem.Interface())
 				dst.SetMapIndex(key, dstElem)
+				changed = changed || ok
 				return nil
 			}
 		}
@@ -1629,13 +1669,19 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 		if !dst.MapIndex(key).IsValid() {
 			newVal := reflect.New(dst.Type().Elem()).Elem()
 			dst.SetMapIndex(key, newVal)
+			changed = true
 		}
 		dstVal := reflect.ValueOf(dst.MapIndex(key).Interface())
 		dstValKind := dstVal.Kind()
 		switch {
 		case dstValKind == reflect.Map:
 			Log.Debugf("Merging: %#v to %#v", value, dstVal)
-			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			ok, err := m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			changed = changed || ok
+			return nil
 		case dstValKind == reflect.Struct && !isSpecial(dstVal):
 			Log.Debugf("Merging: %#v to %#v", value, dstVal)
 			if !dstVal.CanAddr() {
@@ -1644,20 +1690,32 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 				// set the map key to the new value
 				newVal := reflect.New(dstVal.Type()).Elem()
 				newVal.Set(dstVal)
-				if err := m.mergeStructs(newVal, value, overwrite || m.mustOverwrite(key.String())); err != nil {
-					return err
+				ok, err := m.mergeStructs(newVal, value, overwrite || m.mustOverwrite(key.String()))
+				if err != nil {
+					return errors.WithStack(err)
 				}
-				dst.SetMapIndex(key, newVal)
+				if ok {
+					dst.SetMapIndex(key, newVal)
+					changed = true
+				}
 				return nil
 			}
-			return m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			ok, err := m.mergeStructs(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			changed = changed || ok
+			return nil
 		case dstValKind == reflect.Slice, dstValKind == reflect.Array:
 			Log.Debugf("Merging: %#v to %#v", value, dstVal)
-			merged, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			merged, ok, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
 			if err != nil {
 				return err
 			}
-			dst.SetMapIndex(key, merged)
+			if ok {
+				dst.SetMapIndex(key, merged)
+			}
+			changed = changed || ok
 		default:
 			// // if dstVal is Invalid it must be an `any` type
 			// if !dstVal.IsValid() {
@@ -1701,6 +1759,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 					}
 					if ok {
 						dst.SetMapIndex(key, settableDstVal)
+						changed = true
 						return nil
 					}
 					// if destOption := toOption(dstVal); destOption != nil {
@@ -1711,6 +1770,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 		}
 		return nil
 	})
+	return changed, err
 }
 
 func isCollection(dst reflect.Value) bool {
@@ -1741,7 +1801,7 @@ func isSpecial(dst reflect.Value) bool {
 	return false
 }
 
-func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool) (reflect.Value, error) {
+func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool) (reflect.Value, bool, error) {
 	var cp reflect.Value
 	switch dst.Type().Kind() {
 	case reflect.Slice:
@@ -1763,9 +1823,9 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			// if this is a nil interface data then
 			// we don't care that we cant assign it to a
 			// list, it is a no-op anyway.
-			return cp, nil
+			return cp, false, nil
 		}
-		return reflect.Value{}, errors.WithStack(
+		return reflect.Value{}, false, errors.WithStack(
 			notAssignableError{
 				srcType:        reflectedSrc.Type(),
 				dstType:        dst.Type(),
@@ -1774,6 +1834,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		)
 	}
 	var zero interface{}
+	changed := false
 	err := src.foreach(func(ix int, item mergeSource) error {
 		reflected, _ := item.reflect()
 		if dst.Kind() == reflect.Array {
@@ -1783,12 +1844,13 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			}
 			dstElem := dst.Index(ix)
 			if isDefault(dstElem) || dstElem.IsZero() || overwrite {
-				_, err := m.assignValue(dstElem, item, assignOptions{
+				ok, err := m.assignValue(dstElem, item, assignOptions{
 					Overwrite: overwrite,
 				})
 				if err != nil {
 					return err
 				}
+				changed = changed || ok
 			}
 			return nil
 		}
@@ -1822,32 +1884,42 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 		switch {
 		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecial(dstElem)):
 			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
-			if err := m.mergeStructs(dstElem, item, overwrite); err != nil {
-				return err
+			ok, err := m.mergeStructs(dstElem, item, overwrite)
+			if err != nil {
+				return errors.WithStack(err)
 			}
+			changed = changed || ok
 		case dstKind == reflect.Slice, dstKind == reflect.Array:
 			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
-			var err error
-			dstElem, err = m.mergeArrays(dstElem, item, overwrite)
+			// var (
+			// 	err error
+			// 	ok  bool
+			// )
+			merged, ok, err := m.mergeArrays(dstElem, item, overwrite)
 			if err != nil {
 				return err
 			}
+			if ok {
+				dstElem.Set(merged)
+			}
+			changed = changed || ok
 		default:
-			_, err := m.assignValue(dstElem, item, assignOptions{
+			ok, err := m.assignValue(dstElem, item, assignOptions{
 				Overwrite: overwrite,
 			})
 			if err != nil {
 				return err
 			}
+			changed = changed || ok
 		}
 
 		cp = reflect.Append(cp, dstElem)
 		return nil
 	})
 	if err != nil {
-		return reflect.Value{}, err
+		return reflect.Value{}, false, err
 	}
-	return cp, nil
+	return cp, changed, nil
 }
 
 func (f *FigTree) formatEnvName(name string) string {

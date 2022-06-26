@@ -520,8 +520,9 @@ func TestMergeMapWithStruct(t *testing.T) {
 	}
 
 	m := NewMerger()
-	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
 	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := map[string]interface{}{
 		"mapkey":       "mapval1",
@@ -961,8 +962,9 @@ func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
 	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := struct {
 		FieldName string
@@ -988,8 +990,9 @@ func TestMergeStructsWithDestEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
 	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := struct {
 		embedded
@@ -2486,9 +2489,7 @@ func TestAssignInterfaceListToListStringOption(t *testing.T) {
 	config := `
 mylist: []
 `
-	expected := data{
-		MyList: ListStringOption{},
-	}
+	expected := data{}
 	var node yaml.Node
 	err := yaml.Unmarshal([]byte(config), &node)
 	require.NoError(t, err)
