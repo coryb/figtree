@@ -1480,6 +1480,14 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		dstField, restore := fromInterface(dstField)
 		defer restore()
 
+		// if we have a pointer value, deref (and create if nil)
+		if dstField.Kind() == reflect.Pointer {
+			if dstField.IsNil() {
+				dstField.Set(reflect.New(dstField.Type().Elem()))
+			}
+			dstField = dstField.Elem()
+		}
+
 		if m.mustIgnore(fieldName) {
 			return nil
 		}
