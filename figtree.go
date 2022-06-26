@@ -1691,11 +1691,17 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) e
 						dst.SetMapIndex(key, reflect.ValueOf(srcOption.GetValue()))
 						return nil
 					}
-					_, err := m.assignValue(dstVal, value, assignOptions{
+					settableDstVal := reflect.New(dstVal.Type()).Elem()
+					settableDstVal.Set(dstVal)
+					ok, err := m.assignValue(settableDstVal, value, assignOptions{
 						Overwrite: overwrite || m.mustOverwrite(key.String()),
 					})
 					if err != nil {
 						return errors.WithStack(err)
+					}
+					if ok {
+						dst.SetMapIndex(key, settableDstVal)
+						return nil
 					}
 					// if destOption := toOption(dstVal); destOption != nil {
 					// }
