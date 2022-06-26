@@ -1232,7 +1232,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{StringOption{}},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{zero, StringOption{}},
+				"value": []interface{}{zero},
 			},
 		},
 		{
@@ -1244,7 +1244,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{StringOption{}},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{StringOption{}},
+				"value": []interface{}{},
 			},
 		},
 		{
@@ -1504,7 +1504,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{StringOption{}}},
 			want: struct {
 				Value interface{}
-			}{[]interface{}{zero, StringOption{}}},
+			}{[]interface{}{zero}},
 		},
 		{
 			info: info{"list ListStringOption to empty list", line()},
