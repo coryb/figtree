@@ -1118,7 +1118,6 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 					source.Location = coord
 				}
 				option.SetSource(source)
-
 			}
 			return ok, nil
 		}
@@ -1531,11 +1530,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		if dstField.Kind() == reflect.Pointer {
 			if dstField.IsNil() {
 				newField := reflect.New(dstField.Type().Elem())
-				defer func(orig, new reflect.Value) {
+				defer func(orig reflect.Value) {
 					if saveFieldCopy {
-						orig.Set(new)
+						orig.Set(newField)
 					}
-				}(dstField, newField)
+				}(dstField)
 				dstField = newField
 			}
 			dstField = dstField.Elem()
