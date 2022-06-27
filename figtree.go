@@ -1274,7 +1274,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		if !ok {
 			if anon {
 				// this is an embedded struct, and the destination does not contain
-				// the same embeded struct, so try to merge the embedded struct
+				// the same embedded struct, so try to merge the embedded struct
 				// directly with the destination
 				ok, err := m.mergeStructs(dst, srcField, m.mustOverwrite(fieldName))
 				if err != nil {

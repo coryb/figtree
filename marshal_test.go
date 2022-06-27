@@ -56,7 +56,7 @@ int1: 333
 float1: 3.33
 bool1: true
 `
-	assert.Equal(t, expected, string(got))
+	assert.Equal(t, expected, got)
 }
 
 func TestOptionsMarshalJSON(t *testing.T) {

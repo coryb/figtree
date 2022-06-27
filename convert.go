@@ -33,7 +33,7 @@ func convertString(src string, dst interface{}) (err error) {
 	case *int64:
 		var tmp int64
 		tmp, err = strconv.ParseInt(src, 10, 64)
-		*v = int64(tmp)
+		*v = tmp
 	case *uint:
 		var tmp uint64
 		// this is a cheat, we only know uint is at least 32 bits
@@ -55,7 +55,7 @@ func convertString(src string, dst interface{}) (err error) {
 	case *uint64:
 		var tmp uint64
 		tmp, err = strconv.ParseUint(src, 10, 64)
-		*v = uint64(tmp)
+		*v = tmp
 	// hmm, collides with uint8
 	// case *byte:
 	// 	tmp := []byte(src)
@@ -79,7 +79,7 @@ func convertString(src string, dst interface{}) (err error) {
 	case *float64:
 		var tmp float64
 		tmp, err = strconv.ParseFloat(src, 64)
-		*v = float64(tmp)
+		*v = tmp
 	default:
 		err = fmt.Errorf("Cannot convert string %q to type %T", src, dst)
 	}

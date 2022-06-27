@@ -1994,6 +1994,7 @@ list:
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = data{}
 	err = Merge(&dest, &raw)
@@ -2119,6 +2120,7 @@ properties:
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = data{}
 	err = Merge(&dest, &raw)
@@ -2220,6 +2222,7 @@ str-list: [a, b]
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = data{}
 	err = Merge(&dest, &raw)
@@ -2291,6 +2294,7 @@ bar:
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = map[string]myStruct{}
 	err = Merge(&dest, &raw)
@@ -2324,6 +2328,7 @@ bar:
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = map[string]myStruct{}
 	err = Merge(&dest, &raw)
@@ -2388,6 +2393,7 @@ bar:
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = map[string]myStruct{}
 	err = Merge(&dest, &raw)
@@ -2441,6 +2447,7 @@ c: 11.1.1
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = map[string]string{}
 	err = Merge(&dest, &raw)
@@ -2497,6 +2504,7 @@ d: 12.2.2
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = map[string]any{}
 	err = Merge(&dest, &raw)
@@ -2525,6 +2533,7 @@ mylist: []
 	require.NoError(t, err)
 	raw := map[string]any{}
 	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
 
 	dest = data{}
 	err = Merge(&dest, &raw)
