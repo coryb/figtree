@@ -1498,6 +1498,10 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 	changed := false
 	err := src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
+		if m.mustIgnore(fieldName) {
+			return nil
+		}
+
 		dstStructField, ok := dstFieldTypesByYAML[fieldName]
 		if !ok {
 			if anon {
@@ -1530,18 +1534,14 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		if dstField.Kind() == reflect.Pointer {
 			if dstField.IsNil() {
 				newField := reflect.New(dstField.Type().Elem())
-				defer func(orig reflect.Value) {
+				defer func(origField reflect.Value) {
 					if saveFieldCopy {
-						orig.Set(newField)
+						origField.Set(newField)
 					}
 				}(dstField)
 				dstField = newField
 			}
 			dstField = dstField.Elem()
-		}
-
-		if m.mustIgnore(fieldName) {
-			return nil
 		}
 
 		val, _ := srcField.reflect()
@@ -1571,6 +1571,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			if err != nil {
 				return errors.WithStack(err)
 			}
+			saveFieldCopy = saveFieldCopy || ok
 			changed = changed || ok
 			return nil
 		case reflect.Slice:
@@ -1611,6 +1612,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 				if err != nil {
 					return errors.WithStack(err)
 				}
+				saveFieldCopy = saveFieldCopy || ok
 				changed = changed || ok
 				return nil
 			}
