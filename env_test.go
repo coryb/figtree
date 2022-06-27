@@ -7,13 +7,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
 func TestOptionsEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	StringifyValue = true
 	defer func() {
@@ -49,8 +52,10 @@ func TestOptionsEnv(t *testing.T) {
 
 func TestOptionsNamedEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	StringifyValue = true
 	defer func() {
@@ -87,8 +92,10 @@ func TestOptionsNamedEnv(t *testing.T) {
 
 func TestBuiltinEnv(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	os.Clearenv()
 

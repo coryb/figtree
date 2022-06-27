@@ -9,6 +9,7 @@ import (
 	yaml "gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func yamlMarshal(opts interface{}) (string, error) {
@@ -21,8 +22,10 @@ func yamlMarshal(opts interface{}) (string, error) {
 
 func TestOptionsMarshalYAML(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)
@@ -58,8 +61,10 @@ bool1: true
 
 func TestOptionsMarshalJSON(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
 	assert.Nil(t, err)

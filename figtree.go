@@ -334,7 +334,7 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			if err := cmd.Run(); err != nil {
 				return nil, errors.Wrapf(err, "%s is executable, but it failed to execute:\n%s", file, cmd.Stderr)
 			}
-			rel = rel + "[stdout]"
+			rel += "[stdout]"
 			if err := yaml.Unmarshal(stdout.Bytes(), &node); err != nil {
 				return nil, err
 			}
@@ -596,7 +596,8 @@ func (m *Merger) mapToStruct(src reflect.Value) (reflect.Value, error) {
 		if !keyval.IsValid() {
 			continue
 		}
-		if keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map {
+		switch {
+		case keyval.Kind() == reflect.Ptr && keyval.Elem().Kind() == reflect.Map:
 			keyval, err := m.mapToStruct(keyval.Elem())
 			if err != nil {
 				return reflect.Value{}, err
@@ -605,7 +606,7 @@ func (m *Merger) mapToStruct(src reflect.Value) (reflect.Value, error) {
 			if err != nil {
 				return reflect.Value{}, err
 			}
-		} else if keyval.Kind() == reflect.Map {
+		case keyval.Kind() == reflect.Map:
 			keyval, err := m.mapToStruct(keyval)
 			if err != nil {
 				return reflect.Value{}, err
@@ -614,21 +615,24 @@ func (m *Merger) mapToStruct(src reflect.Value) (reflect.Value, error) {
 			if err != nil {
 				return reflect.Value{}, err
 			}
-		} else {
+		default:
 			dest.FieldByName(structFieldName).Set(reflect.ValueOf(keyval.Interface()))
 		}
 	}
 	return dest, nil
 }
 
-func structToMap(src mergeSource) mergeSource {
+func structToMap(src mergeSource) (mergeSource, error) {
 	if !src.isStruct() {
-		return src
+		return src, nil
 	}
 
 	newMap := reflect.ValueOf(map[string]interface{}{})
 
-	reflectedStruct, _ := src.reflect()
+	reflectedStruct, _, err := src.reflect()
+	if err != nil {
+		return mergeSource{}, err
+	}
 	typ := reflectedStruct.Type()
 
 	for i := 0; i < typ.NumField(); i++ {
@@ -641,7 +645,7 @@ func structToMap(src mergeSource) mergeSource {
 		newMap.SetMapIndex(reflect.ValueOf(name), reflectedStruct.Field(i))
 	}
 
-	return newMergeSource(newMap)
+	return newMergeSource(newMap), nil
 }
 
 type ConfigOptions struct {
@@ -706,13 +710,6 @@ func isDefault(v reflect.Value) bool {
 	return false
 }
 
-func getValue(v reflect.Value) reflect.Value {
-	if option := toOption(v); option != nil {
-		return reflect.ValueOf(option.GetValue())
-	}
-	return v
-}
-
 func toOption(v reflect.Value) option {
 	v = reflect.Indirect(v)
 	if !v.IsValid() {
@@ -749,51 +746,6 @@ func isSame(v1, v2 reflect.Value) bool {
 	return reflect.DeepEqual(v1.Interface(), v2.Interface())
 }
 
-// recursively set the Source attribute of the Options
-// func (m *Merger) setSource(v reflect.Value) {
-// 	if v.Kind() == reflect.Ptr {
-// 		v = v.Elem()
-// 	}
-// 	switch v.Kind() {
-// 	case reflect.Map:
-// 		for _, key := range v.MapKeys() {
-// 			keyval := v.MapIndex(key)
-// 			if keyval.Kind() == reflect.Struct && keyval.FieldByName("Source").IsValid() {
-// 				// map values are immutable, so we need to copy the value
-// 				// update the value, then re-insert the value to the map
-// 				newval := reflect.New(keyval.Type())
-// 				newval.Elem().Set(keyval)
-// 				m.setSource(newval)
-// 				v.SetMapIndex(key, newval.Elem())
-// 			}
-// 		}
-// 	case reflect.Struct:
-// 		if v.CanAddr() {
-// 			if option, ok := v.Addr().Interface().(option); ok {
-// 				if option.IsDefined() {
-// 					option.SetSource(NewSource(m.sourceFile))
-// 				}
-// 				return
-// 			}
-// 		}
-// 		for i := 0; i < v.NumField(); i++ {
-// 			structField := v.Type().Field(i)
-// 			// PkgPath is empty for upper case (exported) field names.
-// 			if structField.PkgPath != "" {
-// 				// unexported field, skipping
-// 				continue
-// 			}
-// 			m.setSource(v.Field(i))
-// 		}
-// 	case reflect.Array:
-// 		fallthrough
-// 	case reflect.Slice:
-// 		for i := 0; i < v.Len(); i++ {
-// 			m.setSource(v.Index(i))
-// 		}
-// 	}
-// }
-
 type assignOptions struct {
 	Overwrite      bool
 	SrcIsDefault   bool
@@ -811,216 +763,13 @@ func (e notAssignableError) Error() string {
 	return fmt.Sprintf("%s: %s is not assignable to %s", e.sourceLocation, e.srcType, e.dstType)
 }
 
-// func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) error {
-// 	reflectedSrc, coord := src.reflect()
-// 	Log.Debugf("AssignValue: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
-// 	if !dest.IsValid() || !reflectedSrc.IsValid() {
-// 		return nil
-// 	}
-// 	Log.Debugf("DestKind: %s DestType: %s\n", dest.Kind(), dest.Type())
-// 	if dest.Kind() == reflect.Pointer {
-// 		Log.Debugf("Pointer: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
-// 		if dest.IsNil() {
-// 			dest.Set(reflect.New(dest.Type().Elem()))
-// 		}
-// 		dest = dest.Elem()
-// 		Log.Debugf("Deref'd: %#v to %#v [overwrite: %t]\n", reflectedSrc, dest, opts.Overwrite)
-// 	}
-// 	// // if we have a collection don't proceed to attempt to unmarshal direct
-// 	// // from the yaml.Node ... collections are process per item, rather than
-// 	// // as a whole.
-// 	// if !opts.Overwrite && isCollection(dest) && !isCollection(reflectedSrc) {
-// 	// 	return errors.WithStack(
-// 	// 		notAssignableError{
-// 	// 			srcType: reflectedSrc.Type(),
-// 	// 			dstType: dest.Type(),
-// 	// 		},
-// 	// 	)
-// 	// }
-
-// 	// if !reflectedSrc.IsValid() {
-// 	// 	if opts.Overwrite {
-// 	// 		dest.Set(reflectedSrc)
-// 	// 	}
-// 	// 	return nil
-// 	// }
-
-// 	// if not directly assignable, must be convertable, so
-// 	// try to convert now. (ie convert float32 to float64)
-// 	if dest.Kind() != reflect.String && reflectedSrc.CanConvert(dest.Type()) {
-// 		reflectedSrc = reflectedSrc.Convert(dest.Type())
-// 	}
-// 	if reflectedSrc.Type().AssignableTo(dest.Type()) {
-// 		shouldAssignDest := opts.Overwrite || isZero(dest) || (isDefault(dest) && !isDefault(reflectedSrc))
-// 		isValidSrc := !isZero(reflectedSrc)
-// 		if shouldAssignDest && isValidSrc {
-// 			if reflectedSrc.Kind() == reflect.Map {
-// 				// maps are mutable, so create a brand new shiny one
-// 				dup := reflect.New(reflectedSrc.Type()).Elem()
-// 				if err := m.mergeMaps(dup, src, opts.Overwrite); err != nil {
-// 					return err
-// 				}
-// 				dest.Set(dup)
-// 			} else {
-// 				dest.Set(reflectedSrc)
-// 			}
-// 			return nil
-// 		}
-// 		return nil
-// 	}
-
-// 	if dest.CanAddr() {
-// 		if option, ok := dest.Addr().Interface().(option); ok {
-// 			destOptionValue := reflect.ValueOf(option.GetValue())
-// 			// map interface type to real-ish type:
-// 			reflectedSrc = reflect.ValueOf(reflectedSrc.Interface())
-// 			if !src.isValid() {
-// 				return nil
-// 			}
-// 			source := m.sourceFile
-// 			if coord != nil {
-// 				source += ":" + strconv.Itoa(coord.Line) + ":" + strconv.Itoa(coord.Column)
-// 			}
-
-// 			if !destOptionValue.IsValid() {
-// 				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-// 					return err
-// 				}
-// 				option.SetSource(source)
-// 				return nil
-// 			}
-
-// 			// lots of things can convert implicitly to String, but that is
-// 			// generally not what we want.  (ie `11` => `\v` instead of "11")
-// 			// We handle string conversion below...
-// 			if destOptionValue.Kind() != reflect.String && reflectedSrc.CanConvert(destOptionValue.Type()) {
-// 				reflectedSrc = reflectedSrc.Convert(destOptionValue.Type())
-// 			}
-
-// 			if reflectedSrc.Type().AssignableTo(destOptionValue.Type()) {
-// 				if err := option.SetValue(reflectedSrc.Interface()); err != nil {
-// 					return err
-// 				}
-// 				option.SetSource(source)
-// 				Log.Debugf("assignValue: assigned %#v to %#v [overwrite: %t]", reflectedSrc, destOptionValue, opts.Overwrite)
-// 				return nil
-// 			}
-// 			if destOptionValue.Kind() == reflect.Bool && reflectedSrc.Kind() == reflect.String {
-// 				b, err := strconv.ParseBool(reflectedSrc.Interface().(string))
-// 				if err != nil {
-// 					return errors.Wrapf(err, "%s is not assignable to %s, invalid bool value", reflectedSrc.Type(), destOptionValue.Type())
-// 				}
-// 				if err := option.SetValue(b); err != nil {
-// 					return err
-// 				}
-// 				option.SetSource(source)
-// 				Log.Debugf("assignValue: assigned %#v to %#v", b, destOptionValue)
-// 				return nil
-// 			}
-// 			if destOptionValue.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String {
-// 				if err := option.SetValue(fmt.Sprintf("%v", reflectedSrc.Interface())); err != nil {
-// 					return err
-// 				}
-// 				option.SetSource(source)
-// 				Log.Debugf("assignValue: assigned %#v to %#v", reflectedSrc, destOptionValue)
-// 				return nil
-// 			}
-// 			return errors.WithStack(
-// 				notAssignableError{
-// 					srcType:  reflectedSrc.Type(),
-// 					dstType:  destOptionValue.Type(),
-// 					filename: m.sourceFile,
-// 					coord:    coord,
-// 				},
-// 			)
-// 		}
-// 	}
-// 	// make copy so we can reliably Addr it to see if it fits the
-// 	// Option interface.
-// 	srcCopy := reflect.New(reflectedSrc.Type()).Elem()
-// 	srcCopy.Set(reflectedSrc)
-// 	if option, ok := srcCopy.Addr().Interface().(option); ok {
-// 		srcOptionValue := reflect.ValueOf(option.GetValue())
-// 		if srcOptionValue.Type().AssignableTo(dest.Type()) {
-// 			return m.assignValue(dest, mergeSource{reflected: srcOptionValue, coord: coord}, opts)
-// 		} else {
-// 			return errors.WithStack(
-// 				notAssignableError{
-// 					srcType:  srcOptionValue.Type(),
-// 					dstType:  dest.Type(),
-// 					filename: m.sourceFile,
-// 					coord:    coord,
-// 				},
-// 			)
-// 		}
-// 	}
-
-// 	if node, ok := dest.Interface().(yaml.Node); ok {
-// 		if src.node != nil {
-// 			node = *src.node
-// 		} else {
-// 			if err := node.Encode(src.reflected.Interface()); err != nil {
-// 				return errors.WithStack(err)
-// 			}
-// 		}
-// 		dest.Set(reflect.ValueOf(node))
-// 		return nil
-// 	}
-
-// 	// if we have a collection don't proceed to attempt to unmarshal direct
-// 	// from the yaml.Node ... collections are process per item, rather than
-// 	// as a whole.
-// 	if isCollection(dest) {
-// 		return errors.WithStack(
-// 			notAssignableError{
-// 				srcType:  reflectedSrc.Type(),
-// 				dstType:  dest.Type(),
-// 				filename: m.sourceFile,
-// 				coord:    coord,
-// 			},
-// 		)
-// 	}
-
-// 	if !isSpecial(dest) {
-// 		if dest.CanAddr() {
-// 			dest = dest.Addr()
-// 			meth := dest.MethodByName("UnmarshalYAML")
-// 			if meth.IsValid() {
-// 				if src.node != nil {
-// 					if err := src.node.Decode(dest.Interface()); err != nil {
-// 						return errors.WithStack(err)
-// 					}
-// 				} else {
-// 					// we know we have an UnmarshalYAML function, so use yaml
-// 					// to convert to/from between random types since we can't
-// 					// do it with reflection alone here.
-// 					content, err := yaml.Marshal(reflectedSrc.Interface())
-// 					if err != nil {
-// 						return errors.WithStack(err)
-// 					}
-// 					if err := yaml.Unmarshal(content, dest.Interface()); err != nil {
-// 						return errors.WithStack(err)
-// 					}
-// 				}
-// 				return nil
-// 			}
-// 		}
-// 	}
-
-// 	return errors.WithStack(
-// 		notAssignableError{
-// 			srcType:  reflectedSrc.Type(),
-// 			dstType:  dest.Type(),
-// 			filename: m.sourceFile,
-// 			coord:    coord,
-// 		},
-// 	)
-// }
-
 var stringType = reflect.ValueOf("").Type()
 
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) (bool, error) {
-	reflectedSrc, coord := src.reflect()
+	reflectedSrc, coord, err := src.reflect()
+	if err != nil {
+		return false, err
+	}
 	Log.Debugf("AssignValue: %#v to %#v [opts: %#v]\n", reflectedSrc, dest, opts)
 	if !dest.IsValid() || !reflectedSrc.IsValid() {
 		return false, nil
@@ -1232,23 +981,6 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	)
 }
 
-func fromInterface(v reflect.Value) (reflect.Value, func()) {
-	if v.Kind() == reflect.Interface {
-		realV := reflect.ValueOf(v.Interface())
-		if !realV.IsValid() {
-			realV = reflect.New(v.Type()).Elem()
-			v.Set(realV)
-			return v, func() {}
-		}
-		tmp := reflect.New(realV.Type()).Elem()
-		tmp.Set(realV)
-		return tmp, func() {
-			v.Set(tmp)
-		}
-	}
-	return v, func() {}
-}
-
 type mergeSource struct {
 	reflected reflect.Value
 	node      *yaml.Node
@@ -1275,9 +1007,9 @@ func newMergeSource(src any) mergeSource {
 	panic(fmt.Sprintf("Unknown type: %T", src))
 }
 
-func (ms *mergeSource) reflect() (reflect.Value, *FileCoordinate) {
+func (ms *mergeSource) reflect() (reflect.Value, *FileCoordinate, error) {
 	if ms.reflected.IsValid() && !ms.reflected.IsZero() {
-		return ms.reflected, ms.coord
+		return ms.reflected, ms.coord, nil
 	}
 	if ms.node != nil {
 		if ms.node.Line != 0 || ms.node.Column != 0 {
@@ -1287,14 +1019,17 @@ func (ms *mergeSource) reflect() (reflect.Value, *FileCoordinate) {
 			}
 		}
 		var val any
-		ms.node.Decode(&val)
+		err := ms.node.Decode(&val)
+		if err != nil {
+			return reflect.Value{}, nil, err
+		}
 		ms.reflected = reflect.ValueOf(&val).Elem()
 		if ms.reflected.Kind() == reflect.Interface {
 			ms.reflected = reflect.ValueOf(ms.reflected.Interface())
 		}
 		// ms.node = nil
 	}
-	return ms.reflected, ms.coord
+	return ms.reflected, ms.coord, nil
 }
 
 func (ms *mergeSource) isMap() bool {
@@ -1405,8 +1140,11 @@ func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) e
 	if ms.node != nil {
 		for i := 0; i < len(ms.node.Content); i += 2 {
 			newMS := newMergeSource(ms.node.Content[i])
-			key, _ := newMS.reflect()
-			err := f(key, newMergeSource(ms.node.Content[i+1]))
+			key, _, err := newMS.reflect()
+			if err != nil {
+				return err
+			}
+			err = f(key, newMergeSource(ms.node.Content[i+1]))
 			if err != nil {
 				return err
 			}
@@ -1456,10 +1194,63 @@ func (ms *mergeSource) foreach(f func(ix int, item mergeSource) error) error {
 	return errors.Errorf("not slice or array")
 }
 
-func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool) (bool, error) {
+type fieldYAML struct {
+	StructField reflect.StructField
+	Value       reflect.Value
+}
+
+// populateYAMLMaps will collect a map by field name where
+// those field names are converted to a common name used in YAML
+// documents so we can easily merge fields and maps together from
+// multiple sources.
+func populateYAMLMaps(v reflect.Value) (
+	fieldsByYAML map[string]fieldYAML,
+) {
+	fieldsByYAML = make(map[string]fieldYAML)
+	if v.Kind() != reflect.Struct {
+		return
+	}
+	for i := 0; i < v.NumField(); i++ {
+		fieldType := v.Type().Field(i)
+		yamlName := yamlFieldName(fieldType)
+		if _, ok := fieldsByYAML[yamlName]; !ok {
+			fieldsByYAML[yamlName] = fieldYAML{
+				StructField: fieldType,
+				Value:       v.Field(i),
+			}
+		}
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		fieldType := v.Type().Field(i)
+		if fieldType.Anonymous && reflect.Indirect(v.Field(i)).Type().Kind() == reflect.Struct {
+			anonFields := populateYAMLMaps(reflect.Indirect(v.Field(i)))
+			for k, v := range anonFields {
+				if _, ok := fieldsByYAML[k]; !ok {
+					fieldsByYAML[k] = v
+				}
+			}
+		}
+	}
+	return
+}
+
+func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool) (changed bool, err error) {
 	dst = reflect.Indirect(dst)
-	dst, restore := fromInterface(dst)
-	defer restore()
+
+	if dst.Kind() == reflect.Interface {
+		realDst := reflect.ValueOf(dst.Interface())
+		if realDst.IsValid() {
+			newDst := reflect.New(realDst.Type()).Elem()
+			newDst.Set(realDst)
+			defer func(orig reflect.Value) {
+				if changed {
+					orig.Set(newDst)
+				}
+			}(dst)
+			dst = newDst
+		}
+	}
 
 	if dst.Kind() == reflect.Map {
 		return m.mergeMaps(dst, src, overwrite)
@@ -1470,39 +1261,16 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		return false, nil
 	}
 
-	dstFieldTypesByYAML := make(map[string]reflect.StructField)
-	dstFieldValuesByYAML := make(map[string]reflect.Value)
+	// We first collect maps of struct fields by the yamlized name
+	// so we can easily compare maps and structs by common names
+	dstFieldsByYAML := populateYAMLMaps(dst)
 
-	var populateYAMLMaps func(reflect.Value)
-	populateYAMLMaps = func(dest reflect.Value) {
-		if dest.Kind() != reflect.Struct {
-			return
-		}
-		for i := 0; i < dest.NumField(); i++ {
-			fieldType := dest.Type().Field(i)
-			yamlName := yamlFieldName(fieldType)
-			if _, ok := dstFieldTypesByYAML[yamlName]; !ok {
-				dstFieldTypesByYAML[yamlName] = fieldType
-				dstFieldValuesByYAML[yamlName] = dest.Field(i)
-			}
-		}
-
-		for i := 0; i < dest.NumField(); i++ {
-			fieldType := dest.Type().Field(i)
-			if fieldType.Anonymous && reflect.Indirect(dest.Field(i)).Type().Kind() == reflect.Struct {
-				populateYAMLMaps(reflect.Indirect(dest.Field(i)))
-			}
-		}
-	}
-	populateYAMLMaps(dst)
-
-	changed := false
-	err := src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
+	err = src.foreachField(func(fieldName string, srcField mergeSource, anon bool) error {
 		if m.mustIgnore(fieldName) {
 			return nil
 		}
 
-		dstStructField, ok := dstFieldTypesByYAML[fieldName]
+		dstFieldByYAML, ok := dstFieldsByYAML[fieldName]
 		if !ok {
 			if anon {
 				// this is an embedded struct, and the destination does not contain
@@ -1520,22 +1288,34 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		}
 
 		// PkgPath is empty for upper case (exported) field names.
-		if dstStructField.PkgPath != "" {
+		if dstFieldByYAML.StructField.PkgPath != "" {
 			// unexported field, skipping
 			return nil
 		}
 
-		dstField := dstFieldValuesByYAML[fieldName]
-		dstField, restore := fromInterface(dstField)
-		defer restore()
+		dstField := dstFieldByYAML.Value
 
-		saveFieldCopy := false
+		fieldChanged := false
+		if dstField.Kind() == reflect.Interface {
+			realDstField := reflect.ValueOf(dstField.Interface())
+			if realDstField.IsValid() {
+				newDstField := reflect.New(realDstField.Type()).Elem()
+				newDstField.Set(realDstField)
+				defer func(orig reflect.Value) {
+					if fieldChanged {
+						orig.Set(newDstField)
+					}
+				}(dstField)
+				dstField = newDstField
+			}
+		}
+
 		// if we have a pointer value, deref (and create if nil)
 		if dstField.Kind() == reflect.Pointer {
 			if dstField.IsNil() {
 				newField := reflect.New(dstField.Type().Elem())
 				defer func(origField reflect.Value) {
-					if saveFieldCopy {
+					if fieldChanged {
 						origField.Set(newField)
 					}
 				}(dstField)
@@ -1544,13 +1324,15 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			dstField = dstField.Elem()
 		}
 
-		val, _ := srcField.reflect()
-		var err error
+		val, _, err := srcField.reflect()
+		if err != nil {
+			return err
+		}
 
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || (overwrite || m.mustOverwrite(fieldName))
 
 		if (shouldAssign) && !isSame(dstField, val) {
-			saveFieldCopy, err = m.assignValue(dstField, srcField, assignOptions{
+			fieldChanged, err = m.assignValue(dstField, srcField, assignOptions{
 				Overwrite: overwrite || m.mustOverwrite(fieldName),
 			})
 			// if this is a notAssignableError then we want
@@ -1562,7 +1344,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			if err != nil && !errors.As(err, &assignErr) {
 				return err
 			}
-			changed = changed || saveFieldCopy
+			changed = changed || fieldChanged
 		}
 		switch dstField.Kind() {
 		case reflect.Map:
@@ -1571,12 +1353,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			saveFieldCopy = saveFieldCopy || ok
+			fieldChanged = fieldChanged || ok
 			changed = changed || ok
 			return nil
-		case reflect.Slice:
-			// if srcField.len() > 0 {
-			Log.Debugf("Merging Slice: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
+		case reflect.Slice, reflect.Array:
+			Log.Debugf("Merging %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
 			merged, ok, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
 			if err != nil {
 				return err
@@ -1584,26 +1365,9 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			if ok {
 				dstField.Set(merged)
 			}
-			saveFieldCopy = saveFieldCopy || ok
+			fieldChanged = fieldChanged || ok
 			changed = changed || ok
 			return nil
-			// }
-			// return err
-		case reflect.Array:
-			// if srcField.len() > 0 {
-			Log.Debugf("Merging Array: %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-			merged, ok, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
-			if err != nil {
-				return err
-			}
-			if ok {
-				dstField.Set(merged)
-			}
-			saveFieldCopy = saveFieldCopy || ok
-			changed = changed || ok
-			return nil
-			// }
-			// return err
 		case reflect.Struct:
 			// only merge structs if they are not special structs (options or yaml.Node):
 			if !isSpecial(dstField) {
@@ -1612,7 +1376,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 				if err != nil {
 					return errors.WithStack(err)
 				}
-				saveFieldCopy = saveFieldCopy || ok
+				fieldChanged = fieldChanged || ok
 				changed = changed || ok
 				return nil
 			}
@@ -1624,7 +1388,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (bool, error) {
 	if src.isStruct() {
-		src = structToMap(src)
+		var err error
+		src, err = structToMap(src)
+		if err != nil {
+			return false, err
+		}
 	}
 	if !src.isMap() {
 		return false, nil
@@ -1718,28 +1486,11 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 			}
 			changed = changed || ok
 		default:
-			// // if dstVal is Invalid it must be an `any` type
-			// if !dstVal.IsValid() {
-			// 	reflected, _ := value.reflect()
-			// 	if reflected.IsValid() {
-			// 		dst.SetMapIndex(key, reflected)
-			// 	}
-			// 	return nil
-			// }
-			// newVal := reflect.New(dstVal.Type()).Elem()
-			// newVal.Set(dstVal)
-			// ok, err := m.assignValue(newVal, value, assignOptions{
-			// 	Overwrite: overwrite || m.mustOverwrite(key.String()),
-			// })
-			// if err != nil {
-			// 	return errors.WithStack(err)
-			// }
-			// if ok {
-			// 	dst.SetMapIndex(key, newVal)
-			// }
-
 			if isZero(dstVal) {
-				reflected, _ := value.reflect()
+				reflected, _, err := value.reflect()
+				if err != nil {
+					return err
+				}
 				if !reflected.IsValid() {
 					return nil
 				}
@@ -1819,7 +1570,10 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	}
 
 	if !src.isList() {
-		reflectedSrc, coord := src.reflect()
+		reflectedSrc, coord, err := src.reflect()
+		if err != nil {
+			return reflect.Value{}, false, err
+		}
 		if !reflectedSrc.IsValid() {
 			// if this is a nil interface data then
 			// we don't care that we cant assign it to a
@@ -1837,7 +1591,10 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	var zero interface{}
 	changed := false
 	err := src.foreach(func(ix int, item mergeSource) error {
-		reflected, _ := item.reflect()
+		reflected, _, err := item.reflect()
+		if err != nil {
+			return err
+		}
 		if dst.Kind() == reflect.Array {
 			if dst.Len() <= ix {
 				// truncate arrays, we cannot append
@@ -1892,10 +1649,6 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			changed = changed || ok
 		case dstKind == reflect.Slice, dstKind == reflect.Array:
 			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
-			// var (
-			// 	err error
-			// 	ok  bool
-			// )
 			merged, ok, err := m.mergeArrays(dstElem, item, overwrite)
 			if err != nil {
 				return err

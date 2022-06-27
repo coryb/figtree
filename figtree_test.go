@@ -71,8 +71,10 @@ type TestBuiltin struct {
 
 func TestOptionsLoadConfigD3(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d3arr1val1"})
@@ -107,8 +109,10 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 
 func TestOptionsLoadConfigD2(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
@@ -140,8 +144,10 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 
 func TestOptionsLoadConfigD1(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d1arr1val1"})
@@ -170,8 +176,10 @@ func TestOptionsLoadConfigD1(t *testing.T) {
 
 func TestOptionsCorrupt(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("corrupt.yml", &opts)
@@ -180,8 +188,10 @@ func TestOptionsCorrupt(t *testing.T) {
 
 func TestBuiltinLoadConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d3arr1val1")
@@ -216,8 +226,10 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 
 func TestBuiltinLoadConfigD2(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
@@ -251,8 +263,10 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 
 func TestBuiltinLoadConfigD1(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d1arr1val1")
@@ -281,8 +295,10 @@ func TestBuiltinLoadConfigD1(t *testing.T) {
 
 func TestBuiltinCorrupt(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("corrupt.yml", &opts)
@@ -297,8 +313,10 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 		Float1:     NewFloat32Option(9.99),
 		Bool1:      NewBoolOption(true),
 	}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
@@ -1729,8 +1747,12 @@ ok-name: want-array
 		if keyNode, valNode := walky.GetKeyValue(node, walky.NewStringNode("ok-name")); keyNode != nil {
 			if valNode.Kind == yaml.ScalarNode {
 				seqNode := walky.NewSequenceNode()
-				walky.AppendNode(seqNode, walky.ShallowCopyNode(valNode))
-				walky.AssignMapNode(node, keyNode, seqNode)
+				require.NoError(t,
+					walky.AppendNode(seqNode, walky.ShallowCopyNode(valNode)),
+				)
+				require.NoError(t,
+					walky.AssignMapNode(node, keyNode, seqNode),
+				)
 			}
 		}
 		return nil

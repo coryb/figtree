@@ -5,12 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptionsExecConfigD3(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("exec.yml[stdout]", 3, 5), true, "d3arr1val1"})
@@ -43,8 +46,10 @@ func TestOptionsExecConfigD3(t *testing.T) {
 
 func TestOptionsExecConfigD2(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("exec.yml[stdout]", 3, 5), true, "d2arr1val1"})
@@ -74,8 +79,10 @@ func TestOptionsExecConfigD2(t *testing.T) {
 
 func TestOptionsExecConfigD1(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("exec.yml[stdout]", 3, 5), true, "d1arr1val1"})
@@ -102,8 +109,10 @@ func TestOptionsExecConfigD1(t *testing.T) {
 
 func TestBuiltinExecConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d3arr1val1")
@@ -136,8 +145,10 @@ func TestBuiltinExecConfigD3(t *testing.T) {
 
 func TestBuiltinExecConfigD2(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
@@ -169,8 +180,10 @@ func TestBuiltinExecConfigD2(t *testing.T) {
 
 func TestBuiltinExecConfigD1(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d1arr1val1")

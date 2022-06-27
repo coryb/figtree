@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -17,8 +18,10 @@ func TestCommandLine(t *testing.T) {
 	}
 
 	opts := CommandLineOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)

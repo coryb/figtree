@@ -15,8 +15,10 @@ func init() {
 
 func TestOptionsOverwriteConfigD3(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("../overwrite.yml", 8, 5), true, "d2arr1val1"})
@@ -43,8 +45,10 @@ func TestOptionsOverwriteConfigD3(t *testing.T) {
 
 func TestOptionsOverwriteConfigD2(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("overwrite.yml", 8, 5), true, "d2arr1val1"})
@@ -71,8 +75,10 @@ func TestOptionsOverwriteConfigD2(t *testing.T) {
 
 func TestBuiltinOverwriteConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
@@ -99,8 +105,10 @@ func TestBuiltinOverwriteConfigD3(t *testing.T) {
 
 func TestBuiltinOverwriteConfigD2(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
@@ -135,8 +143,10 @@ type TestArray struct {
 
 func TestBuiltinOverwriteArrayD2(t *testing.T) {
 	opts := TestArray{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	expected := TestArray{
 		IntArr:      [2]int{1, 2},
@@ -162,8 +172,10 @@ type TestOptionsArray struct {
 
 func TestOptionsOverwriteArrayD2(t *testing.T) {
 	opts := TestOptionsArray{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	expected := TestOptionsArray{
 		IntArr: [2]IntOption{

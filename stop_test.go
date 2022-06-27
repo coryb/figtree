@@ -5,12 +5,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptionsStopConfigD3(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("stop.yml", 3, 5), true, "d3arr1val1"})
@@ -40,8 +43,10 @@ func TestOptionsStopConfigD3(t *testing.T) {
 
 func TestOptionsStopConfigD2(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
 	arr1 = append(arr1, StringOption{tSrc("stop.yml", 5, 5), true, "d2arr1val1"})
@@ -68,8 +73,10 @@ func TestOptionsStopConfigD2(t *testing.T) {
 
 func TestBuiltinStopConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d3arr1val1")
@@ -99,8 +106,10 @@ func TestBuiltinStopConfigD3(t *testing.T) {
 
 func TestBuiltinStopConfigD2(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
