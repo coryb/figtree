@@ -802,13 +802,6 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		}
 	}
 
-	// Log.Debugf("Dest: %#v Src: %#v IsSame: %t", dest, reflectedSrc, isSame(dest, reflectedSrc))
-	// if isSame(dest, reflectedSrc) {
-	// 	Log.Debugf("Skipping assignValue....")
-	// 	panic("HERE")
-	// 	return false, nil
-	// }
-
 	// check to see if we can convert src to dest type before we check to see
 	// if is assignable. We cannot assign float32 to float64, but we can
 	// convert float32 to float64 and then assign.  Note we skip conversion
@@ -930,7 +923,32 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 	}
 
 	if dest.Kind() == reflect.String && reflectedSrc.Kind() != reflect.String && stringType.AssignableTo(dest.Type()) {
-		dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
+		switch reflectedSrc.Kind() {
+		case reflect.Array, reflect.Slice, reflect.Map:
+			return false, errors.WithStack(
+				notAssignableError{
+					srcType:        reflectedSrc.Type(),
+					dstType:        dest.Type(),
+					sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
+				},
+			)
+		case reflect.Struct:
+			// we generally dont want to assign structs to a string
+			// unless that struct is an option struct in which case
+			// we use convert the value
+			if option := toOption(reflectedSrc); option != nil {
+				dest.Set(reflect.ValueOf(fmt.Sprintf("%v", option.GetValue())))
+			}
+			return false, errors.WithStack(
+				notAssignableError{
+					srcType:        reflectedSrc.Type(),
+					dstType:        dest.Type(),
+					sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
+				},
+			)
+		default:
+			dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
+		}
 		return true, nil
 	}
 
