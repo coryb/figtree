@@ -205,11 +205,11 @@ func (o Option[T]) MarshalYAML() (any, error) {
 	// need a copy of this struct without the MarshalYAML interface attached
 	return struct {
 		Value   T
-		Source  SourceLocation
+		Source  string
 		Defined bool
 	}{
 		Value:   o.Value,
-		Source:  o.Source,
+		Source:  o.Source.String(),
 		Defined: o.Defined,
 	}, nil
 }
@@ -234,11 +234,11 @@ func (o Option[T]) MarshalJSON() ([]byte, error) {
 	// need a copy of this struct without the MarshalJSON interface attached
 	return json.Marshal(struct {
 		Value   T
-		Source  SourceLocation
+		Source  string
 		Defined bool
 	}{
 		Value:   o.Value,
-		Source:  o.Source,
+		Source:  o.Source.String(),
 		Defined: o.Defined,
 	})
 }
