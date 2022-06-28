@@ -1158,10 +1158,20 @@ func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) e
 	if ms.node != nil {
 		for i := 0; i < len(ms.node.Content); i += 2 {
 			if ms.node.Content[i].Tag == "!!merge" {
-				yamlMergeSrc := newMergeSource(ms.node.Content[i+1])
-				err := yamlMergeSrc.foreachKey(f)
-				if err != nil {
-					return err
+				if ms.node.Content[i+1].Kind == yaml.SequenceNode {
+					for _, elem := range ms.node.Content[i+1].Content {
+						yamlMergeSrc := newMergeSource(elem)
+						err := yamlMergeSrc.foreachKey(f)
+						if err != nil {
+							return err
+						}
+					}
+				} else {
+					yamlMergeSrc := newMergeSource(ms.node.Content[i+1])
+					err := yamlMergeSrc.foreachKey(f)
+					if err != nil {
+						return err
+					}
 				}
 			} else {
 				newMS := newMergeSource(ms.node.Content[i])

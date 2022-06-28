@@ -2585,15 +2585,22 @@ my-str: abc
 
 func TestAssignYAMLMergeMap(t *testing.T) {
 	type data struct {
-		MyMap map[string]int `yaml:"my-map"`
+		MyMap    map[string]int `yaml:"my-map"`
+		ExtraMap map[string]int `yaml:"extra-map"`
 	}
 	config := `
 defs:
   - &common
     a: 1
     b: 2
+  - &extra
+    d: 4
+    e: 5
 my-map:
   <<: *common
+  c: 3
+extra-map:
+  <<: [*common, *extra]
   c: 3
 `
 	expected := data{
@@ -2601,6 +2608,13 @@ my-map:
 			"a": 1,
 			"b": 2,
 			"c": 3,
+		},
+		ExtraMap: map[string]int{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+			"d": 4,
+			"e": 5,
 		},
 	}
 	var node yaml.Node
