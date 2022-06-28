@@ -1,6 +1,7 @@
 package figtree
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"unicode"
 
 	"emperror.dev/errors"
 	logging "gopkg.in/op/go-logging.v1"
@@ -2626,4 +2628,102 @@ extra-map:
 	err = fig.LoadConfigSource(&node, "test", &got)
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
+}
+
+func TestDecodeWithSource(t *testing.T) {
+	StringifyValue = false
+	defer func() {
+		StringifyValue = true
+	}()
+
+	type data struct {
+		MyMap    map[string]IntOption `yaml:"my-map"`
+		ExtraMap map[string]IntOption `yaml:"extra-map"`
+	}
+	config := `
+defs:
+  - &common
+    a: 1
+    b: 2
+    c:
+  - &extra
+    e: 4
+    f: 5
+    g:
+my-map:
+  <<: *common
+  d: 3
+extra-map:
+  <<: [*common, *extra]
+  d: 3
+`
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	if err != nil {
+		panic(err)
+	}
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	if err != nil {
+		panic(err)
+	}
+	var buf bytes.Buffer
+	yaml.NewEncoder(&buf).Encode(&got)
+
+	expected := `
+	my-map:
+	    a:
+	        value: 1
+	        source: test:4:8
+	        defined: true
+	    b:
+	        value: 2
+	        source: test:5:8
+	        defined: true
+	    c:
+	        value: 0
+	        source: test:6:7
+	        defined: false
+	    d:
+	        value: 3
+	        source: test:13:6
+	        defined: true
+	extra-map:
+	    a:
+	        value: 1
+	        source: test:4:8
+	        defined: true
+	    b:
+	        value: 2
+	        source: test:5:8
+	        defined: true
+	    c:
+	        value: 0
+	        source: test:6:7
+	        defined: false
+	    d:
+	        value: 3
+	        source: test:16:6
+	        defined: true
+	    e:
+	        value: 4
+	        source: test:8:8
+	        defined: true
+	    f:
+	        value: 5
+	        source: test:9:8
+	        defined: true
+	    g:
+	        value: 0
+	        source: test:10:7
+	        defined: false
+`
+	expected = strings.TrimLeftFunc(expected, func(r rune) bool {
+		return unicode.IsSpace(r)
+	})
+	expected = strings.ReplaceAll(expected, "\t", "")
+	require.Equal(t, expected, buf.String())
 }

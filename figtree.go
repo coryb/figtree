@@ -1448,6 +1448,20 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 			ok, err := m.assignValue(dstElem, value, assignOptions{
 				Overwrite: overwrite,
 			})
+			if option := toOption(dstElem); option != nil {
+				loc := option.GetSource()
+				if loc.Location == nil {
+					_, coord, err := value.reflect()
+					if err != nil {
+						return err
+					}
+					loc.Location = coord
+				}
+				if loc.Name == "" {
+					loc.Name = m.sourceFile
+				}
+				option.SetSource(loc)
+			}
 			var assignErr notAssignableError
 			if err != nil && !errors.As(err, &assignErr) {
 				return err
