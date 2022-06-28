@@ -1157,14 +1157,22 @@ func (ms *mergeSource) foreachField(f func(key string, value mergeSource, anonym
 func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) error) error {
 	if ms.node != nil {
 		for i := 0; i < len(ms.node.Content); i += 2 {
-			newMS := newMergeSource(ms.node.Content[i])
-			key, _, err := newMS.reflect()
-			if err != nil {
-				return err
-			}
-			err = f(key, newMergeSource(ms.node.Content[i+1]))
-			if err != nil {
-				return err
+			if ms.node.Content[i].Tag == "!!merge" {
+				yamlMergeSrc := newMergeSource(ms.node.Content[i+1])
+				err := yamlMergeSrc.foreachKey(f)
+				if err != nil {
+					return err
+				}
+			} else {
+				newMS := newMergeSource(ms.node.Content[i])
+				key, _, err := newMS.reflect()
+				if err != nil {
+					return err
+				}
+				err = f(key, newMergeSource(ms.node.Content[i+1]))
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return nil

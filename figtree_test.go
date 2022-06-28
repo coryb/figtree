@@ -2582,3 +2582,34 @@ my-str: abc
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }
+
+func TestAssignYAMLMergeMap(t *testing.T) {
+	type data struct {
+		MyMap map[string]int `yaml:"my-map"`
+	}
+	config := `
+defs:
+  - &common
+    a: 1
+    b: 2
+my-map:
+  <<: *common
+  c: 3
+`
+	expected := data{
+		MyMap: map[string]int{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
