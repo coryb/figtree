@@ -2727,3 +2727,43 @@ extra-map:
 	expected = strings.ReplaceAll(expected, "\t", "")
 	require.Equal(t, expected, buf.String())
 }
+
+func TestPreserveRawYAMLStrings(t *testing.T) {
+	type data struct {
+		MyMap map[string]string `yaml:"my-map"`
+	}
+	config := `
+my-map:
+  Prop1: "False"
+  Prop2: False
+  Prop3: 12
+  Prop4: 12.3
+`
+	expected := data{
+		MyMap: map[string]string{
+			"Prop1": "False",
+			"Prop2": "False",
+			"Prop3": "12",
+			"Prop4": "12.3",
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	content, err := yaml.Marshal(got)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	got = data{}
+	err = Merge(&got, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}

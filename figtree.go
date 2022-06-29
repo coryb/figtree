@@ -947,7 +947,15 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 				},
 			)
 		default:
-			dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
+			// if we have a scalar node we want to convert to a string, just use
+			// the literal value tokenized from the document, this will
+			// allow values like `False` to be preserved as a case-sensitive
+			// string rather than being converted to a bool, the back to a string.
+			if src.node != nil && src.node.Kind == yaml.ScalarNode {
+				dest.Set(reflect.ValueOf(src.node.Value))
+			} else {
+				dest.Set(reflect.ValueOf(fmt.Sprintf("%v", reflectedSrc.Interface())))
+			}
 		}
 		return true, nil
 	}
