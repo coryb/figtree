@@ -1695,11 +1695,13 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			// conversions happen before we compare it to existing elements.
 			// Otherwise we might end up with extra dups in the array
 			// that are the same value
-			tmpVal := reflect.New(v.Type()).Elem()
-			_, err := m.assignValue(tmpVal, item, assignOptions{})
-			if err == nil {
-				if reflect.DeepEqual(v.Interface(), tmpVal.Interface()) {
-					return nil
+			if v.CanInterface() {
+				tmpVal := reflect.New(reflect.ValueOf(v.Interface()).Type()).Elem()
+				_, err := m.assignValue(tmpVal, item, assignOptions{})
+				if err == nil {
+					if reflect.DeepEqual(v.Interface(), tmpVal.Interface()) {
+						return nil
+					}
 				}
 			}
 		}
