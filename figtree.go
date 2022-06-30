@@ -307,15 +307,19 @@ func (f *FigTree) LoadConfig(file string, options interface{}) error {
 // the file and return the stdout otherwise it will return the file
 // contents directly.
 func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
-	rel, err := filepath.Rel(f.workDir, file)
+	absFile := file
+	if !filepath.IsAbs(file) {
+		absFile = filepath.Clean(filepath.Join(f.workDir, file))
+	}
+	rel, err := filepath.Rel(f.workDir, absFile)
 	if err != nil {
 		rel = file
 	}
 	var node yaml.Node
-	if stat, err := os.Stat(file); err == nil {
+	if stat, err := os.Stat(absFile); err == nil {
 		if stat.Mode()&0o111 == 0 || !f.exec {
-			Log.Debugf("Reading config %s", file)
-			fh, err := os.Open(file)
+			Log.Debugf("Reading config %s", absFile)
+			fh, err := os.Open(absFile)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to open %s", rel)
 			}
@@ -325,9 +329,9 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 				return nil, errors.Wrapf(err, "unable to decode %s as yaml", rel)
 			}
 		} else {
-			Log.Debugf("Found Executable Config file: %s", file)
+			Log.Debugf("Found Executable Config file: %s", absFile)
 			// it is executable, so run it and try to parse the output
-			cmd := exec.Command(file)
+			cmd := exec.Command(absFile)
 			stdout := bytes.NewBufferString("")
 			cmd.Stdout = stdout
 			cmd.Stderr = bytes.NewBufferString("")
@@ -338,7 +342,6 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			if err := yaml.Unmarshal(stdout.Bytes(), &node); err != nil {
 				return nil, err
 			}
-
 		}
 		return &ConfigSource{
 			Config:   &node,
