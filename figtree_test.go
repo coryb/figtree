@@ -2232,6 +2232,56 @@ str-list: [a, b]
 	require.Equal(t, expected, dest)
 }
 
+func TestLoadConfigWithSliceDups(t *testing.T) {
+	type data struct {
+		Strs    []UnmarshalString `yaml:"strs"`
+		Simple  []string          `yaml:"simple"`
+		Options ListStringOption  `yaml:"options"`
+	}
+	configs := []struct {
+		Name string
+		Body string
+	}{{
+		Name: "test",
+		Body: `
+strs: [a, b]
+simple: [a, b]
+options: [a, b]
+`,
+	}, {
+		Name: "../test",
+		Body: `
+strs: [b ,c]
+simple: [b, c]
+options: [b, c]
+`,
+	}}
+	expected := data{
+		Strs:   []UnmarshalString{"A", "B", "C"},
+		Simple: []string{"a", "b", "c"},
+		Options: []StringOption{
+			{tSrc("test", 4, 11), true, "a"},
+			{tSrc("test", 4, 14), true, "b"},
+			{tSrc("../test", 4, 14), true, "c"},
+		},
+	}
+	sources := []ConfigSource{}
+	for _, c := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(c.Body), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: c.Name,
+		})
+	}
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
 func TestMapOfOptionLists(t *testing.T) {
 	type data struct {
 		Stuff map[string]ListStringOption `yaml:"stuff"`

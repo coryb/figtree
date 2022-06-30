@@ -1686,13 +1686,21 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			return nil
 		}
 
-		for oi := 0; oi < cp.Len(); oi++ {
-			o := cp.Index(oi)
-			if oOption := toOption(o); oOption != nil {
-				o = reflect.ValueOf(oOption.GetValue())
+		for i := 0; i < cp.Len(); i++ {
+			v := cp.Index(i)
+			if oOption := toOption(v); oOption != nil {
+				v = reflect.ValueOf(oOption.GetValue())
 			}
-			if reflect.DeepEqual(compareValue.Interface(), o.Interface()) {
-				return nil
+			// try to assign the input to a tmp value so all the normal
+			// conversions happen before we compare it to existing elements.
+			// Otherwise we might end up with extra dups in the array
+			// that are the same value
+			tmpVal := reflect.New(v.Type()).Elem()
+			_, err := m.assignValue(tmpVal, item, assignOptions{})
+			if err == nil {
+				if reflect.DeepEqual(v.Interface(), tmpVal.Interface()) {
+					return nil
+				}
 			}
 		}
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
