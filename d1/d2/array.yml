@@ -1,0 +1,5 @@
+intArr: [1,2]
+partialInt: [1]
+tooManyInt: [1,2,3]
+strArr: [abc, def]
+toOverwrite: [a, b]

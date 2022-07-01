@@ -5,14 +5,27 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+
+	"emperror.dev/errors"
+	"gopkg.in/yaml.v3"
+)
+
+const (
+	defaultSource  = "default"
+	overrideSource = "override"
+	promptSource   = "prompt"
+	yamlSource     = "yaml"
+	jsonSource     = "json"
 )
 
 type option interface {
 	IsDefined() bool
 	GetValue() any
 	SetValue(any) error
-	SetSource(string)
-	GetSource() string
+	SetSource(SourceLocation)
+	GetSource() SourceLocation
+	IsDefault() bool
+	IsOverride() bool
 }
 
 // StringifyValue is global variable to indicate if the Option should be
@@ -24,15 +37,64 @@ var StringifyValue = true
 // stringMapRegex is used in option parsing for map types Set routines
 var stringMapRegex = regexp.MustCompile("[:=]")
 
+// FileCoordinate represents the line/column of an option
+type FileCoordinate struct {
+	Line   int
+	Column int
+}
+
+// ideally these would be const if Go supported const structs?
+var (
+	// DefaultSource will be the value of the `Source` property
+	// for Option[T] when they are constructed via `NewOption[T]`.
+	DefaultSource = NewSource(defaultSource)
+
+	// OverrideSource will be the value of the `Source` property
+	// for Option[T] when they are populated via kingpin command
+	// line option.
+	OverrideSource = NewSource(overrideSource)
+)
+
+type SourceLocation struct {
+	Name     string
+	Location *FileCoordinate
+}
+
+func (s SourceLocation) String() string {
+	if s.Location != nil {
+		return fmt.Sprintf("%s:%d:%d", s.Name, s.Location.Line, s.Location.Column)
+	}
+	return s.Name
+}
+
+type SourceOption func(*SourceLocation) *SourceLocation
+
+func WithLocation(location *FileCoordinate) SourceOption {
+	return func(s *SourceLocation) *SourceLocation {
+		s.Location = location
+		return s
+	}
+}
+
+func NewSource(name string, opts ...SourceOption) SourceLocation {
+	l := SourceLocation{
+		Name: name,
+	}
+	for _, o := range opts {
+		o(&l)
+	}
+	return l
+}
+
 type Option[T any] struct {
-	Source  string
+	Source  SourceLocation
 	Defined bool
 	Value   T
 }
 
 func NewOption[T any](dflt T) Option[T] {
 	return Option[T]{
-		Source:  "default",
+		Source:  NewSource(defaultSource),
 		Defined: true,
 		Value:   dflt,
 	}
@@ -42,12 +104,20 @@ func (o Option[T]) IsDefined() bool {
 	return o.Defined
 }
 
-func (o *Option[T]) SetSource(source string) {
+func (o *Option[T]) SetSource(source SourceLocation) {
 	o.Source = source
 }
 
-func (o *Option[T]) GetSource() string {
+func (o *Option[T]) GetSource() SourceLocation {
 	return o.Source
+}
+
+func (o *Option[T]) IsDefault() bool {
+	return o.Source.Name == defaultSource
+}
+
+func (o *Option[T]) IsOverride() bool {
+	return o.Source.Name == overrideSource
 }
 
 func (o Option[T]) GetValue() any {
@@ -61,10 +131,10 @@ func (o *Option[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		o.Value = v
 		o.Defined = true
-		o.Source = "prompt"
+		o.Source = NewSource(promptSource)
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, o.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, o.Value, value)
 }
 
 // Set implements part of the Value interface as defined by the kingpin command
@@ -75,7 +145,7 @@ func (o *Option[T]) Set(s string) error {
 	if err != nil {
 		return err
 	}
-	o.Source = "override"
+	o.Source = OverrideSource
 	o.Defined = true
 	return nil
 }
@@ -99,21 +169,35 @@ func (o *Option[T]) SetValue(v any) error {
 		o.Defined = true
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", v, o.Value, v)
+	// look for type conversions as well, like:
+	// (*Option[float64]).SetValue(float32)
+	// There might be a better way to do this, but with
+	// Generics I could not find a better way to convert
+	// the input type to match the Option type.
+	dst := reflect.ValueOf(o.Value)
+	dstType := reflect.ValueOf(v).Type()
+	src := reflect.ValueOf(v)
+	if src.CanConvert(dstType) {
+		dst.Set(src.Convert(dstType))
+		o.Defined = true
+		return nil
+	}
+
+	return errors.Errorf("Got %T expected %T type: %v", v, o.Value, v)
 }
 
-// UnmarshalYAML implement the obsoleteUnmarshaler interface used by the
+// UnmarshalYAML implement the Unmarshaler interface used by the
 // yaml library:
-// https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L40-L42
-//
-// Note this will be replaced in future versions by the recommended interface
-// from yaml.v3:
 // https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L36-L38
-func (o *Option[T]) UnmarshalYAML(unmarshal func(any) error) error {
-	if err := unmarshal(&o.Value); err != nil {
+func (o *Option[T]) UnmarshalYAML(node *yaml.Node) error {
+	if err := node.Decode(&o.Value); err != nil {
 		return err
 	}
-	o.Source = "yaml"
+	var loc *FileCoordinate
+	if node.Line > 0 || node.Column > 0 {
+		loc = &FileCoordinate{Line: node.Line, Column: node.Column}
+	}
+	o.Source = NewSource(yamlSource, WithLocation(loc))
 	o.Defined = true
 	return nil
 }
@@ -131,7 +215,7 @@ func (o Option[T]) MarshalYAML() (any, error) {
 		Defined bool
 	}{
 		Value:   o.Value,
-		Source:  o.Source,
+		Source:  o.Source.String(),
 		Defined: o.Defined,
 	}, nil
 }
@@ -142,7 +226,7 @@ func (o *Option[T]) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &o.Value); err != nil {
 		return err
 	}
-	o.Source = "json"
+	o.Source = NewSource(jsonSource)
 	o.Defined = true
 	return nil
 }
@@ -160,7 +244,7 @@ func (o Option[T]) MarshalJSON() ([]byte, error) {
 		Defined bool
 	}{
 		Value:   o.Value,
-		Source:  o.Source,
+		Source:  o.Source.String(),
 		Defined: o.Defined,
 	})
 }
@@ -187,10 +271,12 @@ type MapOption[T any] map[string]Option[T]
 func (o *MapOption[T]) Set(value string) error {
 	parts := stringMapRegex.Split(value, 2)
 	if len(parts) != 2 {
-		return fmt.Errorf("expected KEY=VALUE got '%s'", value)
+		return errors.Errorf("expected KEY=VALUE got '%s'", value)
 	}
 	val := Option[T]{}
-	val.Set(parts[1])
+	if err := val.Set(parts[1]); err != nil {
+		return err
+	}
 	(*o)[parts[0]] = val
 	return nil
 }
@@ -225,11 +311,11 @@ func (o *MapOption[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		tmp.Value = v
 		tmp.Defined = true
-		tmp.Source = "prompt"
+		tmp.Source = NewSource(promptSource)
 		(*o)[name] = tmp
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 func (o MapOption[T]) IsDefined() bool {
@@ -244,7 +330,9 @@ type ListOption[T any] []Option[T]
 // https://github.com/alecthomas/kingpin/blob/v1.3.4/values.go#L26-L29
 func (o *ListOption[T]) Set(value string) error {
 	val := Option[T]{}
-	val.Set(value)
+	if err := val.Set(value); err != nil {
+		return err
+	}
 	*o = append(*o, val)
 	return nil
 }
@@ -257,11 +345,11 @@ func (o *ListOption[T]) WriteAnswer(name string, value any) error {
 	if v, ok := value.(T); ok {
 		tmp.Value = v
 		tmp.Defined = true
-		tmp.Source = "prompt"
+		tmp.Source = NewSource(promptSource)
 		*o = append(*o, tmp)
 		return nil
 	}
-	return fmt.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
+	return errors.Errorf("Got %T expected %T type: %v", value, tmp.Value, value)
 }
 
 // IsCumulative implements part of the remainderArg interface as defined by the
@@ -281,7 +369,7 @@ func (o ListOption[T]) String() string {
 func (o ListOption[T]) Append(values ...T) ListOption[T] {
 	results := o
 	for _, val := range values {
-		results = append(results, NewOption[T](val))
+		results = append(results, NewOption(val))
 	}
 	return results
 }
