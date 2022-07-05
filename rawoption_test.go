@@ -39,7 +39,7 @@ func TestOptionInterface(t *testing.T) {
 func TestStringOptionYAML(t *testing.T) {
 	s := ""
 	err := yaml.Unmarshal([]byte(`""`), &s)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, s, "")
 
 	type testType struct {
@@ -48,13 +48,13 @@ func TestStringOptionYAML(t *testing.T) {
 	tt := testType{}
 
 	err = yaml.Unmarshal([]byte(`string: ""`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, StringOption{Source: "yaml", Value: "", Defined: true}, tt.String)
+	assert.NoError(t, err)
+	assert.Equal(t, StringOption{Source: tSrc("yaml", 1, 9), Value: "", Defined: true}, tt.String)
 
 	tt = testType{}
 	err = yaml.Unmarshal([]byte(`string: "value"`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, StringOption{Source: "yaml", Value: "value", Defined: true}, tt.String)
+	assert.NoError(t, err)
+	assert.Equal(t, StringOption{Source: tSrc("yaml", 1, 9), Value: "value", Defined: true}, tt.String)
 }
 
 func TestStringOptionJSON(t *testing.T) {
@@ -64,13 +64,13 @@ func TestStringOptionJSON(t *testing.T) {
 	tt := testType{}
 
 	err := json.Unmarshal([]byte(`{"string": ""}`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, StringOption{Source: "json", Value: "", Defined: true}, tt.String)
+	assert.NoError(t, err)
+	assert.Equal(t, StringOption{Source: NewSource("json"), Value: "", Defined: true}, tt.String)
 
 	tt = testType{}
 	err = json.Unmarshal([]byte(`{"string": "value"}`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, StringOption{Source: "json", Value: "value", Defined: true}, tt.String)
+	assert.NoError(t, err)
+	assert.Equal(t, StringOption{Source: NewSource("json"), Value: "value", Defined: true}, tt.String)
 }
 
 func TestBoolOptionYAML(t *testing.T) {
@@ -80,18 +80,18 @@ func TestBoolOptionYAML(t *testing.T) {
 	tt := testType{}
 
 	err := yaml.Unmarshal([]byte(`bool: true`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, BoolOption{Source: "yaml", Value: true, Defined: true}, tt.Bool)
+	assert.NoError(t, err)
+	assert.Equal(t, BoolOption{Source: tSrc("yaml", 1, 7), Value: true, Defined: true}, tt.Bool)
 
 	tt = testType{}
 	err = yaml.Unmarshal([]byte(`bool: false`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, BoolOption{Source: "yaml", Value: false, Defined: true}, tt.Bool)
+	assert.NoError(t, err)
+	assert.Equal(t, BoolOption{Source: tSrc("yaml", 1, 7), Value: false, Defined: true}, tt.Bool)
 
 	tt = testType{
 		Bool: NewBoolOption(true),
 	}
 	err = yaml.Unmarshal([]byte(`bool: false`), &tt)
-	assert.Nil(t, err)
-	assert.Equal(t, BoolOption{Source: "yaml", Value: false, Defined: true}, tt.Bool)
+	assert.NoError(t, err)
+	assert.Equal(t, BoolOption{Source: tSrc("yaml", 1, 7), Value: false, Defined: true}, tt.Bool)
 }

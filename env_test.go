@@ -7,12 +7,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestOptionsEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	StringifyValue = true
 	defer func() {
@@ -23,7 +27,7 @@ func TestOptionsEnv(t *testing.T) {
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -48,8 +52,10 @@ func TestOptionsEnv(t *testing.T) {
 
 func TestOptionsNamedEnv(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	StringifyValue = true
 	defer func() {
@@ -61,7 +67,7 @@ func TestOptionsNamedEnv(t *testing.T) {
 	fig := newFigTreeFromEnv(WithEnvPrefix("TEST"))
 
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -86,14 +92,16 @@ func TestOptionsNamedEnv(t *testing.T) {
 
 func TestBuiltinEnv(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	os.Clearenv()
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	got := []string{}
 	for _, env := range os.Environ() {
@@ -127,15 +135,17 @@ func TestTag(t *testing.T) {
 		MultiEnv    string `yaml:"multi-env" figtree:"MULTIA;MULTIB"`
 	}{}
 
-	input := `
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(`
 default-env: abc
 override-env: def
 no-env: ghi
 multi-env: jkl
-`
+`), &node)
+	assert.NoError(t, err)
 
 	fig := newFigTreeFromEnv()
-	err := fig.LoadConfigBytes([]byte(input), "test", &dest)
+	err = fig.LoadConfigSource(&node, "test", &dest)
 	assert.NoError(t, err)
 
 	got := os.Environ()
