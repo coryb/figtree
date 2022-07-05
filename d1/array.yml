@@ -1,0 +1,7 @@
+intArr: [3, 4]
+partialInt: [2]
+tooManyInt: [4,5,6]
+strArr: [ghi, jkl]
+toOverwrite: [c,d]
+config:
+  overwrite: [toOverwrite]

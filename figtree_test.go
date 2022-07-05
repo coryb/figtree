@@ -1,17 +1,22 @@
 package figtree
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
+	"unicode"
 
+	"emperror.dev/errors"
 	logging "gopkg.in/op/go-logging.v1"
 	yaml "gopkg.in/yaml.v3"
 
+	"github.com/coryb/walky"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +47,10 @@ func newFigTreeFromEnv(opts ...CreateOption) *FigTree {
 	return NewFigTree(opts...)
 }
 
+func tSrc(s string, l, c int) SourceLocation {
+	return NewSource(s, WithLocation(&FileCoordinate{Line: l, Column: c}))
+}
+
 type TestOptions struct {
 	String1    StringOption     `json:"str1,omitempty" yaml:"str1,omitempty"`
 	LeaveEmpty StringOption     `json:"leave-empty,omitempty" yaml:"leave-empty,omitempty"`
@@ -64,107 +73,115 @@ type TestBuiltin struct {
 
 func TestOptionsLoadConfigD3(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d3arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d3arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d3arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d3str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d3str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"../figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d3map1val2"},
-			"key3": StringOption{"figtree.yml", true, "d3map1val3"},
-			"dup":  StringOption{"figtree.yml", true, "d3dupval"},
+			"key0": {tSrc("../../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("../figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 7, 9), true, "d3map1val2"},
+			"key3": {tSrc("figtree.yml", 8, 9), true, "d3map1val3"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d3dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 333},
-		Float1: Float32Option{"figtree.yml", true, 3.33},
-		Bool1:  BoolOption{"figtree.yml", true, true},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 333},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 3.33},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, true},
 	}
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestOptionsLoadConfigD2(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d2str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d2str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 222},
-		Float1: Float32Option{"figtree.yml", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml", true, false},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 222},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 2.22},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, false},
 	}
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestOptionsLoadConfigD1(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d1arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d1str1val1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d1str1val1"},
 		LeaveEmpty: StringOption{},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d1map1val1"},
-			"dup":  StringOption{"figtree.yml", true, "d1dupval"},
+			"key0": {tSrc("figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 8, 9), true, "d1map1val1"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d1dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 111},
-		Float1: Float32Option{"figtree.yml", true, 1.11},
-		Bool1:  BoolOption{"figtree.yml", true, true},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 111},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 1.11},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, true},
 	}
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestOptionsCorrupt(t *testing.T) {
 	opts := TestOptions{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("corrupt.yml", &opts)
@@ -173,8 +190,10 @@ func TestOptionsCorrupt(t *testing.T) {
 
 func TestBuiltinLoadConfigD3(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2/d3")
-	defer os.Chdir("../../..")
+	require.NoError(t, os.Chdir("d1/d2/d3"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d3arr1val1")
@@ -203,14 +222,16 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestBuiltinLoadConfigD2(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d2arr1val1")
@@ -238,14 +259,16 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestBuiltinLoadConfigD1(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	arr1 := []string{}
 	arr1 = append(arr1, "d1arr1val1")
@@ -268,14 +291,16 @@ func TestBuiltinLoadConfigD1(t *testing.T) {
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Exactly(t, expected, opts)
 }
 
 func TestBuiltinCorrupt(t *testing.T) {
 	opts := TestBuiltin{}
-	os.Chdir("d1")
-	defer os.Chdir("..")
+	require.NoError(t, os.Chdir("d1"))
+	t.Cleanup(func() {
+		_ = os.Chdir("..")
+	})
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("corrupt.yml", &opts)
@@ -290,34 +315,36 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 		Float1:     NewFloat32Option(9.99),
 		Bool1:      NewBoolOption(true),
 	}
-	os.Chdir("d1/d2")
-	defer os.Chdir("../..")
+	require.NoError(t, os.Chdir("d1/d2"))
+	t.Cleanup(func() {
+		_ = os.Chdir("../..")
+	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val1"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "d2arr1val2"})
-	arr1 = append(arr1, StringOption{"figtree.yml", true, "dupval"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val1"})
-	arr1 = append(arr1, StringOption{"../figtree.yml", true, "d1arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d1arr1val2"})
 
 	expected := TestOptions{
-		String1:    StringOption{"figtree.yml", true, "d2str1val1"},
-		LeaveEmpty: StringOption{"default", true, "emptyVal1"},
+		String1:    StringOption{tSrc("figtree.yml", 1, 7), true, "d2str1val1"},
+		LeaveEmpty: StringOption{NewSource("default"), true, "emptyVal1"},
 		Array1:     arr1,
 		Map1: map[string]StringOption{
-			"key0": StringOption{"../figtree.yml", true, "d1map1val0"},
-			"key1": StringOption{"figtree.yml", true, "d2map1val1"},
-			"key2": StringOption{"figtree.yml", true, "d2map1val2"},
-			"dup":  StringOption{"figtree.yml", true, "d2dupval"},
+			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
+			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
-		Int1:   IntOption{"figtree.yml", true, 222},
-		Float1: Float32Option{"figtree.yml", true, 2.22},
-		Bool1:  BoolOption{"figtree.yml", true, false},
+		Int1:   IntOption{tSrc("figtree.yml", 10, 7), true, 222},
+		Float1: Float32Option{tSrc("figtree.yml", 11, 9), true, 2.22},
+		Bool1:  BoolOption{tSrc("figtree.yml", 12, 8), true, false},
 	}
 
 	fig := newFigTreeFromEnv()
 	err := fig.LoadAllConfigs("figtree.yml", &opts)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	require.Exactly(t, expected, opts)
 }
 
@@ -336,7 +363,8 @@ func TestMergeMapsWithNull(t *testing.T) {
 		},
 	}
 
-	Merge(dest, src)
+	err := Merge(dest, src)
+	require.NoError(t, err)
 
 	expected := map[string]interface{}{
 		"requires": map[string]interface{}{
@@ -365,8 +393,10 @@ func TestMergeMapsIntoStructWithNull(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Requires struct {
@@ -402,12 +432,14 @@ func TestMergeStringIntoStringOption(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"merge", true, "val1"}}
+	}{StringOption{NewSource("merge"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -422,12 +454,14 @@ func TestMergeStringOptions(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"default", true, "val1"}}
+	}{StringOption{NewSource("default"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -443,8 +477,10 @@ func TestMergeMapStringIntoStringOption(t *testing.T) {
 	}
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Map struct {
@@ -453,7 +489,7 @@ func TestMergeMapStringIntoStringOption(t *testing.T) {
 	}{
 		Map: struct {
 			Key StringOption `json:"key" yaml:"key"`
-		}{StringOption{"default", true, "val1"}},
+		}{StringOption{NewSource("default"), true, "val1"}},
 	}
 	assert.Equal(t, expected, dest)
 }
@@ -469,12 +505,14 @@ func TestMergeMapStringOptions(t *testing.T) {
 
 	dest := MakeMergeStruct(src1, src2)
 
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		Value StringOption
-	}{StringOption{"default", true, "val1"}}
+	}{StringOption{NewSource("default"), true, "val1"}}
 	assert.Equal(t, expected, dest)
 }
 
@@ -502,7 +540,9 @@ func TestMergeMapWithStruct(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := map[string]interface{}{
 		"mapkey":       "mapval1",
@@ -514,7 +554,6 @@ func TestMergeMapWithStruct(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expected, dest)
-
 }
 
 func TestMergeStructWithMap(t *testing.T) {
@@ -544,8 +583,10 @@ func TestMergeStructWithMap(t *testing.T) {
 	}
 
 	merged := MakeMergeStruct(&dest, &src)
-	Merge(merged, &dest)
-	Merge(merged, &src)
+	err := Merge(merged, &dest)
+	require.NoError(t, err)
+	err = Merge(merged, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Map struct {
@@ -598,8 +639,10 @@ func TestMergeStructWithMapArbitraryNaming(t *testing.T) {
 	}
 
 	merged := MakeMergeStruct(&dest, &src)
-	Merge(merged, &dest)
-	Merge(merged, &src)
+	err := Merge(merged, &dest)
+	require.NoError(t, err)
+	err = Merge(merged, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Map struct {
@@ -663,7 +706,8 @@ func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 		"uint":     uint(456),
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Bool    BoolOption
@@ -683,22 +727,22 @@ func TestMergeStructUsingOptionsWithMap(t *testing.T) {
 		Uint8   Uint8Option
 		Uint    UintOption
 	}{
-		Bool:    BoolOption{"merge", true, true},
-		Byte:    ByteOption{"merge", true, byte(10)},
-		Float32: Float32Option{"merge", true, float32(1.23)},
-		Float64: Float64Option{"merge", true, float64(2.34)},
-		Int16:   Int16Option{"merge", true, int16(123)},
-		Int32:   Int32Option{"merge", true, int32(234)},
-		Int64:   Int64Option{"merge", true, int64(345)},
-		Int8:    Int8Option{"merge", true, int8(127)},
-		Int:     IntOption{"merge", true, int(456)},
-		Rune:    RuneOption{"merge", true, rune('a')},
-		String:  StringOption{"merge", true, "stringval"},
-		Uint16:  Uint16Option{"merge", true, uint16(123)},
-		Uint32:  Uint32Option{"merge", true, uint32(234)},
-		Uint64:  Uint64Option{"merge", true, uint64(345)},
-		Uint8:   Uint8Option{"merge", true, uint8(255)},
-		Uint:    UintOption{"merge", true, uint(456)},
+		Bool:    BoolOption{NewSource("merge"), true, true},
+		Byte:    ByteOption{NewSource("merge"), true, byte(10)},
+		Float32: Float32Option{NewSource("merge"), true, float32(1.23)},
+		Float64: Float64Option{NewSource("merge"), true, float64(2.34)},
+		Int16:   Int16Option{NewSource("merge"), true, int16(123)},
+		Int32:   Int32Option{NewSource("merge"), true, int32(234)},
+		Int64:   Int64Option{NewSource("merge"), true, int64(345)},
+		Int8:    Int8Option{NewSource("merge"), true, int8(127)},
+		Int:     IntOption{NewSource("merge"), true, int(456)},
+		Rune:    RuneOption{NewSource("merge"), true, rune('a')},
+		String:  StringOption{NewSource("merge"), true, "stringval"},
+		Uint16:  Uint16Option{NewSource("merge"), true, uint16(123)},
+		Uint32:  Uint32Option{NewSource("merge"), true, uint32(234)},
+		Uint64:  Uint64Option{NewSource("merge"), true, uint64(345)},
+		Uint8:   Uint8Option{NewSource("merge"), true, uint8(255)},
+		Uint:    UintOption{NewSource("merge"), true, uint(456)},
 	}
 	assert.Equal(t, expected, dest)
 }
@@ -759,7 +803,9 @@ func TestMergeMapWithStructUsingOptions(t *testing.T) {
 		Uint:    NewUintOption(456),
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"bool":    true,
 		"byte":    byte(10),
@@ -797,14 +843,15 @@ func TestMergeStructUsingListOptionsWithMap(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Strings ListStringOption
 	}{
 		ListStringOption{
-			StringOption{"default", true, "abc"},
-			StringOption{"merge", true, "def"},
+			StringOption{NewSource("default"), true, "abc"},
+			StringOption{NewSource("merge"), true, "def"},
 		},
 	}
 	assert.Equal(t, expected, dest)
@@ -824,7 +871,9 @@ func TestMergeMapWithStructUsingListOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"strings": []string{"abc", "def"},
 	}
@@ -849,7 +898,9 @@ func TestMergeStructWithListUsingListOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := struct {
 		Property []interface{}
 	}{
@@ -873,14 +924,15 @@ func TestMergeStructUsingMapOptionsWithMap(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
 
 	expected := struct {
 		Strings MapStringOption
 	}{
 		Strings: MapStringOption{
-			"key1": StringOption{"merge", true, "val1"},
-			"key2": StringOption{"merge", true, "val2"},
+			"key1": StringOption{NewSource("merge"), true, "val1"},
+			"key2": StringOption{NewSource("merge"), true, "val2"},
 		},
 	}
 	assert.Equal(t, expected, dest)
@@ -900,7 +952,9 @@ func TestMergeMapWithStructUsingMapOptions(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src)
+	err := Merge(&dest, &src)
+	require.NoError(t, err)
+
 	expected := map[string]interface{}{
 		"strings": map[string]string{
 			"key1": "val1",
@@ -928,7 +982,9 @@ func TestMergeStructsWithSrcEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := struct {
 		FieldName string
@@ -954,7 +1010,9 @@ func TestMergeStructsWithDestEmbedded(t *testing.T) {
 	}
 
 	m := NewMerger()
-	m.mergeStructs(reflect.ValueOf(&dest), reflect.ValueOf(&src))
+	changed, err := m.mergeStructs(reflect.ValueOf(&dest), newMergeSource(reflect.ValueOf(&src)), false)
+	require.NoError(t, err)
+	require.True(t, changed)
 
 	expected := struct {
 		embedded
@@ -977,7 +1035,8 @@ func TestMakeMergeStruct(t *testing.T) {
 
 	got := MakeMergeStruct(input)
 
-	Merge(got, &input)
+	err := Merge(got, &input)
+	require.NoError(t, err)
 
 	assert.Equal(t, input["mapkey"], reflect.ValueOf(got).Elem().FieldByName("Mapkey").Interface())
 	assert.Equal(t, struct {
@@ -998,13 +1057,17 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 	}
 
 	got := MakeMergeStruct(input, s)
-	Merge(got, &input)
+	err := Merge(got, &input)
+	require.NoError(t, err)
+
 	assert.Equal(t, &struct {
 		Mapkey string `json:"mapkey" yaml:"mapkey"`
 	}{"mapval1"}, got)
 
 	got = MakeMergeStruct(s, input)
-	Merge(got, &s)
+	err = Merge(got, &s)
+	require.NoError(t, err)
+
 	assert.Equal(t, &struct{ Mapkey string }{"mapval2"}, got)
 }
 
@@ -1052,7 +1115,8 @@ func TestMakeMergeStructWithYaml(t *testing.T) {
 	// turn map data into a struct
 	got := MakeMergeStruct(data)
 	// then assign the data back into that struct
-	Merge(got, data)
+	err = Merge(got, data)
+	require.NoError(t, err)
 
 	expected := &struct {
 		FooBar string `json:"foo-bar" yaml:"foo-bar"`
@@ -1076,7 +1140,8 @@ func TestMakeMergeStructWithJson(t *testing.T) {
 	// turn map data into a struct
 	got := MakeMergeStruct(data)
 	// then assign the data back into that struct
-	Merge(got, data)
+	err = Merge(got, data)
+	require.NoError(t, err)
 
 	expected := &struct {
 		FooBar string `json:"foo-bar" yaml:"foo-bar"`
@@ -1190,7 +1255,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{StringOption{}},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{zero, StringOption{}},
+				"value": []interface{}{zero},
 			},
 		},
 		{
@@ -1202,7 +1267,7 @@ func TestMergeWithZeros(t *testing.T) {
 				"value": []interface{}{StringOption{}},
 			},
 			want: map[string]interface{}{
-				"value": []interface{}{StringOption{}},
+				"value": []interface{}{},
 			},
 		},
 		{
@@ -1338,16 +1403,20 @@ func TestMergeWithZeros(t *testing.T) {
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 				Log.Debugf("%s", tt.info.name)
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-				Merge(&tt.dest, &tt.src)
+				err := Merge(&tt.dest, &tt.src)
+				require.NoError(t, err)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
 
 				got := MakeMergeStruct(tt.dest)
-				Merge(got, tt.dest)
-				Merge(got, tt.src)
+				err = Merge(got, tt.dest)
+				require.NoError(t, err)
+				err = Merge(got, tt.src)
+				require.NoError(t, err)
 
 				expected := MakeMergeStruct(tt.want)
-				Merge(expected, tt.want)
+				err = Merge(expected, tt.want)
+				require.NoError(t, err)
 
 				assert.Equal(t, expected, got, tt.info.line)
 			}),
@@ -1458,7 +1527,7 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{StringOption{}}},
 			want: struct {
 				Value interface{}
-			}{[]interface{}{zero, StringOption{}}},
+			}{[]interface{}{zero}},
 		},
 		{
 			info: info{"list ListStringOption to empty list", line()},
@@ -1474,7 +1543,6 @@ func TestMergeStructsWithZeros(t *testing.T) {
 			}{[]interface{}{}},
 		},
 		{
-
 			info: info{"list zero list to ListStringOption", line()},
 			dest: struct {
 				Value ListStringOption
@@ -1592,19 +1660,22 @@ func TestMergeStructsWithZeros(t *testing.T) {
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 				Log.Debugf("%s", tt.info.name)
 				Log.Debugf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-				Merge(&tt.dest, &tt.src)
+				err := Merge(&tt.dest, &tt.src)
+				require.NoError(t, err)
 				// })
 				assert.Equal(t, tt.want, tt.dest, tt.info.line)
 
 				got := MakeMergeStruct(tt.dest)
-				Merge(got, tt.dest)
-				Merge(got, tt.src)
+				err = Merge(got, tt.dest)
+				require.NoError(t, err)
+				err = Merge(got, tt.src)
+				require.NoError(t, err)
 
 				expected := MakeMergeStruct(tt.want)
-				Merge(expected, tt.want)
+				err = Merge(expected, tt.want)
+				require.NoError(t, err)
 
 				assert.Equal(t, expected, got, tt.info.line)
-
 			}),
 		)
 	}
@@ -1655,38 +1726,38 @@ func TestMergeStructsWithPreservedMaps(t *testing.T) {
 }
 
 func TestFigtreePreProcessor(t *testing.T) {
-	input := []byte(`
+	var input yaml.Node
+	err := yaml.Unmarshal([]byte(`
 bad-name: good-value
 good-name: bad-value
 ok-name: want-array
-`)
+`), &input)
+	assert.NoError(t, err)
 
-	pp := func(in []byte) ([]byte, error) {
-		raw := map[string]interface{}{}
-		if err := yaml.Unmarshal(in, &raw); err != nil {
-			return in, err
-		}
-
+	pp := func(node *yaml.Node) error {
 		// rename "bad-name" key to "fixed-name"
-		if val, ok := raw["bad-name"]; ok {
-			delete(raw, "bad-name")
-			raw["fixed-name"] = val
+		if keyNode, _ := walky.GetKeyValue(node, walky.NewStringNode("bad-name")); keyNode != nil {
+			keyNode.Value = "fixed-name"
 		}
 
-		// reset "bad-value" key to "good-value"
-		if val, ok := raw["good-name"]; ok {
-			if t, ok := val.(string); ok && t != "fixed-value" {
-				raw["good-name"] = "fixed-value"
-			}
+		// reset "bad-value" key to "fixed-value", under "good-name" key
+		if valNode := walky.GetKey(node, "good-name"); valNode != nil {
+			valNode.Value = "fixed-value"
 		}
 
 		// migrate "ok-name" value from string to list of strings
-		if val, ok := raw["ok-name"]; ok {
-			if t, ok := val.(string); ok {
-				raw["ok-name"] = []string{t}
+		if keyNode, valNode := walky.GetKeyValue(node, walky.NewStringNode("ok-name")); keyNode != nil {
+			if valNode.Kind == yaml.ScalarNode {
+				seqNode := walky.NewSequenceNode()
+				require.NoError(t,
+					walky.AppendNode(seqNode, walky.ShallowCopyNode(valNode)),
+				)
+				require.NoError(t,
+					walky.AssignMapNode(node, keyNode, seqNode),
+				)
 			}
 		}
-		return yaml.Marshal(raw)
+		return nil
 	}
 
 	fig := newFigTreeFromEnv(WithPreProcessor(pp))
@@ -1703,7 +1774,7 @@ ok-name: want-array
 		OkName    []string `yaml:"ok-name"`
 	}{"good-value", "fixed-value", []string{"want-array"}}
 
-	err := fig.LoadConfigBytes(input, "test", &dest)
+	err = fig.LoadConfigSource(&input, "test", &dest)
 	assert.NoError(t, err)
 	assert.Equal(t, want, dest)
 }
@@ -1731,10 +1802,12 @@ func TestMergeMapWithCopy(t *testing.T) {
 		},
 	}
 
-	Merge(&dest, &src1)
+	err := Merge(&dest, &src1)
+	require.NoError(t, err)
 	assert.Equal(t, mss{"key": "value"}, dest.Map)
 
-	Merge(&dest, &src2)
+	err = Merge(&dest, &src2)
+	require.NoError(t, err)
 	assert.Equal(t, mss{"key": "value", "otherkey": "othervalue"}, dest.Map)
 
 	// verify that src1 was unmodified
@@ -1751,12 +1824,14 @@ func TestMergeBoolString(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		EnableThing BoolOption
-	}{BoolOption{Source: "merge", Defined: true, Value: true}}
+	}{BoolOption{Source: NewSource("merge"), Defined: true, Value: true}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1771,12 +1846,14 @@ func TestMergeStringBool(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		EnableThing StringOption
-	}{StringOption{Source: "merge", Defined: true, Value: "true"}}
+	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "true"}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1791,12 +1868,14 @@ func TestMergeStringFloat64(t *testing.T) {
 	}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
-	Merge(dest, src2)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	expected := &struct {
 		SomeThing StringOption
-	}{StringOption{Source: "merge", Defined: true, Value: "42"}}
+	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "42"}}
 
 	assert.Equal(t, expected, dest)
 }
@@ -1811,15 +1890,17 @@ func TestMergeDefaults(t *testing.T) {
 	}{NewStringOption("bar")}
 
 	dest := MakeMergeStruct(src1, src2)
-	Merge(dest, src1)
+	err := Merge(dest, src1)
+	require.NoError(t, err)
 
 	expected := &struct {
 		SomeThing StringOption
-	}{StringOption{Source: "default", Defined: true, Value: "foo"}}
+	}{StringOption{Source: NewSource("default"), Defined: true, Value: "foo"}}
 
 	assert.Equal(t, expected, dest)
 
-	Merge(dest, src2)
+	err = Merge(dest, src2)
+	require.NoError(t, err)
 
 	assert.Equal(t, expected, dest)
 }
@@ -1841,7 +1922,8 @@ func TestMergeCopySlice(t *testing.T) {
 	stuff2 := &stuffer{Stuff: nil}
 
 	for _, stuff := range []*stuffer{stuff1, stuff2} {
-		Merge(stuff, common)
+		err := Merge(stuff, common)
+		require.NoError(t, err)
 		stuffers = append(stuffers, stuff)
 	}
 
@@ -1865,7 +1947,8 @@ func TestMergeCopyArray(t *testing.T) {
 	stuff2 := &stuffer{Stuff: [2]string{}}
 
 	for _, stuff := range []*stuffer{stuff1, stuff2} {
-		Merge(stuff, common)
+		err := Merge(stuff, common)
+		require.NoError(t, err)
 		stuffers = append(stuffers, stuff)
 	}
 
@@ -1875,4 +1958,863 @@ func TestMergeCopyArray(t *testing.T) {
 	stuffers[0].Stuff[0] = "updated"
 	assert.Equal(t, [2]string{"updated", ""}, stuffers[0].Stuff)
 	assert.Equal(t, [2]string{"common", ""}, stuffers[1].Stuff)
+}
+
+func TestListOfStructs(t *testing.T) {
+	type myStruct struct {
+		ID   string `yaml:"id"`
+		Name string `yaml:"name"`
+	}
+	type myStructs []myStruct
+	type data struct {
+		Structs myStructs `yaml:"list"`
+	}
+
+	config := `
+list:
+  - id: abc
+    name: def
+  - id: foo
+    name: bar
+`
+	expected := data{
+		Structs: myStructs{
+			{ID: "abc", Name: "def"},
+			{ID: "foo", Name: "bar"},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestLoadConfigToNode(t *testing.T) {
+	type SubData struct {
+		Field yaml.Node `yaml:"field"`
+	}
+	type data struct {
+		SubData `yaml:",inline"`
+		List    []yaml.Node          `yaml:"list"`
+		Map     map[string]yaml.Node `yaml:"map"`
+		Stuff   yaml.Node            `yaml:"stuff"`
+		Sub     SubData              `yaml:"sub"`
+	}
+
+	config := `
+field: 123
+list: [a, 99]
+map:
+  key1: abc
+  key2: 123
+stuff: {a: 1, b: 2}
+sub:
+  field: ghi
+`
+	expected := data{
+		SubData: SubData{
+			Field: yaml.Node{Kind: yaml.ScalarNode, Tag: "!!int", Value: "123", Line: 2, Column: 8},
+		},
+		List: []yaml.Node{
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "a", Line: 3, Column: 8},
+			{Kind: yaml.ScalarNode, Tag: "!!int", Value: "99", Line: 3, Column: 11},
+		},
+		Map: map[string]yaml.Node{
+			"key1": {Kind: yaml.ScalarNode, Tag: "!!str", Value: "abc", Line: 5, Column: 9},
+			"key2": {Kind: yaml.ScalarNode, Tag: "!!int", Value: "123", Line: 6, Column: 9},
+		},
+		Stuff: yaml.Node{
+			Kind:  yaml.MappingNode,
+			Tag:   "!!map",
+			Style: yaml.FlowStyle,
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Tag: "!!str", Value: "a", Line: 7, Column: 9},
+				{Kind: yaml.ScalarNode, Tag: "!!int", Value: "1", Line: 7, Column: 12},
+				{Kind: yaml.ScalarNode, Tag: "!!str", Value: "b", Line: 7, Column: 15},
+				{Kind: yaml.ScalarNode, Tag: "!!int", Value: "2", Line: 7, Column: 18},
+			},
+			Line:   7,
+			Column: 8,
+		},
+		Sub: SubData{
+			Field: yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: "ghi", Line: 9, Column: 10},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+type UnmarshalInt int
+
+func (t *UnmarshalInt) UnmarshalYAML(unmarshal func(any) error) error {
+	var rawType string
+	if err := unmarshal(&rawType); err != nil {
+		return errors.WithStack(err)
+	}
+	switch strings.ToLower(rawType) {
+	case "foo":
+		*t = 1
+	case "bar":
+		*t = 2
+	default:
+		return errors.Errorf("Unknown unmarshal test value: %s", rawType)
+	}
+	return nil
+}
+
+func TestLoadConfigWithUnmarshalInt(t *testing.T) {
+	type Property struct {
+		Type UnmarshalInt  `yaml:"type"`
+		Ptr  *UnmarshalInt `yaml:"ptr"`
+	}
+	type data struct {
+		Properties []Property `yaml:"properties"`
+	}
+
+	config := `
+properties:
+  - type: foo
+    ptr: foo
+  - type: bar
+    ptr: bar
+`
+	foo := UnmarshalInt(1)
+	bar := UnmarshalInt(2)
+
+	expected := data{
+		Properties: []Property{
+			{Type: foo, Ptr: &foo},
+			{Type: bar, Ptr: &bar},
+		},
+	}
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+type UnmarshalString string
+
+func (t *UnmarshalString) UnmarshalYAML(unmarshal func(any) error) error {
+	var rawType any
+	if err := unmarshal(&rawType); err != nil {
+		return errors.WithStack(err)
+	}
+	switch c := rawType.(type) {
+	case string:
+		*t = UnmarshalString(strings.ToUpper(c))
+	case int:
+		*t = UnmarshalString(fmt.Sprint(c))
+	default:
+		panic(fmt.Sprintf("can't handle %T", c))
+	}
+	return nil
+}
+
+type UnmarshalStringList []UnmarshalString
+
+// UnmarshalYAML will unmarshal a list of PortSpecs and return an error if any items
+// could not be unmarshalled.
+func (pl *UnmarshalStringList) UnmarshalYAML(unmarshal func(any) error) error {
+	var ps []UnmarshalString
+	if err := unmarshal(&ps); err != nil {
+		return err
+	}
+
+	*pl = ps
+	return nil
+}
+
+func TestLoadConfigWithUnmarshalString(t *testing.T) {
+	type Property struct {
+		Type UnmarshalString  `yaml:"type"`
+		Ptr  *UnmarshalString `yaml:"ptr"`
+	}
+	type data struct {
+		Properties []Property          `yaml:"properties"`
+		Prop       Property            `yaml:"prop"`
+		Str        UnmarshalString     `yaml:"str"`
+		Ptr        *UnmarshalString    `yaml:"ptr"`
+		Strs       []UnmarshalString   `yaml:"strs"`
+		Ptrs       []*UnmarshalString  `yaml:"ptrs"`
+		PtrStrs    *[]UnmarshalString  `yaml:"ptr-strs"`
+		StrList    UnmarshalStringList `yaml:"str-list"`
+	}
+
+	config := `
+properties:
+  - type: foo
+    ptr: foo
+  - type: bar
+    ptr: bar
+prop:
+  type: 123
+  ptr: 123
+ptr: a
+str: a
+strs: [a, b]
+ptrs: [a, b]
+str-list: [a, b]
+ptr-strs: [a, b]
+`
+	foo := UnmarshalString("FOO")
+	bar := UnmarshalString("BAR")
+	baz := UnmarshalString("123")
+	a := UnmarshalString("A")
+	b := UnmarshalString("B")
+
+	expected := data{
+		Properties: []Property{
+			{Type: foo, Ptr: &foo},
+			{Type: bar, Ptr: &bar},
+		},
+		Prop:    Property{Type: baz, Ptr: &baz},
+		Str:     a,
+		Ptr:     &a,
+		Strs:    []UnmarshalString{a, b},
+		Ptrs:    []*UnmarshalString{&a, &b},
+		StrList: UnmarshalStringList{a, b},
+		PtrStrs: &[]UnmarshalString{a, b},
+	}
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestLoadConfigWithSliceDups(t *testing.T) {
+	type data struct {
+		Strs    []UnmarshalString `yaml:"strs"`
+		Simple  []string          `yaml:"simple"`
+		Options ListStringOption  `yaml:"options"`
+	}
+	configs := []struct {
+		Name string
+		Body string
+	}{{
+		Name: "test",
+		Body: `
+strs: [a, b]
+simple: [a, b]
+options: [a, b]
+`,
+	}, {
+		Name: "../test",
+		Body: `
+strs: [b ,c]
+simple: [b, c]
+options: [b, c]
+`,
+	}}
+	expected := data{
+		Strs:   []UnmarshalString{"A", "B", "C"},
+		Simple: []string{"a", "b", "c"},
+		Options: []StringOption{
+			{tSrc("test", 4, 11), true, "a"},
+			{tSrc("test", 4, 14), true, "b"},
+			{tSrc("../test", 4, 14), true, "c"},
+		},
+	}
+	sources := []ConfigSource{}
+	for _, c := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(c.Body), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: c.Name,
+		})
+	}
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestMapOfOptionLists(t *testing.T) {
+	type data struct {
+		Stuff map[string]ListStringOption `yaml:"stuff"`
+	}
+
+	config := `
+stuff:
+  foo:
+    - abc
+    - def
+  bar:
+    - ghi
+    - jkl
+`
+	expected := data{
+		Stuff: map[string]ListStringOption{
+			"bar": {
+				StringOption{tSrc("test", 7, 7), true, "ghi"},
+				StringOption{tSrc("test", 8, 7), true, "jkl"},
+			},
+			"foo": {
+				StringOption{tSrc("test", 4, 7), true, "abc"},
+				StringOption{tSrc("test", 5, 7), true, "def"},
+			},
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	dest := data{}
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestMapOfStructs(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var dest map[string]myStruct
+
+	config := `
+foo:
+  name: abc
+bar:
+  name: def
+`
+	expected := map[string]myStruct{
+		"bar": {Name: "def"},
+		"foo": {Name: "abc"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestZeroYAML(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var dest map[string]myStruct
+
+	config := `
+foo:
+bar:
+`
+	expected := map[string]myStruct{
+		"bar": {},
+		"foo": {},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestBoolToStringOption(t *testing.T) {
+	type myStruct struct {
+		Name StringOption
+	}
+	var data map[string]myStruct
+
+	// true/false will be parsed as `!!bool`
+	// but we want to assign it to a StringOption
+	config := `
+foo:
+  name: true
+bar:
+  name: false
+`
+	expected := map[string]myStruct{
+		"bar": {Name: StringOption{tSrc("test", 5, 9), true, "false"}},
+		"foo": {Name: StringOption{tSrc("test", 3, 9), true, "true"}},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestBoolToString(t *testing.T) {
+	type myStruct struct {
+		Name string
+	}
+	var dest map[string]myStruct
+
+	// true/false will be parsed as `!!bool`
+	// but we want to assign it to a string
+	config := `
+foo:
+  name: true
+bar:
+  name: false
+`
+	expected := map[string]myStruct{
+		"bar": {Name: "false"},
+		"foo": {Name: "true"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = map[string]myStruct{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestIntToStringOption(t *testing.T) {
+	var data map[string]StringOption
+
+	config := `
+a: 11
+b: 11.1
+c: 11.1.1
+`
+	expected := map[string]StringOption{
+		"a": {tSrc("test", 2, 4), true, "11"},
+		"b": {tSrc("test", 3, 4), true, "11.1"},
+		"c": {tSrc("test", 4, 4), true, "11.1.1"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestIntToString(t *testing.T) {
+	var dest map[string]string
+	config := `
+a: 11
+b: 11.1
+c: 11.1.1
+`
+	expected := map[string]string{
+		"a": "11",
+		"b": "11.1",
+		"c": "11.1.1",
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = map[string]string{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestAssignToAnyOption(t *testing.T) {
+	var data map[string]Option[any]
+	config := `
+a: foo
+b: 12
+c: 12.2
+d: 12.2.2
+`
+	expected := map[string]Option[any]{
+		"a": {tSrc("test", 2, 4), true, "foo"},
+		"b": {tSrc("test", 3, 4), true, 12},
+		"c": {tSrc("test", 4, 4), true, 12.2},
+		"d": {tSrc("test", 5, 4), true, "12.2.2"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &data)
+	require.NoError(t, err)
+	require.Equal(t, expected, data)
+}
+
+func TestAssignToAny(t *testing.T) {
+	var dest map[string]any
+	config := `
+a: foo
+b: 12
+c: 12.2
+d: 12.2.2
+`
+	expected := map[string]any{
+		"a": "foo",
+		"b": 12,
+		"c": 12.2,
+		"d": "12.2.2",
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = map[string]any{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestAssignInterfaceListToListStringOption(t *testing.T) {
+	type data struct {
+		MyList ListStringOption `yaml:"mylist"`
+	}
+	config := `
+mylist: []
+`
+	expected := data{}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	dest := data{}
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+
+	content, err := yaml.Marshal(dest)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	dest = data{}
+	err = Merge(&dest, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, dest)
+}
+
+func TestAssignStringIntoList(t *testing.T) {
+	type data struct {
+		MyList ListStringOption `yaml:"mylist"`
+	}
+	config := `
+mylist: foobar
+`
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	dest := data{}
+	err = fig.LoadConfigSource(&node, "test", &dest)
+	require.Error(t, err)
+}
+
+func TestAssignStringToOptionPointer(t *testing.T) {
+	type data struct {
+		MyStr *StringOption `yaml:"my-str"`
+	}
+	config := `
+my-str: abc
+`
+	expected := data{
+		MyStr: &StringOption{tSrc("test", 2, 9), true, "abc"},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{MyStr: &StringOption{}}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	got = data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestAssignYAMLMergeMap(t *testing.T) {
+	type data struct {
+		MyMap    map[string]int `yaml:"my-map"`
+		ExtraMap map[string]int `yaml:"extra-map"`
+	}
+	config := `
+defs:
+  - &common
+    a: 1
+    b: 2
+  - &extra
+    d: 4
+    e: 5
+my-map:
+  <<: *common
+  c: 3
+extra-map:
+  <<: [*common, *extra]
+  c: 3
+`
+	expected := data{
+		MyMap: map[string]int{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+		},
+		ExtraMap: map[string]int{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+			"d": 4,
+			"e": 5,
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestDecodeWithSource(t *testing.T) {
+	StringifyValue = false
+	defer func() {
+		StringifyValue = true
+	}()
+
+	type data struct {
+		MyMap    map[string]IntOption `yaml:"my-map"`
+		ExtraMap map[string]IntOption `yaml:"extra-map"`
+	}
+	config := `
+defs:
+  - &common
+    a: 1
+    b: 2
+    c:
+  - &extra
+    e: 4
+    f: 5
+    g:
+my-map:
+  <<: *common
+  d: 3
+extra-map:
+  <<: [*common, *extra]
+  d: 3
+`
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	if err != nil {
+		panic(err)
+	}
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	err = yaml.NewEncoder(&buf).Encode(&got)
+	require.NoError(t, err)
+
+	expected := `
+	my-map:
+	    a:
+	        value: 1
+	        source: test:4:8
+	        defined: true
+	    b:
+	        value: 2
+	        source: test:5:8
+	        defined: true
+	    c:
+	        value: 0
+	        source: test:6:7
+	        defined: false
+	    d:
+	        value: 3
+	        source: test:13:6
+	        defined: true
+	extra-map:
+	    a:
+	        value: 1
+	        source: test:4:8
+	        defined: true
+	    b:
+	        value: 2
+	        source: test:5:8
+	        defined: true
+	    c:
+	        value: 0
+	        source: test:6:7
+	        defined: false
+	    d:
+	        value: 3
+	        source: test:16:6
+	        defined: true
+	    e:
+	        value: 4
+	        source: test:8:8
+	        defined: true
+	    f:
+	        value: 5
+	        source: test:9:8
+	        defined: true
+	    g:
+	        value: 0
+	        source: test:10:7
+	        defined: false
+`
+	expected = strings.TrimLeftFunc(expected, unicode.IsSpace)
+	expected = strings.ReplaceAll(expected, "\t", "")
+	require.Equal(t, expected, buf.String())
+}
+
+func TestPreserveRawYAMLStrings(t *testing.T) {
+	type data struct {
+		MyMap map[string]string `yaml:"my-map"`
+	}
+	config := `
+my-map:
+  Prop1: "False"
+  Prop2: False
+  Prop3: 12
+  Prop4: 12.3
+`
+	expected := data{
+		MyMap: map[string]string{
+			"Prop1": "False",
+			"Prop2": "False",
+			"Prop3": "12",
+			"Prop4": "12.3",
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	content, err := yaml.Marshal(got)
+	require.NoError(t, err)
+	raw := map[string]any{}
+	err = yaml.Unmarshal(content, &raw)
+	require.NoError(t, err)
+
+	got = data{}
+	err = Merge(&got, &raw)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
 }
