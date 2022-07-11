@@ -506,7 +506,7 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					continue
 				}
 
-				field.Name = canonicalFieldName(field)
+				field.Name = CanonicalFieldName(field)
 
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
@@ -673,7 +673,11 @@ func yamlFieldName(sf reflect.StructField) string {
 	return strings.Join(parts, "-")
 }
 
-func canonicalFieldName(sf reflect.StructField) string {
+// CanonicalFieldName will return the the field name that will be used with
+// merging maps and structs where the name casing/formatting may not
+// be consistent.  If the field uses tag `figtree:",name=MyName"` then
+// that name will be used instead of the default contention.
+func CanonicalFieldName(sf reflect.StructField) string {
 	if tag, ok := sf.Tag.Lookup("figtree"); ok {
 		for _, part := range strings.Split(tag, ",") {
 			if strings.HasPrefix(part, "name=") {
