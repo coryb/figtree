@@ -2818,3 +2818,20 @@ my-map:
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }
+
+func TestMergeZeroOption(t *testing.T) {
+	type testData struct {
+		Data StringOption
+	}
+	dest := testData{
+		Data: NewStringOption("default"),
+	}
+	err := Merge(&dest, &testData{})
+	require.NoError(t, err)
+
+	expected := testData{
+		Data: NewStringOption("default"),
+	}
+
+	require.Equal(t, expected, dest)
+}

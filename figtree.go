@@ -710,8 +710,12 @@ func (m *Merger) mustIgnore(name string) bool {
 	return false
 }
 
-func isDefault(v reflect.Value) bool {
+func isZeroOrDefaultOption(v reflect.Value) bool {
 	if option := toOption(v); option != nil {
+		// an option can only be `zero` if it is undefined
+		if !option.IsDefined() {
+			return true
+		}
 		return option.IsDefault()
 	}
 	return false
@@ -1383,7 +1387,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			return err
 		}
 
-		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isDefault(dstField) && !isDefault(val))) || (overwrite || m.mustOverwrite(fieldName))
+		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isZeroOrDefaultOption(dstField) && !isZeroOrDefaultOption(val))) || (overwrite || m.mustOverwrite(fieldName))
 
 		var assignErr error
 		if shouldAssign && !isSame(dstField, val) {
@@ -1669,7 +1673,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				return nil
 			}
 			dstElem := dst.Index(ix)
-			if isDefault(dstElem) || dstElem.IsZero() || overwrite {
+			if isZeroOrDefaultOption(dstElem) || dstElem.IsZero() || overwrite {
 				ok, err := m.assignValue(dstElem, item, assignOptions{
 					Overwrite: overwrite,
 				})
