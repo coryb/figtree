@@ -1143,13 +1143,9 @@ func (ms *mergeSource) len() int {
 
 func (ms *mergeSource) foreachField(f func(key string, value mergeSource, anonymous bool) error) error {
 	if ms.node != nil {
-		for i := 0; i < len(ms.node.Content); i += 2 {
-			err := f(ms.node.Content[i].Value, newMergeSource(ms.node.Content[i+1]), false)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+		return walky.RangeMap(ms.node, func(keyNode, valueNode *yaml.Node) error {
+			return f(keyNode.Value, newMergeSource(valueNode), false)
+		})
 	}
 	switch ms.reflected.Kind() {
 	case reflect.Struct:
@@ -1186,36 +1182,14 @@ func (ms *mergeSource) foreachField(f func(key string, value mergeSource, anonym
 
 func (ms *mergeSource) foreachKey(f func(key reflect.Value, value mergeSource) error) error {
 	if ms.node != nil {
-		for i := 0; i < len(ms.node.Content); i += 2 {
-			if ms.node.Content[i].Tag == "!!merge" {
-				if ms.node.Content[i+1].Kind == yaml.SequenceNode {
-					for _, elem := range ms.node.Content[i+1].Content {
-						yamlMergeSrc := newMergeSource(elem)
-						err := yamlMergeSrc.foreachKey(f)
-						if err != nil {
-							return err
-						}
-					}
-				} else {
-					yamlMergeSrc := newMergeSource(ms.node.Content[i+1])
-					err := yamlMergeSrc.foreachKey(f)
-					if err != nil {
-						return err
-					}
-				}
-			} else {
-				newMS := newMergeSource(ms.node.Content[i])
-				key, _, err := newMS.reflect()
-				if err != nil {
-					return err
-				}
-				err = f(key, newMergeSource(ms.node.Content[i+1]))
-				if err != nil {
-					return err
-				}
+		return walky.RangeMap(ms.node, func(keyNode, valueNode *yaml.Node) error {
+			newMS := newMergeSource(keyNode)
+			key, _, err := newMS.reflect()
+			if err != nil {
+				return err
 			}
-		}
-		return nil
+			return f(key, newMergeSource(valueNode))
+		})
 	}
 	if ms.reflected.Kind() == reflect.Map {
 		for _, key := range ms.reflected.MapKeys() {
