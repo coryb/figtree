@@ -2835,3 +2835,73 @@ func TestMergeZeroOption(t *testing.T) {
 
 	require.Equal(t, expected, dest)
 }
+
+func TestYAMLReferences(t *testing.T) {
+	type stuffOptions struct {
+		A StringOption
+		B StringOption
+		C StringOption
+		D StringOption
+	}
+	type stuffStrings struct {
+		A string
+		B string
+		C string
+		D string
+	}
+	type data struct {
+		Stuff1 stuffOptions      `yaml:"stuff1"`
+		Stuff2 stuffStrings      `yaml:"stuff2"`
+		Stuff3 map[string]string `yaml:"stuff3"`
+	}
+
+	config := `
+defs:
+ - &mystuff
+   a: 1
+   b: 2
+ - &num 42
+stuff1:
+  <<: *mystuff
+  c: 3
+  d: *num
+stuff2:
+  <<: *mystuff
+  c: 4
+  d: *num
+stuff3:
+  <<: *mystuff
+  c: 5
+  d: *num
+`
+	expected := data{
+		Stuff1: stuffOptions{
+			A: StringOption{tSrc("test", 4, 7), true, "1"},
+			B: StringOption{tSrc("test", 5, 7), true, "2"},
+			C: StringOption{tSrc("test", 9, 6), true, "3"},
+			D: StringOption{tSrc("test", 6, 4), true, "42"},
+		},
+		Stuff2: stuffStrings{
+			A: "1",
+			B: "2",
+			C: "4",
+			D: "42",
+		},
+		Stuff3: map[string]string{
+			"a": "1",
+			"b": "2",
+			"c": "5",
+			"d": "42",
+		},
+	}
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
