@@ -8,6 +8,7 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
@@ -2903,5 +2904,171 @@ stuff3:
 	got := data{}
 	err = fig.LoadConfigSource(&node, "test", &got)
 	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestYAMLReferencesMaps(t *testing.T) {
+	type stuffOptions struct {
+		Map    MapStringOption
+		Merged StringOption
+		Extra  StringOption
+	}
+	type stuffMap struct {
+		Map    map[string]string
+		Merged string
+		Extra  string
+	}
+	type data struct {
+		Stuff1 stuffOptions `yaml:"stuff1"`
+		Stuff2 stuffOptions `yaml:"stuff2"`
+		Stuff3 stuffMap     `yaml:"stuff3"`
+		Stuff4 stuffMap     `yaml:"stuff4"`
+	}
+
+	config := `
+defs:
+ - &map1
+   map: {a: 1, b: 2} # this is ignored, dup key with merge site
+   merged: "map1"
+ - &map2
+   map: {b: 3, c: 4, d: 5} # this is ignored, dup key with merge site
+   merged: "map2"
+stuff1:
+  <<: *map1
+  map: {b: 3, c: 4}
+  extra: stuff1
+stuff2:
+  <<: [*map1, *map2]
+  map: {b: 5, c: 6, e: 7}
+  extra: stuff2
+stuff3:
+  <<: *map1
+  map: {b: 3, c: 4}
+  extra: stuff3
+stuff4:
+  <<: [*map1, *map2]
+  map: {b: 5, c: 6, e: 7}
+  extra: stuff4
+`
+	expected := data{
+		Stuff1: stuffOptions{
+			Map: MapStringOption{
+				"b": {tSrc("test", 11, 12), true, "3"},
+				"c": {tSrc("test", 11, 18), true, "4"},
+			},
+			Merged: StringOption{tSrc("test", 5, 12), true, "map1"},
+			Extra:  StringOption{tSrc("test", 12, 10), true, "stuff1"},
+		},
+		Stuff2: stuffOptions{
+			Map: MapStringOption{
+				"b": {tSrc("test", 15, 12), true, "5"},
+				"c": {tSrc("test", 15, 18), true, "6"},
+				"e": {tSrc("test", 15, 24), true, "7"},
+			},
+			Merged: StringOption{tSrc("test", 5, 12), true, "map1"},
+			Extra:  StringOption{tSrc("test", 16, 10), true, "stuff2"},
+		},
+		Stuff3: stuffMap{
+			Map: map[string]string{
+				"b": "3",
+				"c": "4",
+			},
+			Merged: "map1",
+			Extra:  "stuff3",
+		},
+		Stuff4: stuffMap{
+			Map: map[string]string{
+				"b": "5",
+				"c": "6",
+				"e": "7",
+			},
+			Merged: "map1",
+			Extra:  "stuff4",
+		},
+	}
+
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+func TestNullMerge(t *testing.T) {
+	type data struct {
+		Stuff MapStringOption
+	}
+	configs := []string{`
+stuff:
+  a:
+`, `
+stuff:
+  a: 1
+`}
+
+	sources := []ConfigSource{}
+	for i, config := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(config), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: "config" + strconv.Itoa(i),
+		})
+	}
+	got := data{}
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	expected := data{
+		Stuff: MapStringOption{
+			"a": {tSrc("config1", 3, 6), true, "1"},
+		},
+	}
+	require.Equal(t, expected, got)
+}
+
+func TestArrayAllowDupsOnPrimarySource(t *testing.T) {
+	type data struct {
+		Stuff1 []string         `yaml:"stuff1"`
+		Stuff2 ListStringOption `yaml:"stuff2"`
+	}
+
+	configs := []string{`
+stuff1: [a, b, a, a]
+stuff2: [a, b, a, a]
+`, `
+stuff1: [a, b, c]
+stuff2: [a, b, c]
+`}
+
+	sources := []ConfigSource{}
+	for i, config := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(config), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: "config" + strconv.Itoa(i),
+		})
+	}
+	got := data{}
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	expected := data{
+		Stuff1: []string{"a", "b", "a", "a", "c"},
+		Stuff2: ListStringOption{
+			{tSrc("config0", 3, 10), true, "a"},
+			{tSrc("config0", 3, 13), true, "b"},
+			{tSrc("config0", 3, 16), true, "a"},
+			{tSrc("config0", 3, 19), true, "a"},
+			{tSrc("config1", 3, 16), true, "c"},
+		},
+	}
 	require.Equal(t, expected, got)
 }

@@ -756,6 +756,9 @@ func isZero(v reflect.Value) bool {
 	if !v.IsValid() {
 		return true
 	}
+	if option := toOption(v); option != nil {
+		return !option.IsDefined()
+	}
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
 
@@ -1054,8 +1057,15 @@ type mergeSource struct {
 func newMergeSource(src any) mergeSource {
 	switch cast := src.(type) {
 	case reflect.Value:
-		if cast.IsValid() {
-			cast = uninterface(indirect(cast))
+		cast = uninterface(indirect(cast))
+		if cast.IsValid() && cast.CanInterface() {
+			// handle the edge case that someone has passed in
+			// reflect.ValueOf(*yaml.Node) rather than *yaml.Node directly
+			if node, ok := cast.Interface().(yaml.Node); ok {
+				return mergeSource{
+					node: walky.Indirect(&node),
+				}
+			}
 		}
 		return mergeSource{
 			reflected: cast,
@@ -1634,6 +1644,15 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			},
 		)
 	}
+
+	// when dst is an empty array we dont want to dedup those elements, they
+	// should all be directly assigned.  We only want to dedup when merging
+	// in arrays from alternate sources, not the original source.
+	skipDedup := false
+	if cp.Len() == 0 {
+		skipDedup = true
+	}
+
 	var zero interface{}
 	changed := false
 	err := src.foreach(func(ix int, item mergeSource) error {
@@ -1674,25 +1693,29 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			return nil
 		}
 
-		for i := 0; i < cp.Len(); i++ {
-			v := cp.Index(i)
-			if oOption := toOption(v); oOption != nil {
-				v = reflect.ValueOf(oOption.GetValue())
-			}
-			// try to assign the input to a tmp value so all the normal
-			// conversions happen before we compare it to existing elements.
-			// Otherwise we might end up with extra dups in the array
-			// that are the same value
-			if v.CanInterface() {
-				tmpVal := reflect.New(reflect.ValueOf(v.Interface()).Type()).Elem()
-				_, err := m.assignValue(tmpVal, item, assignOptions{})
-				if err == nil {
-					if reflect.DeepEqual(v.Interface(), tmpVal.Interface()) {
-						return nil
+		if !skipDedup {
+			for i := 0; i < cp.Len(); i++ {
+				destElem := cp.Index(i)
+				if destOption := toOption(destElem); destOption != nil {
+					destElem = reflect.ValueOf(destOption.GetValue())
+				}
+
+				// try to assign the input to a tmp value so all the normal
+				// conversions happen before we compare it to existing elements.
+				// Otherwise we might end up with extra dups in the array
+				// that are the same value
+				if destElem.CanInterface() {
+					tmpVal := reflect.New(reflect.ValueOf(destElem.Interface()).Type()).Elem()
+					_, err := m.assignValue(tmpVal, item, assignOptions{})
+					if err == nil {
+						if reflect.DeepEqual(destElem.Interface(), tmpVal.Interface()) {
+							return nil
+						}
 					}
 				}
 			}
 		}
+
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
 		dstKind := dstElem.Kind()
 		switch {
