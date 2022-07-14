@@ -122,15 +122,22 @@ func WithoutExec() CreateOption {
 	}
 }
 
+func WithPreserveDuplicates(keys ...string) CreateOption {
+	return func(f *FigTree) {
+		f.preserveDuplicates = keys
+	}
+}
+
 type FigTree struct {
-	home           string
-	workDir        string
-	configDir      string
-	envPrefix      string
-	preProcessor   PreProcessor
-	applyChangeSet ChangeSetFunc
-	exec           bool
-	filterOut      FilterOut
+	home               string
+	workDir            string
+	configDir          string
+	envPrefix          string
+	preProcessor       PreProcessor
+	applyChangeSet     ChangeSetFunc
+	exec               bool
+	filterOut          FilterOut
+	preserveDuplicates []string
 }
 
 func NewFigTree(opts ...CreateOption) *FigTree {
@@ -186,6 +193,10 @@ func (f *FigTree) WithoutExec() {
 	WithoutExec()(f)
 }
 
+func (f *FigTree) WithPreserveDuplicates(keys ...string) {
+	WithPreserveDuplicates(keys...)(f)
+}
+
 func (f *FigTree) Copy() *FigTree {
 	cp := *f
 	return &cp
@@ -222,7 +233,7 @@ type ConfigSource struct {
 }
 
 func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface{}) error {
-	m := NewMerger()
+	m := NewMerger(PreserveDuplicates(f.preserveDuplicates...))
 	filterOut := f.filterOut
 	if filterOut == nil {
 		filterOut = defaultFilterOut(f)
@@ -249,7 +260,7 @@ func (f *FigTree) LoadAllConfigSources(sources []ConfigSource, options interface
 }
 
 func (f *FigTree) LoadConfigSource(config *yaml.Node, source string, options interface{}) error {
-	m := NewMerger(WithSourceFile(source))
+	m := NewMerger(WithSourceFile(source), PreserveDuplicates(f.preserveDuplicates...))
 	return f.loadConfigSource(m, config, options)
 }
 
@@ -400,10 +411,11 @@ func camelCase(name string) string {
 }
 
 type Merger struct {
-	sourceFile  string
-	preserveMap map[string]struct{}
-	Config      ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
-	ignore      []string
+	sourceFile         string
+	preserveMap        map[string]struct{}
+	preserveDuplicates map[string]struct{}
+	Config             ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
+	ignore             []string
 }
 
 type MergeOption func(*Merger)
@@ -422,10 +434,19 @@ func PreserveMap(keys ...string) MergeOption {
 	}
 }
 
+func PreserveDuplicates(keys ...string) MergeOption {
+	return func(m *Merger) {
+		for _, key := range keys {
+			m.preserveDuplicates[key] = struct{}{}
+		}
+	}
+}
+
 func NewMerger(options ...MergeOption) *Merger {
 	m := &Merger{
-		sourceFile:  "merge",
-		preserveMap: make(map[string]struct{}),
+		sourceFile:         "merge",
+		preserveMap:        map[string]struct{}{},
+		preserveDuplicates: map[string]struct{}{},
 	}
 	for _, opt := range options {
 		opt(m)
@@ -701,6 +722,13 @@ func (m *Merger) mustOverwrite(name string) bool {
 	return false
 }
 
+func (m *Merger) shouldDedup(name string) bool {
+	if _, ok := m.preserveDuplicates[name]; ok {
+		return false
+	}
+	return true
+}
+
 func (m *Merger) mustIgnore(name string) bool {
 	for _, prop := range m.ignore {
 		if name == prop {
@@ -755,6 +783,9 @@ func isZero(v reflect.Value) bool {
 	v = indirect(v)
 	if !v.IsValid() {
 		return true
+	}
+	if option := toOption(v); option != nil {
+		return !option.IsDefined()
 	}
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
 }
@@ -1054,8 +1085,15 @@ type mergeSource struct {
 func newMergeSource(src any) mergeSource {
 	switch cast := src.(type) {
 	case reflect.Value:
-		if cast.IsValid() {
-			cast = uninterface(indirect(cast))
+		cast = uninterface(indirect(cast))
+		if cast.IsValid() && cast.CanInterface() {
+			// handle the edge case that someone has passed in
+			// reflect.ValueOf(*yaml.Node) rather than *yaml.Node directly
+			if node, ok := cast.Interface().(yaml.Node); ok {
+				return mergeSource{
+					node: walky.Indirect(&node),
+				}
+			}
 		}
 		return mergeSource{
 			reflected: cast,
@@ -1391,7 +1429,11 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 			return nil
 		case reflect.Slice, reflect.Array:
 			Log.Debugf("Merging %#v to %#v [overwrite: %t]", val, dstField, overwrite || m.mustOverwrite(fieldName))
-			merged, ok, err := m.mergeArrays(dstField, srcField, overwrite || m.mustOverwrite(fieldName))
+			arrayOpts := mergeArrayOptions{
+				Overwrite: overwrite || m.mustOverwrite(fieldName),
+				Dedup:     m.shouldDedup(fieldName),
+			}
+			merged, ok, err := m.mergeArrays(dstField, srcField, arrayOpts)
 			if err != nil {
 				return err
 			}
@@ -1524,7 +1566,11 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 			return nil
 		case dstValKind == reflect.Slice, dstValKind == reflect.Array:
 			Log.Debugf("Merging: %#v to %#v", value, dstVal)
-			merged, ok, err := m.mergeArrays(dstVal, value, overwrite || m.mustOverwrite(key.String()))
+			arrayOpts := mergeArrayOptions{
+				Overwrite: overwrite || m.mustOverwrite(key.String()),
+				Dedup:     m.shouldDedup(key.String()),
+			}
+			merged, ok, err := m.mergeArrays(dstVal, value, arrayOpts)
 			if err != nil {
 				return err
 			}
@@ -1599,11 +1645,16 @@ func isSpecial(dst reflect.Value) bool {
 	return false
 }
 
-func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool) (reflect.Value, bool, error) {
+type mergeArrayOptions struct {
+	Overwrite bool
+	Dedup     bool
+}
+
+func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, opts mergeArrayOptions) (reflect.Value, bool, error) {
 	var cp reflect.Value
 	switch dst.Type().Kind() {
 	case reflect.Slice:
-		if overwrite {
+		if opts.Overwrite {
 			// overwriting so just make a new slice
 			cp = reflect.MakeSlice(dst.Type(), 0, 0)
 		} else {
@@ -1634,6 +1685,12 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			},
 		)
 	}
+
+	skipDedup := false
+	if cp.Len() == 0 {
+		skipDedup = true
+	}
+
 	var zero interface{}
 	changed := false
 	err := src.foreach(func(ix int, item mergeSource) error {
@@ -1647,9 +1704,9 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				return nil
 			}
 			dstElem := dst.Index(ix)
-			if isZeroOrDefaultOption(dstElem) || dstElem.IsZero() || overwrite {
+			if isZeroOrDefaultOption(dstElem) || dstElem.IsZero() || opts.Overwrite {
 				ok, err := m.assignValue(dstElem, item, assignOptions{
-					Overwrite: overwrite,
+					Overwrite: opts.Overwrite,
 				})
 				if err != nil {
 					return err
@@ -1674,38 +1731,42 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			return nil
 		}
 
-		for i := 0; i < cp.Len(); i++ {
-			v := cp.Index(i)
-			if oOption := toOption(v); oOption != nil {
-				v = reflect.ValueOf(oOption.GetValue())
-			}
-			// try to assign the input to a tmp value so all the normal
-			// conversions happen before we compare it to existing elements.
-			// Otherwise we might end up with extra dups in the array
-			// that are the same value
-			if v.CanInterface() {
-				tmpVal := reflect.New(reflect.ValueOf(v.Interface()).Type()).Elem()
-				_, err := m.assignValue(tmpVal, item, assignOptions{})
-				if err == nil {
-					if reflect.DeepEqual(v.Interface(), tmpVal.Interface()) {
-						return nil
+		if !skipDedup {
+			for i := 0; i < cp.Len(); i++ {
+				destElem := cp.Index(i)
+				if destOption := toOption(destElem); destOption != nil {
+					destElem = reflect.ValueOf(destOption.GetValue())
+				}
+
+				// try to assign the input to a tmp value so all the normal
+				// conversions happen before we compare it to existing elements.
+				// Otherwise we might end up with extra dups in the array
+				// that are the same value
+				if destElem.CanInterface() {
+					tmpVal := reflect.New(reflect.ValueOf(destElem.Interface()).Type()).Elem()
+					_, err := m.assignValue(tmpVal, item, assignOptions{})
+					if err == nil {
+						if reflect.DeepEqual(destElem.Interface(), tmpVal.Interface()) {
+							return nil
+						}
 					}
 				}
 			}
 		}
+
 		dstElem := reflect.New(cp.Type().Elem()).Elem()
 		dstKind := dstElem.Kind()
 		switch {
 		case dstKind == reflect.Map, (dstKind == reflect.Struct && !isSpecial(dstElem)):
 			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
-			ok, err := m.mergeStructs(dstElem, item, overwrite)
+			ok, err := m.mergeStructs(dstElem, item, opts.Overwrite)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 			changed = changed || ok
 		case dstKind == reflect.Slice, dstKind == reflect.Array:
 			Log.Debugf("Merging: %#v to %#v", reflected, dstElem)
-			merged, ok, err := m.mergeArrays(dstElem, item, overwrite)
+			merged, ok, err := m.mergeArrays(dstElem, item, opts)
 			if err != nil {
 				return err
 			}
@@ -1715,7 +1776,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 			changed = changed || ok
 		default:
 			ok, err := m.assignValue(dstElem, item, assignOptions{
-				Overwrite: overwrite,
+				Overwrite: opts.Overwrite,
 			})
 			if err != nil {
 				return err
