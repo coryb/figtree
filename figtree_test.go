@@ -3072,3 +3072,100 @@ stuff2: [a, b, c]
 	}
 	require.Equal(t, expected, got)
 }
+
+func TestOverwrite(t *testing.T) {
+	type data struct {
+		A1 []string          `yaml:"a1"`
+		A2 ListStringOption  `yaml:"a2"`
+		A3 []string          `yaml:"a3"`
+		A4 ListStringOption  `yaml:"a4"`
+		B1 map[string]string `yaml:"b1"`
+		B2 MapStringOption   `yaml:"b2"`
+		B3 map[string]string `yaml:"b3"`
+		B4 MapStringOption   `yaml:"b4"`
+		C1 string            `yaml:"c1"`
+		C2 StringOption      `yaml:"c2"`
+		C3 string            `yaml:"c3"`
+		C4 StringOption      `yaml:"c4"`
+	}
+
+	configs := []string{`
+a1: [a, b, a, a]
+a2: [a, b, a, a]
+a3: [a, b, a, a]
+a4: [a, b, a, a]
+b1: {a: 1, b: 2}
+b2: {a: 1, b: 2}
+b3: {a: 1, b: 2}
+b4: {a: 1, b: 2}
+c1: a
+c2: a
+c3: a
+c4: a
+`, `
+config:
+  overwrite: [a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4]
+a1: [a]
+a2: [a]
+a3: []
+a4: []
+b1: {a: 1}
+b2: {a: 1}
+b3: {}
+b4: {}
+c1: b
+c2: b
+c3: ""
+c4: ""
+`, `
+# these are ignored b/c first overwrite will "win"
+config:
+  overwrite: [a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4]
+a1: [c]
+a2: [c]
+a3: [c]
+a4: [c]
+b1: {c: 1}
+b2: {c: 1}
+b3: {c: 1}
+b4: {c: 1}
+c1: c
+c2: c
+c3: c
+c4: c
+`}
+
+	sources := []ConfigSource{}
+	for i, config := range configs {
+		var node yaml.Node
+		err := yaml.Unmarshal([]byte(config), &node)
+		require.NoError(t, err)
+		sources = append(sources, ConfigSource{
+			Config:   &node,
+			Filename: "config" + strconv.Itoa(i),
+		})
+	}
+	got := data{}
+	fig := newFigTreeFromEnv()
+	err := fig.LoadAllConfigSources(sources, &got)
+	require.NoError(t, err)
+	expected := data{
+		A1: []string{"a"},
+		A2: ListStringOption{
+			{tSrc("config1", 5, 6), true, "a"},
+		},
+		A3: []string{},
+		A4: ListStringOption{},
+		B1: map[string]string{"a": "1"},
+		B2: MapStringOption{
+			"a": {tSrc("config1", 9, 9), true, "1"},
+		},
+		B3: map[string]string{},
+		B4: MapStringOption{},
+		C1: "b",
+		C2: StringOption{tSrc("config1", 13, 5), true, "b"},
+		C3: "",
+		C4: StringOption{tSrc("config1", 15, 5), true, ""},
+	}
+	require.Equal(t, expected, got)
+}
