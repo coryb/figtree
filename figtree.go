@@ -1654,7 +1654,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	}
 
 	var zero interface{}
-	changed := false
+	changed := overwrite
 	err := src.foreach(func(ix int, item mergeSource) error {
 		reflected, _, err := item.reflect()
 		if err != nil {
