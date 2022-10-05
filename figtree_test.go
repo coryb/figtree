@@ -3169,3 +3169,119 @@ c4: c
 	}
 	require.Equal(t, expected, got)
 }
+
+func TestCustomOption(t *testing.T) {
+	type MyString string
+	type data struct {
+		Stuff Option[MyString]
+		Other Option[UnmarshalString]
+		More  Option[*MyString]
+		Extra Option[*UnmarshalString]
+	}
+	config := `
+stuff: abc
+other: foo
+more: baz
+extra: bin
+`
+	baz := MyString("baz")
+	bin := UnmarshalString("BIN")
+	expected := data{
+		Stuff: Option[MyString]{
+			Source:  tSrc("test", 2, 8),
+			Defined: true,
+			Value:   MyString("abc"),
+		},
+		Other: Option[UnmarshalString]{
+			Source:  tSrc("test", 3, 8),
+			Defined: true,
+			Value:   UnmarshalString("FOO"),
+		},
+		More: Option[*MyString]{
+			Source:  tSrc("test", 4, 7),
+			Defined: true,
+			Value:   &baz,
+		},
+		Extra: Option[*UnmarshalString]{
+			Source:  tSrc("test", 5, 8),
+			Defined: true,
+			Value:   &bin,
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
+
+type ParsedThing struct {
+	First  string
+	Second string
+}
+
+func (t *ParsedThing) UnmarshalYAML(unmarshal func(any) error) error {
+	var rawType string
+	if err := unmarshal(&rawType); err != nil {
+		return errors.WithStack(err)
+	}
+	first, second, ok := strings.Cut(rawType, ":")
+	if !ok {
+		return errors.Errorf("invalid parsed thing, expected: 'first:second', got: %s", rawType)
+	}
+	t.First = first
+	t.Second = second
+	return nil
+}
+
+func TestCustomOptionStruct(t *testing.T) {
+	type data struct {
+		Stuff Option[ParsedThing]
+		Other ParsedThing
+		More  Option[*ParsedThing]
+		Extra *ParsedThing
+	}
+	config := `
+stuff: abc:def
+other: ghi:jkl
+more: mno:pqr
+extra: stu:vwx
+`
+	expected := data{
+		Stuff: Option[ParsedThing]{
+			Source:  tSrc("test", 2, 8),
+			Defined: true,
+			Value: ParsedThing{
+				First:  "abc",
+				Second: "def",
+			},
+		},
+		Other: ParsedThing{
+			First:  "ghi",
+			Second: "jkl",
+		},
+		More: Option[*ParsedThing]{
+			Source:  tSrc("test", 4, 7),
+			Defined: true,
+			Value: &ParsedThing{
+				First:  "mno",
+				Second: "pqr",
+			},
+		},
+		Extra: &ParsedThing{
+			First:  "stu",
+			Second: "vwx",
+		},
+	}
+	var node yaml.Node
+	err := yaml.Unmarshal([]byte(config), &node)
+	require.NoError(t, err)
+	fig := newFigTreeFromEnv()
+	got := data{}
+	err = fig.LoadConfigSource(&node, "test", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+}
