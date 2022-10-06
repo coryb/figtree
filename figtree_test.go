@@ -3237,22 +3237,29 @@ func (t *ParsedThing) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
+func (t ParsedThing) MarshalYAML() (any, error) {
+	return t.First + ":" + t.Second, nil
+}
+
 func TestCustomOptionStruct(t *testing.T) {
+	StringifyValue = true
+	defer func() {
+		StringifyValue = false
+	}()
 	type data struct {
 		Stuff Option[ParsedThing]
 		Other ParsedThing
 		More  Option[*ParsedThing]
 		Extra *ParsedThing
 	}
-	config := `
-stuff: abc:def
+	config := `stuff: abc:def
 other: ghi:jkl
 more: mno:pqr
 extra: stu:vwx
 `
 	expected := data{
 		Stuff: Option[ParsedThing]{
-			Source:  tSrc("test", 2, 8),
+			Source:  tSrc("yaml", 1, 8),
 			Defined: true,
 			Value: ParsedThing{
 				First:  "abc",
@@ -3264,7 +3271,7 @@ extra: stu:vwx
 			Second: "jkl",
 		},
 		More: Option[*ParsedThing]{
-			Source:  tSrc("test", 4, 7),
+			Source:  tSrc("yaml", 3, 7),
 			Defined: true,
 			Value: &ParsedThing{
 				First:  "mno",
@@ -3281,7 +3288,14 @@ extra: stu:vwx
 	require.NoError(t, err)
 	fig := newFigTreeFromEnv()
 	got := data{}
-	err = fig.LoadConfigSource(&node, "test", &got)
+	err = fig.LoadConfigSource(&node, "yaml", &got)
+	require.NoError(t, err)
+	require.Equal(t, expected, got)
+
+	content, err := yaml.Marshal(got)
+	require.NoError(t, err)
+	got = data{}
+	err = yaml.Unmarshal(content, &got)
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }
