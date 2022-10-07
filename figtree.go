@@ -1003,19 +1003,6 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		return true, nil
 	}
 
-	// if we have a collection don't proceed to attempt to unmarshal direct
-	// from the yaml.Node ... collections are process per item, rather than
-	// as a whole.
-	if isCollection(dest) {
-		return false, errors.WithStack(
-			notAssignableError{
-				srcType:        reflectedSrc.Type(),
-				dstType:        dest.Type(),
-				sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
-			},
-		)
-	}
-
 	if !isSpecial(dest) && dest.CanAddr() {
 		meth := dest.Addr().MethodByName("UnmarshalYAML")
 		if meth.IsValid() {
@@ -1037,6 +1024,32 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 			}
 			return true, nil
 		}
+	}
+
+	// if we have a collection don't proceed to attempt to unmarshal direct
+	// from the yaml.Node ... collections are process per item, rather than
+	// as a whole.
+	if isCollection(dest) {
+		return false, errors.WithStack(
+			notAssignableError{
+				srcType:        reflectedSrc.Type(),
+				dstType:        dest.Type(),
+				sourceLocation: NewSource(m.sourceFile, WithLocation(coord)),
+			},
+		)
+	}
+
+	// if we are still here, try one last-ditch effort to see if we can convert,
+	// this time allowing things to convert to `string` types is okay since we
+	// have exhausted all other assignment options above.
+	if reflectedSrc.CanConvert(dest.Type()) {
+		shouldAssignDest := opts.Overwrite || isZero(dest) || (opts.destIsDefault && !opts.srcIsDefault)
+		if shouldAssignDest {
+			reflectedSrc = reflectedSrc.Convert(dest.Type())
+			dest.Set(reflectedSrc)
+			return true, nil
+		}
+		return false, nil
 	}
 
 	return false, errors.WithStack(
@@ -1388,6 +1401,9 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 				return assignErr
 			}
 			changed = changed || fieldChanged
+			if fieldChanged {
+				return nil
+			}
 		}
 		switch dstField.Kind() {
 		case reflect.Map:

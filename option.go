@@ -206,6 +206,19 @@ func (o *Option[T]) UnmarshalYAML(node *yaml.Node) error {
 // https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L50-L52
 func (o Option[T]) MarshalYAML() (any, error) {
 	if StringifyValue {
+		// First double check if the Value has a custom Marshaler.
+		// Note we can't use `o.Value.(yaml.Marshaler)` directly because
+		// you cannot do type assertions on generic types.  First we check
+		// if Value is a direct (non pointer) type
+		var q any = &o.Value
+		if marshaler, ok := q.(yaml.Marshaler); ok {
+			return marshaler.MarshalYAML()
+		}
+		// Now we try again for cases where Value is a pointer type.
+		q = o.Value
+		if marshaler, ok := q.(yaml.Marshaler); ok {
+			return marshaler.MarshalYAML()
+		}
 		return o.Value, nil
 	}
 	// need a copy of this struct without the MarshalYAML interface attached
