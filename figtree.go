@@ -1721,6 +1721,12 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 				// Otherwise we might end up with extra dups in the array
 				// that are the same value
 				if destElem.CanInterface() {
+					// ensure the destElem is not a nil value for a pointer type
+					// .. in which case this will return a zero Value, which
+					// cannot have `Type` called on it.
+					if !reflect.ValueOf(destElem.Interface()).IsValid() {
+						continue
+					}
 					tmpVal := reflect.New(reflect.ValueOf(destElem.Interface()).Type()).Elem()
 					_, err := m.assignValue(tmpVal, item, assignOptions{})
 					if err == nil {

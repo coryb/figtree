@@ -3299,3 +3299,31 @@ extra: stu:vwx
 	require.NoError(t, err)
 	require.Equal(t, expected, got)
 }
+
+func TestMergeArrayWithNilElems(t *testing.T) {
+	dest := map[string]interface{}{
+		"stuff": []any{
+			"abc",
+			nil,
+		},
+	}
+
+	src := map[string]interface{}{
+		"stuff": []any{
+			"abc",
+			"def",
+		},
+	}
+
+	err := Merge(dest, src)
+	require.NoError(t, err)
+
+	expected := map[string]interface{}{
+		"stuff": []any{
+			"abc",
+			nil,
+			"def",
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
