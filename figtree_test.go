@@ -3327,3 +3327,104 @@ func TestMergeArrayWithNilElems(t *testing.T) {
 	}
 	assert.Equal(t, expected, dest)
 }
+
+func TestMergeEmbedStructWithNilFields(t *testing.T) {
+	type Embed struct {
+		A string
+		B string
+	}
+	type myStruct struct {
+		Foo string
+		Bar string
+		*Embed
+	}
+
+	dest := &myStruct{
+		Foo:   "foo",
+		Embed: &Embed{},
+	}
+
+	src := &myStruct{
+		Bar: "bar",
+	}
+
+	err := Merge(dest, src)
+	require.NoError(t, err)
+
+	// Empty Embed is already set in dest, so left empty
+	expected := &myStruct{
+		Foo:   "foo",
+		Bar:   "bar",
+		Embed: &Embed{},
+	}
+	assert.Equal(t, expected, dest)
+
+	dest = &myStruct{
+		Foo: "foo",
+	}
+
+	src = &myStruct{
+		Bar:   "bar",
+		Embed: &Embed{},
+	}
+
+	err = Merge(dest, src)
+	require.NoError(t, err)
+
+	// Embed is nil, b/c it is empty in src, and nil in dest
+	// We do not create new pointer structs for empty sources.
+	expected = &myStruct{
+		Foo:   "foo",
+		Bar:   "bar",
+		Embed: (*Embed)(nil),
+	}
+	assert.Equal(t, expected, dest)
+
+	dest = &myStruct{
+		Foo: "foo",
+		Embed: &Embed{
+			A: "a",
+		},
+	}
+
+	src = &myStruct{
+		Bar: "bar",
+	}
+
+	err = Merge(dest, src)
+	require.NoError(t, err)
+
+	// Embed is defined from dest, no updates from nil Embed in src
+	expected = &myStruct{
+		Foo: "foo",
+		Bar: "bar",
+		Embed: &Embed{
+			A: "a",
+		},
+	}
+	assert.Equal(t, expected, dest)
+
+	dest = &myStruct{
+		Foo: "foo",
+		Embed: &Embed{
+			A: "a",
+		},
+	}
+
+	src = &myStruct{
+		Bar: "bar",
+	}
+
+	err = Merge(dest, src)
+	require.NoError(t, err)
+
+	// Embed is created from src, no errors on merge from nil Embed in dest.
+	expected = &myStruct{
+		Foo: "foo",
+		Bar: "bar",
+		Embed: &Embed{
+			A: "a",
+		},
+	}
+	assert.Equal(t, expected, dest)
+}
