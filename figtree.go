@@ -1278,8 +1278,17 @@ func populateYAMLMaps(v reflect.Value) map[string]fieldYAML {
 
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := v.Type().Field(i)
-		if fieldType.Anonymous && indirect(v.Field(i)).Type().Kind() == reflect.Struct {
-			anonFields := populateYAMLMaps(indirect(v.Field(i)))
+		if !fieldType.Anonymous {
+			continue
+		}
+
+		fv := v.Field(i)
+		if fv.Kind() == reflect.Pointer && fv.IsNil() {
+			// skip nil pointers for embedded structs
+			continue
+		}
+		if indirect(fv).Type().Kind() == reflect.Struct {
+			anonFields := populateYAMLMaps(indirect(fv))
 			for k, v := range anonFields {
 				if _, ok := fieldsByYAML[k]; !ok {
 					fieldsByYAML[k] = v
