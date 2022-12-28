@@ -275,7 +275,7 @@ func (f *FigTree) loadConfigSource(m *Merger, config *yaml.Node, options interfa
 
 	err = config.Decode(m)
 	if err != nil {
-		return errors.Wrapf(err, "unable to parse %s", sourceLine(m.sourceFile, config))
+		return errors.WithStack(walky.ErrFilename(err, m.sourceFile))
 	}
 
 	_, err = m.mergeStructs(
@@ -326,7 +326,7 @@ func (f *FigTree) ReadFile(file string) (*ConfigSource, error) {
 			defer fh.Close()
 			decoder := yaml.NewDecoder(fh)
 			if err := decoder.Decode(&node); err != nil && !errors.Is(err, io.EOF) {
-				return nil, errors.Wrapf(err, "unable to decode %s as yaml", rel)
+				return nil, errors.WithStack(walky.ErrFilename(err, file))
 			}
 		} else {
 			Log.Debugf("Found Executable Config file: %s", absFile)
@@ -811,7 +811,7 @@ type assignOptions struct {
 func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOptions) (bool, error) {
 	reflectedSrc, coord, err := src.reflect()
 	if err != nil {
-		return false, err
+		return false, walky.ErrFilename(err, m.sourceFile)
 	}
 	Log.Debugf("assignValue: %#v to %#v [opts: %#v]\n", reflectedSrc, dest, opts)
 	if !dest.IsValid() || !reflectedSrc.IsValid() {
@@ -1008,7 +1008,7 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		if meth.IsValid() {
 			if src.node != nil {
 				if err := src.node.Decode(dest.Addr().Interface()); err != nil {
-					return false, errors.WithStack(err)
+					return false, errors.WithStack(walky.ErrFilename(walky.NewYAMLError(err, src.node), m.sourceFile))
 				}
 			} else {
 				// we know we have an UnmarshalYAML function, so use yaml
@@ -1105,7 +1105,7 @@ func (ms *mergeSource) reflect() (reflect.Value, *FileCoordinate, error) {
 		var val any
 		err := ms.node.Decode(&val)
 		if err != nil {
-			return reflect.Value{}, nil, err
+			return reflect.Value{}, nil, errors.WithStack(walky.NewYAMLError(err, ms.node))
 		}
 		ms.reflected = uninterface(reflect.ValueOf(&val).Elem())
 	}
@@ -1390,7 +1390,7 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 
 		val, _, err := srcField.reflect()
 		if err != nil {
-			return err
+			return walky.ErrFilename(err, m.sourceFile)
 		}
 
 		shouldAssign := (isZero(dstField) && !srcField.isZero() || (isZeroOrDefaultOption(dstField) && !isZeroOrDefaultOption(val))) || (overwrite || m.mustOverwrite(fieldName))
@@ -1451,7 +1451,10 @@ func (m *Merger) mergeStructs(dst reflect.Value, src mergeSource, overwrite bool
 		}
 		return assignErr
 	})
-	return changed, err
+	if err != nil {
+		return changed, walky.ErrFilename(err, m.sourceFile)
+	}
+	return changed, nil
 }
 
 func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (bool, error) {
@@ -1485,7 +1488,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 				if loc.Location == nil {
 					_, coord, err := value.reflect()
 					if err != nil {
-						return err
+						return walky.ErrFilename(err, m.sourceFile)
 					}
 					loc.Location = coord
 				}
@@ -1573,7 +1576,7 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 			}
 			reflected, _, err := value.reflect()
 			if err != nil {
-				return err
+				return walky.ErrFilename(err, m.sourceFile)
 			}
 			if !reflected.IsValid() {
 				return nil
@@ -1603,7 +1606,10 @@ func (m *Merger) mergeMaps(dst reflect.Value, src mergeSource, overwrite bool) (
 		}
 		return nil
 	})
-	return changed, err
+	if err != nil {
+		return changed, walky.ErrFilename(err, m.sourceFile)
+	}
+	return changed, nil
 }
 
 func isCollection(dst reflect.Value) bool {
@@ -1653,7 +1659,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	if !src.isList() {
 		reflectedSrc, coord, err := src.reflect()
 		if err != nil {
-			return reflect.Value{}, false, err
+			return reflect.Value{}, false, walky.ErrFilename(err, m.sourceFile)
 		}
 		if !reflectedSrc.IsValid() {
 			// if this is a nil interface data then
@@ -1683,7 +1689,7 @@ func (m *Merger) mergeArrays(dst reflect.Value, src mergeSource, overwrite bool)
 	err := src.foreach(func(ix int, item mergeSource) error {
 		reflected, _, err := item.reflect()
 		if err != nil {
-			return err
+			return walky.ErrFilename(err, m.sourceFile)
 		}
 		if dst.Kind() == reflect.Array {
 			if dst.Len() <= ix {

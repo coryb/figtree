@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"emperror.dev/errors"
+	"github.com/coryb/walky"
 	"gopkg.in/yaml.v3"
 )
 
@@ -191,7 +192,7 @@ func (o *Option[T]) SetValue(v any) error {
 // https://github.com/go-yaml/yaml/blob/v3.0.1/yaml.go#L36-L38
 func (o *Option[T]) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&o.Value); err != nil {
-		return err
+		return walky.NewYAMLError(err, node)
 	}
 	var loc *FileCoordinate
 	if node.Line > 0 || node.Column > 0 {
