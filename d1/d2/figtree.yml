@@ -1,10 +1,10 @@
 str1: d2str1val1
 arr1:
-  - d2arr1val1
+  - 211
   - d2arr1val2
   - dupval
 map1:
-  key1: d2map1val1
+  key1: 211
   key2: d2map1val2
   dup:  d2dupval
 int1: 222

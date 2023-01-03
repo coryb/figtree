@@ -80,6 +80,8 @@ func convertString(src string, dst interface{}) (err error) {
 		var tmp float64
 		tmp, err = strconv.ParseFloat(src, 64)
 		*v = tmp
+	case *any:
+		*v = src
 	default:
 		err = fmt.Errorf("Cannot convert string %q to type %T", src, dst)
 	}

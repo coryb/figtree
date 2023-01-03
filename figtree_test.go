@@ -83,7 +83,7 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d3arr1val1"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d3arr1val2"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
-	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "211"})
 	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 4, 5), true, "d2arr1val2"})
 	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 3, 5), true, "d1arr1val1"})
 	arr1 = append(arr1, StringOption{tSrc("../../figtree.yml", 4, 5), true, "d1arr1val2"})
@@ -94,7 +94,7 @@ func TestOptionsLoadConfigD3(t *testing.T) {
 		Array1:     arr1,
 		Map1: map[string]StringOption{
 			"key0": {tSrc("../../figtree.yml", 7, 9), true, "d1map1val0"},
-			"key1": {tSrc("../figtree.yml", 7, 9), true, "d2map1val1"},
+			"key1": {tSrc("../figtree.yml", 7, 9), true, "211"},
 			"key2": {tSrc("figtree.yml", 7, 9), true, "d3map1val2"},
 			"key3": {tSrc("figtree.yml", 8, 9), true, "d3map1val3"},
 			"dup":  {tSrc("figtree.yml", 9, 9), true, "d3dupval"},
@@ -118,7 +118,7 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "211"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
 	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
@@ -130,7 +130,7 @@ func TestOptionsLoadConfigD2(t *testing.T) {
 		Array1:     arr1,
 		Map1: map[string]StringOption{
 			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
-			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "211"},
 			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
 			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
@@ -200,7 +200,7 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 	arr1 = append(arr1, "d3arr1val1")
 	arr1 = append(arr1, "d3arr1val2")
 	arr1 = append(arr1, "dupval")
-	arr1 = append(arr1, "d2arr1val1")
+	arr1 = append(arr1, "211")
 	arr1 = append(arr1, "d2arr1val2")
 	arr1 = append(arr1, "d1arr1val1")
 	arr1 = append(arr1, "d1arr1val2")
@@ -211,7 +211,7 @@ func TestBuiltinLoadConfigD3(t *testing.T) {
 		Array1:     arr1,
 		Map1: map[string]string{
 			"key0": "d1map1val0",
-			"key1": "d2map1val1",
+			"key1": "211",
 			"key2": "d3map1val2",
 			"key3": "d3map1val3",
 			"dup":  "d3dupval",
@@ -235,7 +235,7 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 	})
 
 	arr1 := []string{}
-	arr1 = append(arr1, "d2arr1val1")
+	arr1 = append(arr1, "211")
 	arr1 = append(arr1, "d2arr1val2")
 	arr1 = append(arr1, "dupval")
 	arr1 = append(arr1, "d1arr1val1")
@@ -247,7 +247,7 @@ func TestBuiltinLoadConfigD2(t *testing.T) {
 		Array1:     arr1,
 		Map1: map[string]string{
 			"key0": "d1map1val0",
-			"key1": "d2map1val1",
+			"key1": "211",
 			"key2": "d2map1val2",
 			"dup":  "d2dupval",
 		},
@@ -322,7 +322,7 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 	})
 
 	arr1 := []StringOption{}
-	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "d2arr1val1"})
+	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 3, 5), true, "211"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 4, 5), true, "d2arr1val2"})
 	arr1 = append(arr1, StringOption{tSrc("figtree.yml", 5, 5), true, "dupval"})
 	arr1 = append(arr1, StringOption{tSrc("../figtree.yml", 3, 5), true, "d1arr1val1"})
@@ -334,7 +334,7 @@ func TestOptionsLoadConfigDefaults(t *testing.T) {
 		Array1:     arr1,
 		Map1: map[string]StringOption{
 			"key0": {tSrc("../figtree.yml", 7, 9), true, "d1map1val0"},
-			"key1": {tSrc("figtree.yml", 7, 9), true, "d2map1val1"},
+			"key1": {tSrc("figtree.yml", 7, 9), true, "211"},
 			"key2": {tSrc("figtree.yml", 8, 9), true, "d2map1val2"},
 			"dup":  {tSrc("figtree.yml", 9, 9), true, "d2dupval"},
 		},
