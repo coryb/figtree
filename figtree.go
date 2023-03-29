@@ -453,12 +453,16 @@ func (m *Merger) advance() {
 	m.Config.Overwrite = nil
 }
 
-// Merge will attempt to merge the data from src into dst.  They shoud be either both maps or both structs.
-// The structs do not need to have the same structure, but any field name that exists in both
-// structs will must be the same type.
+// Merge will attempt to merge the data from src into dst. src and dst may each
+// be either a map or a struct. Structs do not need to have the same structure,
+// but any field name that exists in both structs will must be the same type.
 func Merge(dst, src interface{}) error {
+	dstValue := reflect.ValueOf(dst)
+	if dstValue.Kind() == reflect.Struct {
+		return errors.New("dst argument cannot be a struct (should be *struct)")
+	}
 	m := NewMerger()
-	_, err := m.mergeStructs(reflect.ValueOf(dst), newMergeSource(reflect.ValueOf(src)), false)
+	_, err := m.mergeStructs(dstValue, newMergeSource(reflect.ValueOf(src)), false)
 	return err
 }
 
@@ -914,14 +918,12 @@ func (m *Merger) assignValue(dest reflect.Value, src mergeSource, opts assignOpt
 		if src.node != nil {
 			dest.Set(reflect.ValueOf(*src.node))
 			return true, nil
-		} else {
-			if err := node.Encode(reflectedSrc.Interface()); err != nil {
-				return false, errors.WithStack(err)
-			}
-			dest.Set(reflect.ValueOf(node))
-			return true, nil
 		}
-		return false, nil
+		if err := node.Encode(reflectedSrc.Interface()); err != nil {
+			return false, errors.WithStack(err)
+		}
+		dest.Set(reflect.ValueOf(node))
+		return true, nil
 	}
 
 	if reflectedSrc.Type().AssignableTo(dest.Type()) {
