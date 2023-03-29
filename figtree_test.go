@@ -3428,3 +3428,18 @@ func TestMergeEmbedStructWithNilFields(t *testing.T) {
 	}
 	assert.Equal(t, expected, dest)
 }
+
+func TestMergeWithDstStructArg(t *testing.T) {
+	dest := struct {
+		MyStructField string `yaml:"struct-field"`
+	}{
+		MyStructField: "field1",
+	}
+
+	src := map[string]interface{}{
+		"struct-field": "mapval1",
+	}
+
+	err := Merge(dest, src)
+	require.Error(t, err)
+}
