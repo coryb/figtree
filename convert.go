@@ -7,6 +7,16 @@ import (
 
 // dst must be a pointer type
 func convertString(src string, dst interface{}) (err error) {
+	// allow destinations that implement the kingping.Value interface:
+	// https://github.com/alecthomas/kingpin/blob/v2.3.2/values.go#L30-L33
+	type setter interface {
+		Set(string) error
+	}
+	// allow destinations that implement the kingpin.Setter interface:
+	// https://github.com/alecthomas/kingpin/blob/v2.3.2/parsers.go#L12-L14
+	type setValuer interface {
+		SetValue(any) error
+	}
 	switch v := dst.(type) {
 	case *bool:
 		*v, err = strconv.ParseBool(src)
@@ -82,6 +92,10 @@ func convertString(src string, dst interface{}) (err error) {
 		*v = tmp
 	case *any:
 		*v = src
+	case setter:
+		return v.Set(src)
+	case setValuer:
+		return v.SetValue(src)
 	default:
 		err = fmt.Errorf("Cannot convert string %q to type %T", src, dst)
 	}

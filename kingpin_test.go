@@ -8,12 +8,23 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
+type Stringish struct {
+	value string
+}
+
+// implement the Setter interface used to convert strings to option type
+func (s *Stringish) Set(v string) error {
+	s.value = v
+	return nil
+}
+
 func TestCommandLine(t *testing.T) {
 	type CommandLineOptions struct {
-		Str1 StringOption     `yaml:"str1,omitempty"`
-		Int1 IntOption        `yaml:"int1,omitempty"`
-		Map1 MapStringOption  `yaml:"map1,omitempty"`
-		Arr1 ListStringOption `yaml:"arr1,omitempty"`
+		Str1 StringOption          `yaml:"str1,omitempty"`
+		Int1 IntOption             `yaml:"int1,omitempty"`
+		Map1 MapStringOption       `yaml:"map1,omitempty"`
+		Arr1 ListStringOption      `yaml:"arr1,omitempty"`
+		Strs ListOption[Stringish] `yaml:"strs,omitempty"`
 	}
 
 	opts := CommandLineOptions{}
@@ -31,7 +42,8 @@ func TestCommandLine(t *testing.T) {
 	app.Flag("int1", "Int1").SetValue(&opts.Int1)
 	app.Flag("map1", "Map1").SetValue(&opts.Map1)
 	app.Flag("arr1", "Arr1").SetValue(&opts.Arr1)
-	_, err = app.Parse([]string{"--int1", "999", "--map1", "k1=v1", "--map1", "k2=v2", "--arr1", "v1", "--arr1", "v2"})
+	app.Flag("str", "Strs").SetValue(&opts.Strs)
+	_, err = app.Parse([]string{"--int1", "999", "--map1", "k1=v1", "--map1", "k2=v2", "--arr1", "v1", "--arr1", "v2", "--str", "abc", "--str", "def"})
 	require.NoError(t, err)
 
 	arr1 := ListStringOption{}
@@ -58,6 +70,10 @@ func TestCommandLine(t *testing.T) {
 			"k2":   {NewSource("override"), true, "v2"},
 		},
 		Arr1: arr1,
+		Strs: ListOption[Stringish]{
+			{NewSource("override"), true, Stringish{"abc"}},
+			{NewSource("override"), true, Stringish{"def"}},
+		},
 	}
 
 	require.Equal(t, expected, opts)
