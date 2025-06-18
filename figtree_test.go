@@ -3443,3 +3443,23 @@ func TestMergeWithDstStructArg(t *testing.T) {
 	err := Merge(dest, src)
 	require.Error(t, err)
 }
+
+func TestMergeOptionAny(t *testing.T) {
+	input1 := struct {
+		StructField Option[string] `yaml:"struct-field"`
+	}{}
+
+	input2 := struct {
+		StructField Option[any] `yaml:"struct-field"`
+	}{}
+
+	merge := MakeMergeStruct(input1, input2)
+	require.Equal(t, &struct {
+		StructField Option[any] `yaml:"struct-field"`
+	}{}, merge)
+
+	merge = MakeMergeStruct(input2, input1)
+	require.Equal(t, &struct {
+		StructField Option[any] `yaml:"struct-field"`
+	}{}, merge)
+}

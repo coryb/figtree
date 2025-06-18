@@ -493,6 +493,49 @@ func inlineField(field reflect.StructField) bool {
 	return false
 }
 
+func mergeOptions(a reflect.Type, b reflect.Type) (reflect.Value, bool) {
+	if !a.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+		// try to see if pointer type of A implements option
+		a := reflect.New(a).Type()
+		if !a.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+			return reflect.Value{}, false
+		}
+	}
+	if !b.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+		// try to see if pointer type of B implements option
+		b := reflect.New(b).Type()
+		if !b.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+			return reflect.Value{}, false
+		}
+	}
+
+	av, ok := a.FieldByName("Value")
+	if !ok {
+		return reflect.Value{}, false
+	}
+	avt := av.Type
+
+	bv, ok := b.FieldByName("Value")
+	if !ok {
+		return reflect.Value{}, false
+	}
+	bvt := bv.Type
+
+	if bvt.AssignableTo(avt) {
+		return reflect.New(a).Elem(), true
+	}
+	if avt.AssignableTo(bvt) {
+		return reflect.New(b).Elem(), true
+	}
+	if bvt.ConvertibleTo(avt) {
+		return reflect.New(a).Elem(), true
+	}
+	if avt.ConvertibleTo(bvt) {
+		return reflect.New(b).Elem(), true
+	}
+	return reflect.Value{}, false
+}
+
 func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 	foundFields := map[string]reflect.StructField{}
 	for i := 0; i < len(values); i++ {
@@ -515,11 +558,19 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 				if f, ok := foundFields[field.Name]; ok {
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
-							// we have 2 fields with the same name and they are both structs, so we need
-							// to merge the existing struct with the new one in case they are different
-							newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
-							f.Type = newval.Type()
-							foundFields[field.Name] = f
+							// do we have two options?
+							if newval, ok := mergeOptions(f.Type, field.Type); ok {
+								// we have two fields with the same name and they are both options, so we need
+								// to merge the existing option with the new one in case they are different
+								f.Type = newval.Type()
+								foundFields[field.Name] = f
+							} else {
+								// we have 2 fields with the same name and they are both structs, so we need
+								// to merge the existing struct with the new one in case they are different
+								newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
+								f.Type = newval.Type()
+								foundFields[field.Name] = f
+							}
 						}
 					}
 					// field already found, skip
