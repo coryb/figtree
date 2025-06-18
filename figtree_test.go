@@ -591,15 +591,15 @@ func TestMergeStructWithMap(t *testing.T) {
 
 	expected := struct {
 		Map struct {
-			Mapkey      string
+			Mapkey      string      `json:"mapkey" yaml:"mapkey"`
 			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
 			StructField string
-		}
-		Mapkey      string
+		} `json:"map" yaml:"map"`
+		Mapkey      string `json:"mapkey" yaml:"mapkey"`
 		StructField string
 	}{
 		Map: struct {
-			Mapkey      string
+			Mapkey      string      `json:"mapkey" yaml:"mapkey"`
 			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
 			StructField string
 		}{
@@ -647,15 +647,15 @@ func TestMergeStructWithMapArbitraryNaming(t *testing.T) {
 
 	expected := struct {
 		Map struct {
-			Mapkey      string      `yaml:"mapkey"`
+			Mapkey      string      `json:"mapkey" yaml:"mapkey"`
 			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
 			StructField string      `yaml:"struct-field"`
-		} `yaml:"map"`
-		Mapkey      string `yaml:"mapkey"`
+		} `json:"map" yaml:"map"`
+		Mapkey      string `json:"mapkey" yaml:"mapkey"`
 		StructField string `yaml:"struct-field"`
 	}{
 		Map: struct {
-			Mapkey      string      `yaml:"mapkey"`
+			Mapkey      string      `json:"mapkey" yaml:"mapkey"`
 			Nullkey     interface{} `json:"nullkey" yaml:"nullkey"`
 			StructField string      `yaml:"struct-field"`
 		}{
@@ -1069,7 +1069,9 @@ func TestMakeMergeStructWithDups(t *testing.T) {
 	err = Merge(got, &s)
 	require.NoError(t, err)
 
-	assert.Equal(t, &struct{ Mapkey string }{"mapval2"}, got)
+	assert.Equal(t, &struct {
+		Mapkey string `json:"mapkey" yaml:"mapkey"`
+	}{"mapval2"}, got)
 }
 
 func TestMakeMergeStructWithInline(t *testing.T) {
@@ -1831,7 +1833,7 @@ func TestMergeBoolString(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := &struct {
-		EnableThing BoolOption
+		EnableThing BoolOption `json:"enable-thing" yaml:"enable-thing"`
 	}{BoolOption{Source: NewSource("merge"), Defined: true, Value: true}}
 
 	assert.Equal(t, expected, dest)
@@ -1853,7 +1855,7 @@ func TestMergeStringBool(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := &struct {
-		EnableThing StringOption
+		EnableThing StringOption `json:"enable-thing" yaml:"enable-thing"`
 	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "true"}}
 
 	assert.Equal(t, expected, dest)
@@ -1875,7 +1877,7 @@ func TestMergeStringFloat64(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := &struct {
-		SomeThing StringOption
+		SomeThing StringOption `json:"some-thing" yaml:"some-thing"`
 	}{StringOption{Source: NewSource("merge"), Defined: true, Value: "42"}}
 
 	assert.Equal(t, expected, dest)
@@ -3461,5 +3463,52 @@ func TestMergeOptionAny(t *testing.T) {
 	merge = MakeMergeStruct(input2, input1)
 	require.Equal(t, &struct {
 		StructField Option[any] `yaml:"struct-field"`
+	}{}, merge)
+}
+
+// TestMergeSameYAMLTag checks that merging two structs with the same YAML tag
+// but different casing for the field name does not cause a panic or unexpected
+// behavior. It ensures that the `figtree` tag is preserved correctly.
+func TestMergeSameYAMLTag(t *testing.T) {
+	input1 := struct {
+		SomeID Option[string] `yaml:"some-id" figtree:"name=SomeID"`
+	}{}
+
+	input2 := struct {
+		SomeId Option[string] `yaml:"some-id"`
+	}{}
+
+	merge := MakeMergeStruct(input1, input2)
+	require.Equal(t, &struct {
+		SomeID Option[string] `figtree:"name=SomeID" yaml:"some-id"`
+	}{}, merge)
+
+	merge = MakeMergeStruct(input2, input1)
+	require.Equal(t, &struct {
+		SomeID Option[string] `figtree:"name=SomeID" yaml:"some-id"`
+	}{}, merge)
+}
+
+// TestMergeNameCollision checks that merging two maps with different
+// input casing that will result in the same struct field name does not cause
+// a panic or unexpected behavior.
+func TestMergeNameCollision(t *testing.T) {
+	input1 := map[string]any{
+		"some-key": "value1",
+	}
+	input2 := map[string]any{
+		"SomeKey": "value2",
+	}
+	merge := MakeMergeStruct(input1, input2)
+	require.Equal(t, &struct {
+		SomeKey string `json:"some-key" yaml:"some-key"`
+	}{}, merge)
+
+	// Reversing the order, they are merged in first-to-last prirority order
+	// on this causes `SomeKey` to be the json/yaml name (keys from maps
+	// are preserved by order)
+	merge = MakeMergeStruct(input2, input1)
+	require.Equal(t, &struct {
+		SomeKey string `json:"SomeKey" yaml:"SomeKey"`
 	}{}, merge)
 }
