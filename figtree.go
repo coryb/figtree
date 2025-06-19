@@ -561,10 +561,7 @@ func (m *Merger) mergeTags(a reflect.StructField, b reflect.StructField) string 
 		aTag, aOk := a.Tag.Lookup(tag)
 		bTag, bOk := b.Tag.Lookup(tag)
 		switch {
-		case aOk && bOk:
-			// if both defined, pick the first one
-			resultTag = append(resultTag, fmt.Sprintf("%s:%q", tag, aTag))
-		case aOk:
+		case aOk: // if a has a tag or both have the tag, use a
 			resultTag = append(resultTag, fmt.Sprintf("%s:%q", tag, aTag))
 		case bOk:
 			resultTag = append(resultTag, fmt.Sprintf("%s:%q", tag, bTag))
@@ -725,15 +722,13 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 		fields = append(fields, value)
 		if prev, ok := seen[value.Name]; ok {
 			// we have a duplicate field name, this should not happen
-			// but if it does, we will just skip it
-			fmt.Fprintf(os.Stderr, "Duplicate field name %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", value.Name, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag)
+			panic(fmt.Sprintf("Duplicate field name %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", value.Name, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag))
 		}
 		seen[value.Name] = value
 		yamlName := yamlTagName(value.Tag)
 		if prev, ok := yamlSeen[yamlName]; yamlName != "" && ok {
 			// we have a duplicate field name, this should not happen
-			// but if it does, we will just skip it
-			fmt.Fprintf(os.Stderr, "Duplicate YAML tag %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", yamlName, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag)
+			panic(fmt.Sprintf("Duplicate YAML tag %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", yamlName, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag))
 		}
 		yamlSeen[yamlName] = value
 	}
