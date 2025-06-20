@@ -400,10 +400,11 @@ func camelCase(name string) string {
 }
 
 type Merger struct {
-	sourceFile  string
-	preserveMap map[string]struct{}
-	Config      ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
-	ignore      []string
+	sourceFile   string
+	preserveMap  map[string]struct{}
+	preserveTags map[string]struct{}
+	Config       ConfigOptions `json:"config,omitempty" yaml:"config,omitempty"`
+	ignore       []string
 }
 
 type MergeOption func(*Merger)
@@ -422,10 +423,23 @@ func PreserveMap(keys ...string) MergeOption {
 	}
 }
 
+func PreserveTags(names ...string) MergeOption {
+	return func(m *Merger) {
+		for _, tag := range names {
+			m.preserveTags[tag] = struct{}{}
+		}
+	}
+}
+
 func NewMerger(options ...MergeOption) *Merger {
 	m := &Merger{
 		sourceFile:  "merge",
 		preserveMap: make(map[string]struct{}),
+		preserveTags: map[string]struct{}{
+			"json":    {},
+			"yaml":    {},
+			"figtree": {},
+		},
 	}
 	for _, opt := range options {
 		opt(m)
@@ -493,6 +507,90 @@ func inlineField(field reflect.StructField) bool {
 	return false
 }
 
+func mergeOptions(a reflect.Type, b reflect.Type) (reflect.Value, bool) {
+	if !a.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+		// try to see if pointer type of A implements option
+		a := reflect.New(a).Type()
+		if !a.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+			return reflect.Value{}, false
+		}
+	}
+	if !b.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+		// try to see if pointer type of B implements option
+		b := reflect.New(b).Type()
+		if !b.Implements(reflect.TypeOf((*option)(nil)).Elem()) {
+			return reflect.Value{}, false
+		}
+	}
+
+	av, ok := a.FieldByName("Value")
+	if !ok {
+		return reflect.Value{}, false
+	}
+	avt := av.Type
+
+	bv, ok := b.FieldByName("Value")
+	if !ok {
+		return reflect.Value{}, false
+	}
+	bvt := bv.Type
+
+	if bvt.AssignableTo(avt) {
+		return reflect.New(a).Elem(), true
+	}
+	if avt.AssignableTo(bvt) {
+		return reflect.New(b).Elem(), true
+	}
+	if bvt.ConvertibleTo(avt) {
+		return reflect.New(a).Elem(), true
+	}
+	if avt.ConvertibleTo(bvt) {
+		return reflect.New(b).Elem(), true
+	}
+	return reflect.Value{}, false
+}
+
+func (m *Merger) mergeTags(a reflect.StructField, b reflect.StructField) string {
+	allTags := []string{}
+	for k := range m.preserveTags {
+		allTags = append(allTags, k)
+	}
+	var resultTag []string
+	sort.Strings(allTags)
+	for _, tag := range allTags {
+		aTag, aOk := a.Tag.Lookup(tag)
+		bTag, bOk := b.Tag.Lookup(tag)
+		switch {
+		case aOk: // if a has a tag or both have the tag, use a
+			resultTag = append(resultTag, fmt.Sprintf("%s:%q", tag, aTag))
+		case bOk:
+			resultTag = append(resultTag, fmt.Sprintf("%s:%q", tag, bTag))
+		}
+	}
+	return strings.Join(resultTag, " ")
+}
+
+// findField will look for the field in the map.  It will first look for
+// the field name as defined by CanonicalFieldName, then it will look for
+// a field based on the yaml tag name.  This helps ensure that we dont add
+// duplicate fields based on either struct field name or the yaml tag name,
+// both of which will cause failures.
+func findField(fields map[string]reflect.StructField, field reflect.StructField) (key string, found reflect.StructField, ok bool) {
+	fieldName := CanonicalFieldName(field)
+	if f, found := fields[fieldName]; found {
+		return fieldName, f, true
+	}
+
+	yamlName := yamlFieldName(field)
+	for k, f := range fields {
+		if yamlName == yamlFieldName(f) {
+			return k, f, true
+		}
+	}
+
+	return "", reflect.StructField{}, false
+}
+
 func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 	foundFields := map[string]reflect.StructField{}
 	for i := 0; i < len(values); i++ {
@@ -511,15 +609,36 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 				}
 
 				field.Name = CanonicalFieldName(field)
+				if fieldKey, f, ok := findField(foundFields, field); ok {
+					newTag := m.mergeTags(f, field)
+					if newTag != string(f.Tag) {
+						f.Tag = reflect.StructTag(newTag)
+						foundFields[fieldKey] = f
+					}
 
-				if f, ok := foundFields[field.Name]; ok {
+					// the canonical name is influenced by the `figtree` tag
+					// so make sure the merged field has the correct name after
+					// merging the tags.
+					if fieldName := CanonicalFieldName(f); f.Name != fieldName {
+						f.Name = fieldName
+						foundFields[fieldKey] = f
+					}
+
 					if f.Type.Kind() == reflect.Struct && field.Type.Kind() == reflect.Struct {
 						if fName, fieldName := f.Type.Name(), field.Type.Name(); fName == "" || fieldName == "" || fName != fieldName {
-							// we have 2 fields with the same name and they are both structs, so we need
-							// to merge the existing struct with the new one in case they are different
-							newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
-							f.Type = newval.Type()
-							foundFields[field.Name] = f
+							// do we have two options?
+							if newval, ok := mergeOptions(f.Type, field.Type); ok {
+								// we have two fields with the same name and they are both options, so we need
+								// to merge the existing option with the new one in case they are different
+								f.Type = newval.Type()
+								foundFields[fieldKey] = f
+							} else {
+								// we have 2 fields with the same name and they are both structs, so we need
+								// to merge the existing struct with the new one in case they are different
+								newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(field.Type).Elem()).Elem()
+								f.Type = newval.Type()
+								foundFields[fieldKey] = f
+							}
 						}
 					}
 					// field already found, skip
@@ -557,14 +676,35 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 					Type: t,
 					Tag:  reflect.StructTag(fmt.Sprintf(`json:"%s" yaml:"%s"`, key.String(), key.String())),
 				}
-				if f, ok := foundFields[field.Name]; ok {
+				// the yaml and json names are just taken directly from the map key
+				if fieldKey, f, ok := findField(foundFields, field); ok {
+					newTag := m.mergeTags(f, field)
+					if newTag != string(f.Tag) {
+						f.Tag = reflect.StructTag(newTag)
+						foundFields[fieldKey] = f
+					}
+					// the canonical name is influenced by the `figtree` tag
+					// so make sure the merged field has the correct name after
+					// merging the tags.
+					if fieldName := CanonicalFieldName(f); f.Name != fieldName {
+						f.Name = fieldName
+						foundFields[fieldKey] = f
+					}
 					if f.Type.Kind() == reflect.Struct && t.Kind() == reflect.Struct {
 						if fName, tName := f.Type.Name(), t.Name(); fName == "" || tName == "" || fName != tName {
-							// we have 2 fields with the same name and they are both structs, so we need
-							// to merge the existig struct with the new one in case they are different
-							newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
-							f.Type = newval.Type()
-							foundFields[field.Name] = f
+							// do we have two options?
+							if newval, ok := mergeOptions(f.Type, field.Type); ok {
+								// we have two fields with the same name and they are both options, so we need
+								// to merge the existing option with the new one in case they are different
+								f.Type = newval.Type()
+								foundFields[fieldKey] = f
+							} else {
+								// we have 2 fields with the same name and they are both structs, so we need
+								// to merge the existig struct with the new one in case they are different
+								newval := m.makeMergeStruct(reflect.New(f.Type).Elem(), reflect.New(t).Elem()).Elem()
+								f.Type = newval.Type()
+								foundFields[fieldKey] = f
+							}
 						}
 					}
 					// field already found, skip
@@ -576,8 +716,21 @@ func (m *Merger) makeMergeStruct(values ...reflect.Value) reflect.Value {
 	}
 
 	fields := []reflect.StructField{}
+	seen := map[string]reflect.StructField{}
+	yamlSeen := map[string]reflect.StructField{}
 	for _, value := range foundFields {
 		fields = append(fields, value)
+		if prev, ok := seen[value.Name]; ok {
+			// we have a duplicate field name, this should not happen
+			panic(fmt.Sprintf("Duplicate field name %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", value.Name, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag))
+		}
+		seen[value.Name] = value
+		yamlName := yamlTagName(value.Tag)
+		if prev, ok := yamlSeen[yamlName]; yamlName != "" && ok {
+			// we have a duplicate field name, this should not happen
+			panic(fmt.Sprintf("Duplicate YAML tag %q in merge struct.\n\tOld: %s %s `%s`\n\tNew: %s %s `%s`\n", yamlName, prev.Name, prev.Type.String(), prev.Tag, value.Name, value.Type.String(), value.Tag))
+		}
+		yamlSeen[yamlName] = value
 	}
 	sort.Slice(fields, func(i, j int) bool {
 		return fields[i].Name < fields[j].Name
@@ -659,14 +812,21 @@ type ConfigOptions struct {
 	Overwrite []string `json:"overwrite,omitempty" yaml:"overwrite,omitempty"`
 }
 
-func yamlFieldName(sf reflect.StructField) string {
-	if tag, ok := sf.Tag.Lookup("yaml"); ok {
+func yamlTagName(tag reflect.StructTag) string {
+	if tag, ok := tag.Lookup("yaml"); ok {
 		// with yaml:"foobar,omitempty"
 		// we just want to the "foobar" part
 		parts := strings.Split(tag, ",")
 		if parts[0] != "" && parts[0] != "-" {
 			return parts[0]
 		}
+	}
+	return ""
+}
+
+func yamlFieldName(sf reflect.StructField) string {
+	if name := yamlTagName(sf.Tag); name != "" {
+		return name
 	}
 	// guess the field name from reversing camel case
 	// so "FooBar" becomes "foo-bar"
